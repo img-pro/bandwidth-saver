@@ -22,7 +22,7 @@
                 url: ajaxurl,
                 type: 'POST',
                 data: {
-                    action: 'imgpro_toggle_enabled',
+                    action: 'imgpro_cdn_toggle_enabled',
                     enabled: isEnabled ? 1 : 0,
                     nonce: imgproCdnAdmin.nonce
                 },

@@ -11,11 +11,11 @@
         // Handle main toggle switch
         $('#enabled').on('change', function() {
             const $toggle = $(this);
-            const $card = $toggle.closest('.imgpro-cdn-toggle-card');
+            const $card = $('.imgpro-cdn-toggle-card');
             const isEnabled = $toggle.is(':checked');
 
             // Add loading state
-            $card.addClass('imgpro-loading');
+            $card.addClass('imgpro-cdn-loading');
 
             // AJAX request to update setting
             $.ajax({
@@ -29,7 +29,7 @@
                 success: function(response) {
                     if (response.success) {
                         // Update UI
-                        updateToggleUI(isEnabled);
+                        updateToggleUI($card, isEnabled);
 
                         // Show success notice
                         showNotice('success', response.data.message);
@@ -45,34 +45,50 @@
                     showNotice('error', 'An error occurred. Please try again.');
                 },
                 complete: function() {
-                    $card.removeClass('imgpro-loading');
+                    $card.removeClass('imgpro-cdn-loading');
                 }
             });
         });
 
         // Update toggle card UI
-        function updateToggleUI(isEnabled) {
-            const $status = $('.imgpro-cdn-main-toggle-status');
+        function updateToggleUI($card, isEnabled) {
+            const $icon = $card.find('.imgpro-cdn-toggle-icon .dashicons');
+            const $content = $card.find('.imgpro-cdn-toggle-content');
 
             if (isEnabled) {
-                $status.find('.dashicons').removeClass('dashicons-warning').addClass('dashicons-yes-alt');
-                $status.find('h2').text(imgproCdnAdmin.i18n.active);
-                $status.find('p').text(imgproCdnAdmin.i18n.activeMessage);
+                // Update card background
+                $card.removeClass('imgpro-cdn-toggle-disabled').addClass('imgpro-cdn-toggle-active');
+
+                // Update icon
+                $icon.removeClass('dashicons-warning').addClass('dashicons-yes-alt');
+
+                // Update text
+                $content.find('h2').text(imgproCdnAdmin.i18n.activeLabel);
+                $content.find('p').html(imgproCdnAdmin.i18n.activeMessage);
             } else {
-                $status.find('.dashicons').removeClass('dashicons-yes-alt').addClass('dashicons-warning');
-                $status.find('h2').text(imgproCdnAdmin.i18n.disabled);
-                $status.find('p').text(imgproCdnAdmin.i18n.disabledMessage);
+                // Update card background
+                $card.removeClass('imgpro-cdn-toggle-active').addClass('imgpro-cdn-toggle-disabled');
+
+                // Update icon
+                $icon.removeClass('dashicons-yes-alt').addClass('dashicons-warning');
+
+                // Update text
+                $content.find('h2').text(imgproCdnAdmin.i18n.disabledLabel);
+                $content.find('p').text(imgproCdnAdmin.i18n.disabledMessage);
             }
         }
 
         // Show admin notice
         function showNotice(type, message) {
-            const $notice = $('<div class="notice notice-' + type + ' is-dismissible"><p>' + message + '</p></div>');
-            $('.imgpro-cdn-admin').prepend($notice);
+            // Remove any existing notices first
+            $('.imgpro-cdn-toggle-notice').remove();
+
+            const $notice = $('<div class="notice notice-' + type + ' is-dismissible imgpro-cdn-toggle-notice"><p>' + message + '</p></div>');
+            $('.imgpro-cdn-toggle-card').after($notice);
 
             // Auto dismiss after 3 seconds
             setTimeout(function() {
-                $notice.fadeOut(function() {
+                $notice.fadeOut(300, function() {
                     $(this).remove();
                 });
             }, 3000);

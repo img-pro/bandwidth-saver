@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Image CDN – Bandwidth Saver for WordPress
+ * Plugin Name: Image CDN – Bandwidth Saver by ImgPro
  * Plugin URI: https://img.pro
  * Description: Deliver images from Cloudflare's global network. Save bandwidth costs with free-tier friendly R2 storage and zero egress fees.
- * Version: 0.0.8
+ * Version: 0.0.9
  * Author: ImgPro
  * Author URI: https://img.pro
  * License: GPLv2 or later
@@ -46,7 +46,7 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
 
 // Define plugin constants
 if (!defined('IMGPRO_CDN_VERSION')) {
-    define('IMGPRO_CDN_VERSION', '0.0.8');
+    define('IMGPRO_CDN_VERSION', '0.0.9');
 }
 if (!defined('IMGPRO_CDN_PLUGIN_DIR')) {
     define('IMGPRO_CDN_PLUGIN_DIR', plugin_dir_path(__FILE__));

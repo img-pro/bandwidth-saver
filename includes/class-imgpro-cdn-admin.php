@@ -59,7 +59,7 @@ class ImgPro_CDN_Admin {
                 'imgpro-cdn-admin',
                 plugins_url('admin/css/imgpro-cdn-admin.css', dirname(__FILE__)),
                 [],
-                IMGPRO_CDN_VERSION
+                IMGPRO_CDN_VERSION . '.' . filemtime($css_file)
             );
         }
 
@@ -70,7 +70,7 @@ class ImgPro_CDN_Admin {
                 'imgpro-cdn-admin',
                 plugins_url('admin/js/imgpro-cdn-admin.js', dirname(__FILE__)),
                 ['jquery'],
-                IMGPRO_CDN_VERSION,
+                IMGPRO_CDN_VERSION . '.' . filemtime($js_file),
                 true
             );
 
@@ -78,9 +78,9 @@ class ImgPro_CDN_Admin {
             wp_localize_script('imgpro-cdn-admin', 'imgproCdnAdmin', [
                 'nonce' => wp_create_nonce('imgpro_cdn_toggle_enabled'),
                 'i18n' => [
-                    'active' => __('Image CDN is Active', 'imgpro-cdn'),
-                    'disabled' => __('Image CDN is Disabled', 'imgpro-cdn'),
-                    'activeMessage' => __('Images load faster worldwide. Your bandwidth costs are being reduced.', 'imgpro-cdn'),
+                    'activeLabel' => __('Active', 'imgpro-cdn'),
+                    'disabledLabel' => __('Disabled', 'imgpro-cdn'),
+                    'activeMessage' => '<span class="imgpro-cdn-nowrap imgpro-cdn-hide-mobile">' . __('Images load faster worldwide.', 'imgpro-cdn') . '</span> <span class="imgpro-cdn-nowrap">' . __('Your bandwidth costs are being reduced.', 'imgpro-cdn') . '</span>',
                     'disabledMessage' => __('Enable to cut bandwidth costs and speed up image delivery globally', 'imgpro-cdn'),
                 ]
             ]);
@@ -172,8 +172,8 @@ class ImgPro_CDN_Admin {
         <div class="wrap imgpro-cdn-admin">
             <div class="imgpro-cdn-header">
                 <div>
-                    <h1><?php _e('Image CDN', 'imgpro-cdn'); ?></h1>
-                    <p class="imgpro-cdn-tagline"><?php _e('Cut bandwidth costs, boost global speed', 'imgpro-cdn'); ?></p>
+                    <h1><?php esc_html_e('Bandwidth Saver by ImgPro', 'imgpro-cdn'); ?></h1>
+                    <p class="imgpro-cdn-tagline"><?php esc_html_e('Cut bandwidth costs, boost global speed', 'imgpro-cdn'); ?></p>
                 </div>
                 <div class="imgpro-cdn-header-meta">
                     <span class="imgpro-cdn-version">v<?php echo esc_html(IMGPRO_CDN_VERSION); ?></span>
@@ -187,10 +187,13 @@ class ImgPro_CDN_Admin {
             <div class="imgpro-cdn-footer">
                 <p>
                     <?php
-                    printf(
-                        __('Image CDN by %s, powered by %s', 'imgpro-cdn'),
-                        '<a href="https://img.pro" target="_blank">ImgPro</a>',
-                        '<a href="https://www.cloudflare.com/products/r2/" target="_blank">Cloudflare R2 &amp; Workers</a>'
+                    echo wp_kses_post(
+                        sprintf(
+                            /* translators: 1: ImgPro link, 2: Cloudflare R2 & Workers link */
+                            __('Image CDN by %1$s, powered by %2$s', 'imgpro-cdn'),
+                            '<a href="https://img.pro" target="_blank">ImgPro</a>',
+                            '<a href="https://www.cloudflare.com/products/r2/" target="_blank">Cloudflare R2 &amp; Workers</a>'
+                        )
                     );
                     ?>
                 </p>
@@ -213,22 +216,25 @@ class ImgPro_CDN_Admin {
 
             <?php if ($is_configured): ?>
                 <?php // Big Toggle Switch (only when configured) ?>
-                <div class="imgpro-cdn-card imgpro-toggle-card">
+                <div class="imgpro-cdn-card imgpro-cdn-toggle-card <?php echo $settings['enabled'] ? 'imgpro-cdn-toggle-active' : 'imgpro-cdn-toggle-disabled'; ?>">
                     <div class="imgpro-cdn-main-toggle">
                         <div class="imgpro-cdn-main-toggle-status">
-                            <?php if ($settings['enabled']): ?>
-                                <span class="dashicons dashicons-yes-alt"></span>
-                                <div>
-                                    <h2><?php _e('Image CDN is Active', 'imgpro-cdn'); ?></h2>
-                                    <p><?php _e('Images load faster worldwide. Your bandwidth costs are being reduced.', 'imgpro-cdn'); ?></p>
-                                </div>
-                            <?php else: ?>
-                                <span class="dashicons dashicons-warning"></span>
-                                <div>
-                                    <h2><?php _e('Image CDN is Disabled', 'imgpro-cdn'); ?></h2>
-                                    <p><?php _e('Enable to cut bandwidth costs and speed up image delivery globally', 'imgpro-cdn'); ?></p>
-                                </div>
-                            <?php endif; ?>
+                            <div class="imgpro-cdn-toggle-icon">
+                                <?php if ($settings['enabled']): ?>
+                                    <span class="dashicons dashicons-yes-alt"></span>
+                                <?php else: ?>
+                                    <span class="dashicons dashicons-warning"></span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="imgpro-cdn-toggle-content">
+                                <?php if ($settings['enabled']): ?>
+                                    <h2><?php esc_html_e('Active', 'imgpro-cdn'); ?></h2>
+                                    <p><span class="imgpro-cdn-nowrap imgpro-cdn-hide-mobile"><?php esc_html_e('Images load faster worldwide.', 'imgpro-cdn'); ?></span> <span class="imgpro-cdn-nowrap"><?php esc_html_e('Your bandwidth costs are being reduced.', 'imgpro-cdn'); ?></span></p>
+                                <?php else: ?>
+                                    <h2><?php esc_html_e('Disabled', 'imgpro-cdn'); ?></h2>
+                                    <p><?php esc_html_e('Enable to cut bandwidth costs and speed up image delivery globally', 'imgpro-cdn'); ?></p>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
                         <label class="imgpro-cdn-main-toggle-switch">
@@ -239,73 +245,77 @@ class ImgPro_CDN_Admin {
                 </div>
             <?php endif; ?>
 
-            <?php // CDN Configuration ?>
+            <?php // Image CDN Settings ?>
             <div class="imgpro-cdn-card">
-                <h2><?php _e('CDN Configuration', 'imgpro-cdn'); ?></h2>
-                <p class="description" style="margin-top: -8px; margin-bottom: 20px;"><?php _e('Connect your Cloudflare domains to start delivering images globally', 'imgpro-cdn'); ?></p>
+                <h2><?php esc_html_e('Image CDN Settings', 'imgpro-cdn'); ?></h2>
+                <p class="description" style="margin-top: -8px; margin-bottom: 20px;"><?php esc_html_e('Connect your Cloudflare domains to start delivering images globally', 'imgpro-cdn'); ?></p>
 
                 <div class="imgpro-cdn-advanced-content">
                         <table class="form-table" role="presentation">
                             <tr>
                                 <th scope="row">
-                                    <label for="cdn_url"><?php _e('CDN Domain', 'imgpro-cdn'); ?></label>
+                                    <label for="cdn_url"><?php esc_html_e('CDN Domain', 'imgpro-cdn'); ?></label>
                                 </th>
                                 <td>
                                     <input type="text" id="cdn_url" name="imgpro_cdn_settings[cdn_url]" value="<?php echo esc_attr($settings['cdn_url']); ?>" class="regular-text" placeholder="cdn.yourdomain.com" required>
-                                    <p class="description"><?php _e('Your R2 public bucket domain. Images are cached here and delivered from 300+ global locations. Handles 99% of traffic.', 'imgpro-cdn'); ?></p>
+                                    <p class="description"><?php esc_html_e('Your R2 public bucket domain. Cached images are delivered from 300+ global locations.', 'imgpro-cdn'); ?></p>
                                 </td>
                             </tr>
 
                             <tr>
                                 <th scope="row">
-                                    <label for="worker_url"><?php _e('Worker Domain', 'imgpro-cdn'); ?></label>
+                                    <label for="worker_url"><?php esc_html_e('Worker Domain', 'imgpro-cdn'); ?></label>
                                 </th>
                                 <td>
                                     <input type="text" id="worker_url" name="imgpro_cdn_settings[worker_url]" value="<?php echo esc_attr($settings['worker_url']); ?>" class="regular-text" placeholder="worker.yourdomain.com" required>
-                                    <p class="description"><?php _e('Your Cloudflare Worker domain. Processes new images and cache misses. First request is slower, then cached globally forever.', 'imgpro-cdn'); ?></p>
+                                    <p class="description"><?php esc_html_e('Your Cloudflare Worker domain. Processes new images and cache misses.', 'imgpro-cdn'); ?></p>
                                 </td>
                             </tr>
 
                             <tr>
                                 <th scope="row">
-                                    <label for="allowed_domains"><?php _e('Allowed Domains', 'imgpro-cdn'); ?></label>
+                                    <label for="allowed_domains"><?php esc_html_e('Allowed Domains', 'imgpro-cdn'); ?></label>
                                 </th>
                                 <td>
-                                    <textarea id="allowed_domains" name="imgpro_cdn_settings[allowed_domains]" rows="3" class="large-text" placeholder="example.com&#10;cdn.example.com"><?php
+                                    <textarea id="allowed_domains" name="imgpro_cdn_settings[allowed_domains]" rows="3" class="large-text" placeholder="example.com&#10;blog.example.com&#10;shop.example.com"><?php
                                         if (is_array($settings['allowed_domains'])) {
                                             echo esc_textarea(implode("\n", $settings['allowed_domains']));
                                         }
                                     ?></textarea>
-                                    <p class="description"><?php _e('Restrict CDN to specific domains (one per line). Leave empty to process all images.', 'imgpro-cdn'); ?></p>
+                                    <p class="description"><?php esc_html_e('Enable Image CDN in limited domains (one per line). Leave empty to process all images.', 'imgpro-cdn'); ?></p>
                                 </td>
                             </tr>
 
                             <tr>
                                 <th scope="row">
-                                    <label for="excluded_paths"><?php _e('Excluded Paths', 'imgpro-cdn'); ?></label>
+                                    <label for="excluded_paths"><?php esc_html_e('Excluded Paths', 'imgpro-cdn'); ?></label>
                                 </th>
                                 <td>
-                                    <textarea id="excluded_paths" name="imgpro_cdn_settings[excluded_paths]" rows="3" class="large-text" placeholder="/wp-admin&#10;/wp-includes"><?php
+                                    <textarea id="excluded_paths" name="imgpro_cdn_settings[excluded_paths]" rows="3" class="large-text" placeholder="/cart&#10;/checkout&#10;/my-account"><?php
                                         if (is_array($settings['excluded_paths'])) {
                                             echo esc_textarea(implode("\n", $settings['excluded_paths']));
                                         }
                                     ?></textarea>
-                                    <p class="description"><?php _e('Skip CDN for specific paths like /wp-admin or /cart (one per line). Useful for admin areas.', 'imgpro-cdn'); ?></p>
+                                    <p class="description"><?php esc_html_e('Skip Image CDN for specific paths like checkout or cart pages (one per line).', 'imgpro-cdn'); ?></p>
                                 </td>
                             </tr>
 
+                            <?php if (defined('WP_DEBUG') && WP_DEBUG): ?>
                             <tr>
                                 <th scope="row">
-                                    <label for="debug_mode"><?php _e('Debug Mode', 'imgpro-cdn'); ?></label>
+                                    <label for="debug_mode"><?php esc_html_e('Debug Mode', 'imgpro-cdn'); ?></label>
                                 </th>
                                 <td>
                                     <label>
                                         <input type="checkbox" id="debug_mode" name="imgpro_cdn_settings[debug_mode]" value="1" <?php checked($settings['debug_mode'], true); ?>>
-                                        <?php _e('Enable debug mode', 'imgpro-cdn'); ?>
+                                        <?php esc_html_e('Enable debug mode', 'imgpro-cdn'); ?>
                                     </label>
-                                    <p class="description"><?php _e('Add data attributes to images for troubleshooting. Requires WP_DEBUG enabled.', 'imgpro-cdn'); ?></p>
+                                    <p class="description">
+                                        <?php esc_html_e('Adds debug data to images (visible in browser console and Inspect Element).', 'imgpro-cdn'); ?>
+                                    </p>
                                 </td>
                             </tr>
+                            <?php endif; ?>
                         </table>
 
                         <?php submit_button(__('Save Settings', 'imgpro-cdn'), 'primary large'); ?>
@@ -317,7 +327,8 @@ class ImgPro_CDN_Admin {
 
     public function ajax_toggle_enabled() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'imgpro_cdn_toggle_enabled')) {
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'imgpro_cdn_toggle_enabled')) {
             wp_send_json_error(['message' => __('Security check failed', 'imgpro-cdn')]);
         }
 

@@ -236,9 +236,9 @@ class ImgPro_CDN_Rewriter {
         // Extract origin from CDN/Worker URL
         // Format: https://cdn-or-worker-domain/origin-domain/path
         // Result: https://origin-domain/path
-        $parsed = parse_url($url);
+        $parsed = wp_parse_url($url);
 
-        // Handle parse_url() failure
+        // Handle wp_parse_url() failure
         if ($parsed === false || !is_array($parsed) || empty($parsed['path'])) {
             return $url;
         }
@@ -305,15 +305,6 @@ class ImgPro_CDN_Rewriter {
         } else {
             // Production version (no logging)
             $attributes['onerror'] = 'if(!this.dataset.fallback){var failedCdnUrl=this.currentSrc||this.src;this.dataset.fallback="1";this.classList.remove("imgpro-loaded");this.removeAttribute("srcset");this.removeAttribute("sizes");this.src=this.dataset.originalSrc;this.onload=function(){this.classList.add("imgpro-loaded")};if(this.dataset.workerDomain){var failedFilename=failedCdnUrl.split("/").pop();var originBase=this.dataset.originalSrc;var originDir=originBase.substring(0,originBase.lastIndexOf("/")+1);var originVariantUrl=originDir+failedFilename;var warmUrl="https://"+this.dataset.workerDomain+"/"+originVariantUrl.replace(/^https?:\\/\\//,"");(new Image()).src=warmUrl}}else{this.dataset.fallback="2";this.classList.remove("imgpro-loaded");this.onerror=null}';
-        }
-
-        // Debug logging
-        if ($debug_enabled) {
-            error_log(sprintf('ImgPro rewrite_attributes: input_src=%s, origin=%s, cdn=%s',
-                $attributes['src'] === $cdn_url ? '[already CDN]' : $attributes['src'],
-                $origin_url,
-                $cdn_url
-            ));
         }
 
         return $attributes;
@@ -422,15 +413,6 @@ class ImgPro_CDN_Rewriter {
             }
 
             $processor->set_attribute('onerror', $onerror);
-
-            // Debug logging
-            if ($debug_enabled) {
-                error_log(sprintf('ImgPro rewrite_content: input_src=%s, origin=%s, cdn=%s',
-                    $src,
-                    $origin_url,
-                    $cdn_url
-                ));
-            }
         }
 
         return $processor->get_updated_html();
@@ -494,15 +476,6 @@ class ImgPro_CDN_Rewriter {
                 $onerror = ' onerror="if(!this.dataset.fallback){var failedCdnUrl=this.currentSrc||this.src;this.dataset.fallback=&quot;1&quot;;this.classList.remove(&quot;imgpro-loaded&quot;);this.removeAttribute(&quot;srcset&quot;);this.removeAttribute(&quot;sizes&quot;);this.src=this.dataset.originalSrc;this.onload=function(){this.classList.add(&quot;imgpro-loaded&quot;)};if(this.dataset.workerDomain){var failedFilename=failedCdnUrl.split(&quot;/&quot;).pop();var originBase=this.dataset.originalSrc;var originDir=originBase.substring(0,originBase.lastIndexOf(&quot;/&quot;)+1);var originVariantUrl=originDir+failedFilename;var warmUrl=&quot;https://&quot;+this.dataset.workerDomain+&quot;/&quot;+originVariantUrl.replace(/^https?:\\/\\//,&quot;&quot;);(new Image()).src=warmUrl}}else{this.dataset.fallback=&quot;2&quot;;this.classList.remove(&quot;imgpro-loaded&quot;);this.onerror=null}"';
             }
 
-            // Debug logging
-            if ($debug_enabled) {
-                error_log(sprintf('ImgPro rewrite_content: input_src=%s, origin=%s, cdn=%s',
-                    $src,
-                    $origin_url,
-                    $cdn_url
-                ));
-            }
-
             return sprintf('<%s%s%ssrc="%s"%s%s%s%s>', $tag_name, $before ? ' ' . $before : '', $before ? '' : ' ', esc_url($cdn_url), $data_attr, $onload, $onerror, $after);
         }, $content);
     }
@@ -558,7 +531,7 @@ class ImgPro_CDN_Rewriter {
         // Allowed domains (with subdomain support)
         $allowed = $this->settings->get('allowed_domains', []);
         if (!empty($allowed)) {
-            $url_host = parse_url($url, PHP_URL_HOST);
+            $url_host = wp_parse_url($url, PHP_URL_HOST);
             if (!$url_host || !$this->is_domain_allowed($url_host, $allowed)) {
                 return false;
             }
@@ -594,7 +567,7 @@ class ImgPro_CDN_Rewriter {
             'svg',
         ]);
 
-        $path = parse_url($url, PHP_URL_PATH);
+        $path = wp_parse_url($url, PHP_URL_PATH);
 
         if (!$path) {
             return false;
@@ -672,9 +645,9 @@ class ImgPro_CDN_Rewriter {
         }
 
         $normalized = $this->normalize_url($url);
-        $parsed = parse_url($normalized);
+        $parsed = wp_parse_url($normalized);
 
-        // parse_url() can return false on severely malformed URLs
+        // wp_parse_url() can return false on severely malformed URLs
         if ($parsed === false || !is_array($parsed) || empty($parsed['host']) || empty($parsed['path'])) {
             return $url;
         }
@@ -705,9 +678,9 @@ class ImgPro_CDN_Rewriter {
         }
 
         $normalized = $this->normalize_url($url);
-        $parsed = parse_url($normalized);
+        $parsed = wp_parse_url($normalized);
 
-        // parse_url() can return false on severely malformed URLs
+        // wp_parse_url() can return false on severely malformed URLs
         if ($parsed === false || !is_array($parsed) || empty($parsed['host']) || empty($parsed['path'])) {
             return $url;
         }
@@ -743,8 +716,8 @@ class ImgPro_CDN_Rewriter {
         }
 
         if (substr($url, 0, 1) === '/') {
-            $home = parse_url(home_url());
-            // Handle parse_url() failure gracefully
+            $home = wp_parse_url(home_url());
+            // Handle wp_parse_url() failure gracefully
             if ($home === false || !is_array($home)) {
                 return $url;
             }

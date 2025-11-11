@@ -1,4 +1,4 @@
-# Image CDN by ImgPro - WordPress Plugin
+# Image CDN – Bandwidth Saver by ImgPro
 
 [![WordPress Plugin Version](https://img.shields.io/badge/version-0.0.8-blue.svg)](https://wordpress.org/plugins/imgpro-cdn/)
 [![Requires WordPress Version](https://img.shields.io/badge/wordpress-6.2%2B-blue.svg)](https://wordpress.org/download/)
@@ -73,7 +73,7 @@ WordPress Admin → Settings → Image CDN
 
 **Optional Settings:**
 - **Allowed Domains**: Restrict CDN to specific domains (leave empty for all)
-- **Excluded Paths**: Skip CDN for specific paths (e.g., `/wp-admin`, `/cart`)
+- **Excluded Paths**: Skip CDN for specific paths (e.g., `/cart`, `/checkout`)
 - **Debug Mode**: Add data attributes for troubleshooting (requires WP_DEBUG)
 
 ## Configuration
@@ -92,16 +92,17 @@ Enabled: false (enable after configuration)
 **Allowed Domains** - Whitelist specific domains:
 ```
 example.com
-cdn.example.com
+blog.example.com
+shop.example.com
 ```
 
 **Excluded Paths** - Skip CDN for specific paths:
 ```
-/wp-admin
-/wp-includes
 /cart
 /checkout
+/my-account
 ```
+Note: Admin areas (`/wp-admin`, REST API, AJAX requests) are automatically excluded.
 
 ## Compatibility
 

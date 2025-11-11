@@ -4,7 +4,7 @@ Tags: cdn, images, cloudflare, performance, bandwidth
 Requires at least: 6.2
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.0.9
+Stable tag: 0.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -140,6 +140,25 @@ This plugin is specifically designed for Cloudflare R2. If you need a different 
 
 == Changelog ==
 
+= 0.1.0 (2025-11-10) =
+* NEW: ImgPro Cloud quick-start option with one-click setup
+* NEW: Empty state with two setup options (ImgPro Cloud vs self-hosted Cloudflare)
+* NEW: Cloud usage indicator when using ImgPro Cloud domains
+* NEW: Direct link to worker setup guide for self-hosting
+* UI: Complete admin interface redesign with modern design system
+* UI: Comprehensive accessibility improvements (ARIA labels, focus states, keyboard navigation)
+* UI: Typography system with consistent scale and spacing rhythm
+* UI: Micro-interactions and polished hover states throughout
+* UI: Mobile-responsive design optimized for all screen sizes
+* UI: Semantic HTML structure with proper heading hierarchy
+* UI: Visual grouping of settings with clear sections
+* UX: Simplified copy and reduced redundancy throughout interface
+* UX: Left-aligned empty state for cleaner appearance
+* UX: Streamlined settings card with reduced visual noise
+* Performance: Request-level caching reduces context detection overhead
+* Accessibility: Supports high contrast mode and reduced motion preferences
+* Code: External CSS replaces inline styles for better caching
+
 = 0.0.8 (2025-11-11) =
 * CRITICAL FIX: Fixed JavaScript string escaping breaking image display
 * Fixed onload/onerror handlers using incorrect quote style causing syntax errors
@@ -189,6 +208,9 @@ This plugin is specifically designed for Cloudflare R2. If you need a different 
 * Compatible with all WordPress optimization plugins
 
 == Upgrade Notice ==
+
+= 0.1.0 =
+Major update with ImgPro Cloud quick-start, completely redesigned admin interface, and comprehensive accessibility improvements. Recommended for all users.
 
 = 0.0.8 =
 CRITICAL UPDATE: Fixes JavaScript errors preventing images from displaying. Update immediately if experiencing blank/hidden images.

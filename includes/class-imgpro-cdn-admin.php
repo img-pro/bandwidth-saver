@@ -302,40 +302,40 @@ class ImgPro_CDN_Admin {
                 </div>
             <?php endif; ?>
 
+            <?php
+            // Check if using ImgPro Cloud
+            $using_imgpro_cloud = ($settings['cdn_url'] === 'wp.img.pro' && $settings['worker_url'] === 'fetch.wp.img.pro');
+            if ($using_imgpro_cloud):
+            ?>
+                <div class="imgpro-cdn-card imgpro-cdn-cloud-notice">
+                    <div class="imgpro-cdn-cloud-notice-icon">
+                        <span class="dashicons dashicons-cloud"></span>
+                    </div>
+                    <div class="imgpro-cdn-cloud-notice-content">
+                        <h4><?php esc_html_e('Using ImgPro Cloud', 'imgpro-cdn'); ?></h4>
+                        <p>
+                            <?php esc_html_e('You\'re using our managed service. Your images are being delivered through our shared Cloudflare infrastructure.', 'imgpro-cdn'); ?>
+                        </p>
+                        <p>
+                            <?php
+                            echo wp_kses_post(
+                                sprintf(
+                                    __('Want to use your own Cloudflare account? %s to deploy the worker yourself.', 'imgpro-cdn'),
+                                    '<a href="https://github.com/img-pro/wp-image-cdn-worker" target="_blank">' . __('View setup guide', 'imgpro-cdn') . ' <span class="dashicons dashicons-external"></span></a>'
+                                )
+                            );
+                            ?>
+                        </p>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <?php // Image CDN Settings ?>
             <div class="imgpro-cdn-card imgpro-cdn-settings-card">
                 <div class="imgpro-cdn-card-header">
                     <h2><?php esc_html_e('Image CDN Settings', 'imgpro-cdn'); ?></h2>
                     <p class="imgpro-cdn-card-description"><?php esc_html_e('Connect your Cloudflare domains to start delivering images globally', 'imgpro-cdn'); ?></p>
                 </div>
-
-                <?php
-                // Check if using ImgPro Cloud
-                $using_imgpro_cloud = ($settings['cdn_url'] === 'wp.img.pro' && $settings['worker_url'] === 'fetch.wp.img.pro');
-                if ($using_imgpro_cloud):
-                ?>
-                    <div class="imgpro-cdn-cloud-notice">
-                        <div class="imgpro-cdn-cloud-notice-icon">
-                            <span class="dashicons dashicons-cloud"></span>
-                        </div>
-                        <div class="imgpro-cdn-cloud-notice-content">
-                            <h4><?php esc_html_e('Using ImgPro Cloud', 'imgpro-cdn'); ?></h4>
-                            <p>
-                                <?php esc_html_e('You\'re using our managed service. Your images are being delivered through our shared Cloudflare infrastructure.', 'imgpro-cdn'); ?>
-                            </p>
-                            <p>
-                                <?php
-                                echo wp_kses_post(
-                                    sprintf(
-                                        __('Want to use your own Cloudflare account? %s to deploy the worker yourself.', 'imgpro-cdn'),
-                                        '<a href="https://github.com/img-pro/wp-image-cdn-worker" target="_blank">' . __('View setup guide', 'imgpro-cdn') . ' <span class="dashicons dashicons-external"></span></a>'
-                                    )
-                                );
-                                ?>
-                            </p>
-                        </div>
-                    </div>
-                <?php endif; ?>
 
                 <div class="imgpro-cdn-settings-content">
                         <div class="imgpro-cdn-settings-section">

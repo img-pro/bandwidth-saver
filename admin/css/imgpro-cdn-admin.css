@@ -376,11 +376,8 @@
 .imgpro-cdn-cloud-notice {
     display: flex;
     gap: var(--imgpro-space-md);
-    padding: var(--imgpro-space-lg);
-    margin-bottom: var(--imgpro-space-lg);
-    background: linear-gradient(135deg, #f0f6fc 0%, #e0f0ff 100%);
-    border: 2px solid var(--imgpro-primary);
-    border-radius: var(--imgpro-radius);
+    background: linear-gradient(135deg, #f0f6fc 0%, #e0f0ff 100%) !important;
+    border: 2px solid var(--imgpro-primary) !important;
 }
 
 .imgpro-cdn-cloud-notice-icon {
@@ -876,7 +873,6 @@
     /* Cloud notice responsive */
     .imgpro-cdn-cloud-notice {
         flex-direction: column;
-        padding: var(--imgpro-space-md);
     }
 
     .imgpro-cdn-cloud-notice-icon .dashicons {

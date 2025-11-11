@@ -150,15 +150,6 @@ class ImgPro_CDN_Core {
      * @param string|false $old_version Previous version number or false if new install
      */
     private function upgrade($old_version) {
-        // Log upgrade for debugging (only in WP_DEBUG mode)
-        if ($old_version && defined('WP_DEBUG') && WP_DEBUG) {
-            error_log(sprintf(
-                'ImgPro CDN: Upgraded from %s to %s',
-                sanitize_text_field($old_version),
-                IMGPRO_CDN_VERSION
-            ));
-        }
-
         // Future upgrade routines can be added here
         // Example:
         // if (version_compare($old_version, '1.0.0', '<')) {

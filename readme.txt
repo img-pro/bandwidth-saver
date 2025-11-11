@@ -1,10 +1,10 @@
-=== Image CDN by ImgPro ===
+=== Image CDN – Bandwidth Saver by ImgPro ===
 Contributors: imgpro
 Tags: cdn, images, cloudflare, performance, bandwidth
 Requires at least: 6.2
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.0.8
+Stable tag: 0.0.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 

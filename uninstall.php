@@ -26,21 +26,21 @@ delete_option('imgpro_cdn_version');
 // For multisite installations
 if (is_multisite()) {
     // Get all sites with pagination for better performance on large networks
-    $page = 1;
-    $per_page = 100;
+    $imgpro_page = 1;
+    $imgpro_per_page = 100;
 
     while (true) {
-        $sites = get_sites([
-            'number' => $per_page,
-            'offset' => ($page - 1) * $per_page,
+        $imgpro_sites = get_sites([
+            'number' => $imgpro_per_page,
+            'offset' => ($imgpro_page - 1) * $imgpro_per_page,
         ]);
 
-        if (empty($sites)) {
+        if (empty($imgpro_sites)) {
             break;
         }
 
-        foreach ($sites as $site) {
-            switch_to_blog($site->blog_id);
+        foreach ($imgpro_sites as $imgpro_site) {
+            switch_to_blog($imgpro_site->blog_id);
 
             // Delete options for this site
             delete_option('imgpro_cdn_settings');
@@ -49,7 +49,7 @@ if (is_multisite()) {
             restore_current_blog();
         }
 
-        $page++;
+        $imgpro_page++;
     }
 }
 

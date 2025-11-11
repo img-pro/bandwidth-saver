@@ -211,6 +211,33 @@ class ImgPro_CDN_Admin {
         ?>
 
 
+        <?php if (!$is_configured): ?>
+            <?php // Empty State for Unconfigured Plugin ?>
+            <div class="imgpro-cdn-card imgpro-cdn-empty-state">
+                <div class="imgpro-cdn-empty-state-icon">
+                    <span class="dashicons dashicons-cloud"></span>
+                </div>
+                <h2><?php esc_html_e('Welcome to Image CDN', 'imgpro-cdn'); ?></h2>
+                <p class="imgpro-cdn-empty-state-description">
+                    <?php esc_html_e('Get started by configuring your Cloudflare domains below. Once configured, your images will be delivered through Cloudflare\'s global network.', 'imgpro-cdn'); ?>
+                </p>
+                <div class="imgpro-cdn-empty-state-features">
+                    <div class="imgpro-cdn-feature-item">
+                        <span class="dashicons dashicons-performance"></span>
+                        <span><?php esc_html_e('Global CDN delivery', 'imgpro-cdn'); ?></span>
+                    </div>
+                    <div class="imgpro-cdn-feature-item">
+                        <span class="dashicons dashicons-saved"></span>
+                        <span><?php esc_html_e('Bandwidth cost savings', 'imgpro-cdn'); ?></span>
+                    </div>
+                    <div class="imgpro-cdn-feature-item">
+                        <span class="dashicons dashicons-shield"></span>
+                        <span><?php esc_html_e('Free tier friendly', 'imgpro-cdn'); ?></span>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <form method="post" action="options.php">
             <?php settings_fields('imgpro_cdn_settings_group'); ?>
 
@@ -237,88 +264,153 @@ class ImgPro_CDN_Admin {
                             </div>
                         </div>
 
-                        <label class="imgpro-cdn-main-toggle-switch">
-                            <input type="checkbox" id="enabled" name="imgpro_cdn_settings[enabled]" value="1" <?php checked($settings['enabled'], true); ?>>
-                            <span class="imgpro-cdn-main-toggle-slider"></span>
+                        <label class="imgpro-cdn-main-toggle-switch" for="enabled">
+                            <input
+                                type="checkbox"
+                                id="enabled"
+                                name="imgpro_cdn_settings[enabled]"
+                                value="1"
+                                <?php checked($settings['enabled'], true); ?>
+                                aria-describedby="enabled-description"
+                                role="switch"
+                                aria-checked="<?php echo $settings['enabled'] ? 'true' : 'false'; ?>"
+                            >
+                            <span class="imgpro-cdn-main-toggle-slider" aria-hidden="true"></span>
+                            <span class="screen-reader-text" id="enabled-description">
+                                <?php esc_html_e('Toggle Image CDN on or off. When enabled, images are delivered through Cloudflare\'s global network.', 'imgpro-cdn'); ?>
+                            </span>
                         </label>
                     </div>
                 </div>
             <?php endif; ?>
 
             <?php // Image CDN Settings ?>
-            <div class="imgpro-cdn-card">
-                <h2><?php esc_html_e('Image CDN Settings', 'imgpro-cdn'); ?></h2>
-                <p class="description" style="margin-top: -8px; margin-bottom: 20px;"><?php esc_html_e('Connect your Cloudflare domains to start delivering images globally', 'imgpro-cdn'); ?></p>
+            <div class="imgpro-cdn-card imgpro-cdn-settings-card">
+                <div class="imgpro-cdn-card-header">
+                    <h2><?php esc_html_e('Image CDN Settings', 'imgpro-cdn'); ?></h2>
+                    <p class="imgpro-cdn-card-description"><?php esc_html_e('Connect your Cloudflare domains to start delivering images globally', 'imgpro-cdn'); ?></p>
+                </div>
 
-                <div class="imgpro-cdn-advanced-content">
-                        <table class="form-table" role="presentation">
-                            <tr>
-                                <th scope="row">
-                                    <label for="cdn_url"><?php esc_html_e('CDN Domain', 'imgpro-cdn'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="cdn_url" name="imgpro_cdn_settings[cdn_url]" value="<?php echo esc_attr($settings['cdn_url']); ?>" class="regular-text" placeholder="cdn.yourdomain.com" required>
-                                    <p class="description"><?php esc_html_e('Your R2 public bucket domain. Cached images are delivered from 300+ global locations.', 'imgpro-cdn'); ?></p>
-                                </td>
-                            </tr>
+                <div class="imgpro-cdn-settings-content">
+                        <div class="imgpro-cdn-settings-section">
+                            <h3 class="imgpro-cdn-section-title"><?php esc_html_e('Cloudflare Configuration', 'imgpro-cdn'); ?></h3>
+                            <table class="form-table" role="presentation">
+                                <tr>
+                                    <th scope="row">
+                                        <label for="cdn_url"><?php esc_html_e('CDN Domain', 'imgpro-cdn'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            id="cdn_url"
+                                            name="imgpro_cdn_settings[cdn_url]"
+                                            value="<?php echo esc_attr($settings['cdn_url']); ?>"
+                                            class="regular-text"
+                                            placeholder="cdn.yourdomain.com"
+                                            required
+                                            aria-required="true"
+                                            aria-describedby="cdn-url-description"
+                                        >
+                                        <p class="description" id="cdn-url-description"><?php esc_html_e('Your R2 public bucket domain. Cached images are delivered from 300+ global locations.', 'imgpro-cdn'); ?></p>
+                                    </td>
+                                </tr>
 
-                            <tr>
-                                <th scope="row">
-                                    <label for="worker_url"><?php esc_html_e('Worker Domain', 'imgpro-cdn'); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="worker_url" name="imgpro_cdn_settings[worker_url]" value="<?php echo esc_attr($settings['worker_url']); ?>" class="regular-text" placeholder="worker.yourdomain.com" required>
-                                    <p class="description"><?php esc_html_e('Your Cloudflare Worker domain. Processes new images and cache misses.', 'imgpro-cdn'); ?></p>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="worker_url"><?php esc_html_e('Worker Domain', 'imgpro-cdn'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            id="worker_url"
+                                            name="imgpro_cdn_settings[worker_url]"
+                                            value="<?php echo esc_attr($settings['worker_url']); ?>"
+                                            class="regular-text"
+                                            placeholder="worker.yourdomain.com"
+                                            required
+                                            aria-required="true"
+                                            aria-describedby="worker-url-description"
+                                        >
+                                        <p class="description" id="worker-url-description"><?php esc_html_e('Your Cloudflare Worker domain. Processes new images and cache misses.', 'imgpro-cdn'); ?></p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
 
-                            <tr>
-                                <th scope="row">
-                                    <label for="allowed_domains"><?php esc_html_e('Allowed Domains', 'imgpro-cdn'); ?></label>
-                                </th>
-                                <td>
-                                    <textarea id="allowed_domains" name="imgpro_cdn_settings[allowed_domains]" rows="3" class="large-text" placeholder="example.com&#10;blog.example.com&#10;shop.example.com"><?php
-                                        if (is_array($settings['allowed_domains'])) {
-                                            echo esc_textarea(implode("\n", $settings['allowed_domains']));
-                                        }
-                                    ?></textarea>
-                                    <p class="description"><?php esc_html_e('Enable Image CDN in limited domains (one per line). Leave empty to process all images.', 'imgpro-cdn'); ?></p>
-                                </td>
-                            </tr>
+                        <div class="imgpro-cdn-settings-section">
+                            <h3 class="imgpro-cdn-section-title"><?php esc_html_e('Advanced Options', 'imgpro-cdn'); ?></h3>
+                            <table class="form-table" role="presentation">
+                                <tr>
+                                    <th scope="row">
+                                        <label for="allowed_domains"><?php esc_html_e('Allowed Domains', 'imgpro-cdn'); ?></label>
+                                    </th>
+                                    <td>
+                                        <textarea
+                                            id="allowed_domains"
+                                            name="imgpro_cdn_settings[allowed_domains]"
+                                            rows="3"
+                                            class="large-text"
+                                            placeholder="example.com&#10;blog.example.com&#10;shop.example.com"
+                                            aria-describedby="allowed-domains-description"
+                                        ><?php
+                                            if (is_array($settings['allowed_domains'])) {
+                                                echo esc_textarea(implode("\n", $settings['allowed_domains']));
+                                            }
+                                        ?></textarea>
+                                        <p class="description" id="allowed-domains-description"><?php esc_html_e('Enable Image CDN in limited domains (one per line). Leave empty to process all images.', 'imgpro-cdn'); ?></p>
+                                    </td>
+                                </tr>
 
-                            <tr>
-                                <th scope="row">
-                                    <label for="excluded_paths"><?php esc_html_e('Excluded Paths', 'imgpro-cdn'); ?></label>
-                                </th>
-                                <td>
-                                    <textarea id="excluded_paths" name="imgpro_cdn_settings[excluded_paths]" rows="3" class="large-text" placeholder="/cart&#10;/checkout&#10;/my-account"><?php
-                                        if (is_array($settings['excluded_paths'])) {
-                                            echo esc_textarea(implode("\n", $settings['excluded_paths']));
-                                        }
-                                    ?></textarea>
-                                    <p class="description"><?php esc_html_e('Skip Image CDN for specific paths like checkout or cart pages (one per line).', 'imgpro-cdn'); ?></p>
-                                </td>
-                            </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="excluded_paths"><?php esc_html_e('Excluded Paths', 'imgpro-cdn'); ?></label>
+                                    </th>
+                                    <td>
+                                        <textarea
+                                            id="excluded_paths"
+                                            name="imgpro_cdn_settings[excluded_paths]"
+                                            rows="3"
+                                            class="large-text"
+                                            placeholder="/cart&#10;/checkout&#10;/my-account"
+                                            aria-describedby="excluded-paths-description"
+                                        ><?php
+                                            if (is_array($settings['excluded_paths'])) {
+                                                echo esc_textarea(implode("\n", $settings['excluded_paths']));
+                                            }
+                                        ?></textarea>
+                                        <p class="description" id="excluded-paths-description"><?php esc_html_e('Skip Image CDN for specific paths like checkout or cart pages (one per line).', 'imgpro-cdn'); ?></p>
+                                    </td>
+                                </tr>
 
-                            <?php if (defined('WP_DEBUG') && WP_DEBUG): ?>
-                            <tr>
-                                <th scope="row">
-                                    <label for="debug_mode"><?php esc_html_e('Debug Mode', 'imgpro-cdn'); ?></label>
-                                </th>
-                                <td>
-                                    <label>
-                                        <input type="checkbox" id="debug_mode" name="imgpro_cdn_settings[debug_mode]" value="1" <?php checked($settings['debug_mode'], true); ?>>
-                                        <?php esc_html_e('Enable debug mode', 'imgpro-cdn'); ?>
-                                    </label>
-                                    <p class="description">
-                                        <?php esc_html_e('Adds debug data to images (visible in browser console and Inspect Element).', 'imgpro-cdn'); ?>
-                                    </p>
-                                </td>
-                            </tr>
-                            <?php endif; ?>
-                        </table>
+                                <?php if (defined('WP_DEBUG') && WP_DEBUG): ?>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="debug_mode"><?php esc_html_e('Debug Mode', 'imgpro-cdn'); ?></label>
+                                    </th>
+                                    <td>
+                                        <label for="debug_mode">
+                                            <input
+                                                type="checkbox"
+                                                id="debug_mode"
+                                                name="imgpro_cdn_settings[debug_mode]"
+                                                value="1"
+                                                <?php checked($settings['debug_mode'], true); ?>
+                                                aria-describedby="debug-mode-description"
+                                            >
+                                            <?php esc_html_e('Enable debug mode', 'imgpro-cdn'); ?>
+                                        </label>
+                                        <p class="description" id="debug-mode-description">
+                                            <?php esc_html_e('Adds debug data to images (visible in browser console and Inspect Element).', 'imgpro-cdn'); ?>
+                                        </p>
+                                    </td>
+                                </tr>
+                                <?php endif; ?>
+                            </table>
+                        </div>
 
-                        <?php submit_button(__('Save Settings', 'imgpro-cdn'), 'primary large'); ?>
+                        <div class="imgpro-cdn-form-actions">
+                            <?php submit_button(__('Save Settings', 'imgpro-cdn'), 'primary large', 'submit', false); ?>
+                        </div>
                 </div>
             </div>
         </form>

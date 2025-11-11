@@ -8,6 +8,38 @@
 
     $(document).ready(function() {
 
+        // Handle "Use ImgPro Cloud" button
+        $('#imgpro-cdn-use-cloud').on('click', function() {
+            const $button = $(this);
+            const originalText = $button.text();
+
+            // Disable button and show loading state
+            $button.prop('disabled', true).text('Setting up...');
+
+            // AJAX request to save ImgPro Cloud domains
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'imgpro_cdn_use_cloud',
+                    nonce: imgproCdnAdmin.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Reload page to show configured state
+                        window.location.reload();
+                    } else {
+                        $button.prop('disabled', false).text(originalText);
+                        alert(response.data.message || 'Failed to configure ImgPro Cloud');
+                    }
+                },
+                error: function() {
+                    $button.prop('disabled', false).text(originalText);
+                    alert('An error occurred. Please try again.');
+                }
+            });
+        });
+
         // Handle main toggle switch
         $('#enabled').on('change', function() {
             const $toggle = $(this);
@@ -54,6 +86,7 @@
         function updateToggleUI($card, isEnabled) {
             const $icon = $card.find('.imgpro-cdn-toggle-icon .dashicons');
             const $content = $card.find('.imgpro-cdn-toggle-content');
+            const $checkbox = $('#enabled');
 
             if (isEnabled) {
                 // Update card background
@@ -65,6 +98,9 @@
                 // Update text
                 $content.find('h2').text(imgproCdnAdmin.i18n.activeLabel);
                 $content.find('p').html(imgproCdnAdmin.i18n.activeMessage);
+
+                // Update ARIA attribute for screen readers
+                $checkbox.attr('aria-checked', 'true');
             } else {
                 // Update card background
                 $card.removeClass('imgpro-cdn-toggle-active').addClass('imgpro-cdn-toggle-disabled');
@@ -75,6 +111,9 @@
                 // Update text
                 $content.find('h2').text(imgproCdnAdmin.i18n.disabledLabel);
                 $content.find('p').text(imgproCdnAdmin.i18n.disabledMessage);
+
+                // Update ARIA attribute for screen readers
+                $checkbox.attr('aria-checked', 'false');
             }
         }
 

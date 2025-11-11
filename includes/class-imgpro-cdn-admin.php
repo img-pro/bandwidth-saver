@@ -333,8 +333,8 @@ class ImgPro_CDN_Admin {
             <?php // Image CDN Settings ?>
             <div class="imgpro-cdn-card imgpro-cdn-settings-card">
                 <div class="imgpro-cdn-card-header">
-                    <h2><?php esc_html_e('Image CDN Settings', 'imgpro-cdn'); ?></h2>
-                    <p class="imgpro-cdn-card-description"><?php esc_html_e('Connect your Cloudflare domains to start delivering images globally', 'imgpro-cdn'); ?></p>
+                    <h2><?php esc_html_e('Image CDN', 'imgpro-cdn'); ?></h2>
+                    <p class="imgpro-cdn-card-description"><?php esc_html_e('Connect your domains to start delivering images globally', 'imgpro-cdn'); ?></p>
                 </div>
 
                 <div class="imgpro-cdn-settings-content">
@@ -357,7 +357,7 @@ class ImgPro_CDN_Admin {
                                             aria-required="true"
                                             aria-describedby="cdn-url-description"
                                         >
-                                        <p class="description" id="cdn-url-description"><?php esc_html_e('Your R2 public bucket domain. Cached images are delivered from 300+ global locations.', 'imgpro-cdn'); ?></p>
+                                        <p class="description" id="cdn-url-description"><?php esc_html_e('Your R2 bucket\'s public domain. Cached images are delivered from 300+ global locations.', 'imgpro-cdn'); ?></p>
                                     </td>
                                 </tr>
 

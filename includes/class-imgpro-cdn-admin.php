@@ -334,7 +334,7 @@ class ImgPro_CDN_Admin {
             <div class="imgpro-cdn-card imgpro-cdn-settings-card">
                 <div class="imgpro-cdn-card-header">
                     <h2><?php esc_html_e('Image CDN', 'imgpro-cdn'); ?></h2>
-                    <p class="imgpro-cdn-card-description"><?php esc_html_e('Configure your domains to start delivering images globally', 'imgpro-cdn'); ?></p>
+                    <p class="imgpro-cdn-card-description"><?php esc_html_e('Setup your domains to start delivering images globally', 'imgpro-cdn'); ?></p>
                 </div>
 
                 <div class="imgpro-cdn-settings-content">

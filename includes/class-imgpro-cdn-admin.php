@@ -481,10 +481,22 @@ class ImgPro_CDN_Admin {
         // Get current settings
         $current_settings = $this->settings->get_all();
 
+        // Check if value is already set to desired state
+        if ($current_settings['enabled'] === $enabled) {
+            // Value unchanged - still success since setting is in desired state
+            $message = $enabled
+                ? __('Image CDN enabled. Your images now load from Cloudflare\'s global network.', 'imgpro-cdn')
+                : __('Image CDN disabled. Images now load from your server.', 'imgpro-cdn');
+
+            wp_send_json_success(['message' => $message]);
+            return;
+        }
+
         // Update only the enabled field
         $current_settings['enabled'] = $enabled;
 
-        // Save settings
+        // Save settings - update_option returns false if value unchanged OR on error
+        // Since we checked for unchanged value above, false here means actual error
         $result = update_option(ImgPro_CDN_Settings::OPTION_KEY, $current_settings);
 
         if ($result !== false) {
@@ -513,12 +525,28 @@ class ImgPro_CDN_Admin {
         // Get current settings
         $current_settings = $this->settings->get_all();
 
+        // Check if ImgPro Cloud is already configured
+        $is_already_configured = (
+            $current_settings['cdn_url'] === 'wp.img.pro' &&
+            $current_settings['worker_url'] === 'fetch.wp.img.pro' &&
+            $current_settings['enabled'] === true
+        );
+
+        if ($is_already_configured) {
+            // Already configured - still success since settings are in desired state
+            wp_send_json_success([
+                'message' => __('ImgPro Cloud configured successfully!', 'imgpro-cdn')
+            ]);
+            return;
+        }
+
         // Set ImgPro Cloud domains
         $current_settings['cdn_url'] = 'wp.img.pro';
         $current_settings['worker_url'] = 'fetch.wp.img.pro';
         $current_settings['enabled'] = true;
 
-        // Save settings
+        // Save settings - update_option returns false if value unchanged OR on error
+        // Since we checked for unchanged values above, false here means actual error
         $result = update_option(ImgPro_CDN_Settings::OPTION_KEY, $current_settings);
 
         if ($result !== false) {

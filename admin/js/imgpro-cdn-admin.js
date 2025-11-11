@@ -86,6 +86,7 @@
         function updateToggleUI($card, isEnabled) {
             const $icon = $card.find('.imgpro-cdn-toggle-icon .dashicons');
             const $content = $card.find('.imgpro-cdn-toggle-content');
+            const $checkbox = $('#enabled');
 
             if (isEnabled) {
                 // Update card background
@@ -97,6 +98,9 @@
                 // Update text
                 $content.find('h2').text(imgproCdnAdmin.i18n.activeLabel);
                 $content.find('p').html(imgproCdnAdmin.i18n.activeMessage);
+
+                // Update ARIA attribute for screen readers
+                $checkbox.attr('aria-checked', 'true');
             } else {
                 // Update card background
                 $card.removeClass('imgpro-cdn-toggle-active').addClass('imgpro-cdn-toggle-disabled');
@@ -107,6 +111,9 @@
                 // Update text
                 $content.find('h2').text(imgproCdnAdmin.i18n.disabledLabel);
                 $content.find('p').text(imgproCdnAdmin.i18n.disabledMessage);
+
+                // Update ARIA attribute for screen readers
+                $checkbox.attr('aria-checked', 'false');
             }
         }
 

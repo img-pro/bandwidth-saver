@@ -227,13 +227,13 @@ class ImgPro_CDN_Admin {
                             <h3><?php esc_html_e('ImgPro Cloud', 'imgpro-cdn'); ?></h3>
                             <span class="imgpro-cdn-badge imgpro-cdn-badge-recommended"><?php esc_html_e('Recommended', 'imgpro-cdn'); ?></span>
                         </div>
-                        <p><?php esc_html_e('Start instantly with our managed service. No Cloudflare setup required.', 'imgpro-cdn'); ?></p>
+                        <p><?php esc_html_e('Start instantly with our managed service. No Cloudflare account required.', 'imgpro-cdn'); ?></p>
                         <button type="button" class="button button-primary button-hero imgpro-cdn-use-cloud" id="imgpro-cdn-use-cloud">
                             <?php esc_html_e('Use ImgPro Cloud', 'imgpro-cdn'); ?>
                         </button>
                         <p class="imgpro-cdn-setup-note">
                             <span class="dashicons dashicons-info"></span>
-                            <?php esc_html_e('Fast setup, free to try', 'imgpro-cdn'); ?>
+                            <?php esc_html_e('One click setup, free trial', 'imgpro-cdn'); ?>
                         </p>
                     </div>
 

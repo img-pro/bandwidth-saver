@@ -145,7 +145,7 @@
     margin-top: var(--imgpro-space-xl);
     padding: var(--imgpro-space-lg) 0;
     border-top: 1px solid var(--imgpro-gray-200);
-    text-align: center;
+    text-align: left;
 }
 
 .imgpro-cdn-footer p {

@@ -1,4 +1,4 @@
-=== Image CDN – Bandwidth Saver by ImgPro ===
+=== Bandwidth Saver: Image CDN ===
 Contributors: imgpro
 Tags: cdn, images, cloudflare, performance, bandwidth
 Requires at least: 6.2
@@ -26,7 +26,7 @@ Deliver images from Cloudflare's global network. Save bandwidth costs with free-
 = Key Benefits =
 
 * **Free Tier Compatible** - Most sites pay $0/month
-* **Ultra Simple** - Zero configuration needed
+* **One-Click Setup** - Start with ImgPro Cloud instantly
 * **Works with WordPress** - No fighting against WP image handling
 * **Works with ANY Plugin** - Use your favorite optimization plugins
 * **Global Edge Delivery** - Fast worldwide
@@ -59,34 +59,33 @@ Deliver images from Cloudflare's global network. Save bandwidth costs with free-
 
 == Installation ==
 
-= Requirements =
+= Quick Start (Recommended) =
 
-1. **Cloudflare Account** (free tier works!)
-2. **R2 Enabled** (in Cloudflare Dashboard)
-3. **Domain on Cloudflare** (for worker routes)
+**ImgPro Cloud** - No Cloudflare account needed:
 
-= Setup Steps =
+1. Install and activate the plugin
+2. Go to Settings → Image CDN
+3. Click "Use ImgPro Cloud"
+4. Done! Your images now load from Cloudflare's global edge network
 
-**1. Deploy Cloudflare Worker (15 minutes)**
+Free while in beta. No credit card required.
 
-The Cloudflare Worker must be deployed separately to your Cloudflare account.
-See the GitHub repository for detailed worker deployment instructions:
-https://github.com/img-pro/wp-image-cdn-worker
+= Advanced Setup (Optional) =
 
-**2. Configure R2 CDN (5 minutes)**
+**Use Your Own Cloudflare Account** - Full control over infrastructure:
 
-1. Cloudflare Dashboard → R2 → Create bucket
-2. Settings → Custom Domains → Add your CDN domain (e.g., cdn.yourdomain.com)
+**Requirements:**
+* Cloudflare account (free tier works)
+* R2 enabled in Cloudflare Dashboard
+* Domain on Cloudflare (for worker routes)
 
-**3. Configure Plugin (2 minutes)**
+**Setup:**
+1. Deploy the Cloudflare Worker to your account (~15 minutes)
+   See: https://github.com/img-pro/wp-image-cdn-worker
+2. Configure R2 bucket with custom domain
+3. Enter your domains in Settings → Image CDN
 
-WordPress Admin → Settings → Image CDN:
-* CDN Domain: cdn.yourdomain.com
-* Worker Domain: worker.yourdomain.com
-* Enable CDN: ✓
-* Save Settings
-
-Done! Your images now load from Cloudflare's global edge network.
+For detailed instructions, see the worker repository documentation.
 
 == Frequently Asked Questions ==
 
@@ -134,9 +133,9 @@ This plugin is specifically designed for Cloudflare R2. If you need a different 
 
 == Screenshots ==
 
-1. Settings page - Simple, clean interface
-2. Architecture - Two-domain setup for optimal performance
-3. Worker metrics - Monitor your usage in Cloudflare Dashboard
+1. Welcome screen - Choose between ImgPro Cloud (one-click setup) or self-hosted Cloudflare
+2. Active state - Plugin enabled with ImgPro Cloud, images delivered globally
+3. Settings interface - Configure CDN domains, allowed domains, and excluded paths
 
 == Changelog ==
 
@@ -253,7 +252,7 @@ No hash generation, no transformation parameters - just simple caching.
 = Code Statistics =
 
 * **Worker:** 1 file, ~150 lines
-* **Plugin:** 4 classes, ~850 lines
+* **Plugin:** 4 classes, ~1,900 lines
 * **Dependencies:** Cloudflare R2 only
 * **Complexity:** Very low
 
@@ -267,19 +266,17 @@ No hash generation, no transformation parameters - just simple caching.
 
 = Documentation =
 
-* **Quick Start:** README.md
-* **Implementation:** .dev/docs/V2_IMPLEMENTATION_GUIDE.md
-* **Architecture:** .dev/docs/CACHE_ONLY_ARCHITECTURE.md
-* **Diagrams:** .dev/docs/V2_ARCHITECTURE_DIAGRAM.md
+* **Plugin Repository:** https://github.com/img-pro/wp-image-cdn
+* **Worker Repository:** https://github.com/img-pro/wp-image-cdn-worker
 
 == Support ==
 
 For support:
 
-1. Read documentation in `.dev/docs/` folder
-2. Check Cloudflare Dashboard for worker metrics
-3. WordPress support forum
-4. Plugin support page
+1. **WordPress.org Support Forum:** https://wordpress.org/support/plugin/bandwidth-saver-image-cdn/
+2. **Plugin Documentation:** https://github.com/img-pro/wp-image-cdn
+3. **Worker Documentation:** https://github.com/img-pro/wp-image-cdn-worker
+4. **Cloudflare Dashboard:** Check worker metrics and logs
 
 == External Services ==
 

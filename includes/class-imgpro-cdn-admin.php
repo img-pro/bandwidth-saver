@@ -173,7 +173,7 @@ class ImgPro_CDN_Admin {
         <div class="wrap imgpro-cdn-admin">
             <div class="imgpro-cdn-header">
                 <div>
-                    <h1><?php esc_html_e('Bandwidth Saver by ImgPro', 'imgpro-cdn'); ?></h1>
+                    <h1><?php esc_html_e('Bandwidth Saver: Image CDN', 'imgpro-cdn'); ?></h1>
                     <p class="imgpro-cdn-tagline"><?php esc_html_e('Cut bandwidth costs, boost global speed', 'imgpro-cdn'); ?></p>
                 </div>
                 <div class="imgpro-cdn-header-meta">
@@ -191,7 +191,7 @@ class ImgPro_CDN_Admin {
                     echo wp_kses_post(
                         sprintf(
                             /* translators: 1: ImgPro link, 2: Cloudflare R2 & Workers link */
-                            __('Image CDN - Bandwidth Saver by %1$s, powered by %2$s', 'imgpro-cdn'),
+                            __('Bandwidth Saver: Image CDN by %1$s, powered by %2$s', 'imgpro-cdn'),
                             '<a href="https://img.pro" target="_blank">ImgPro</a>',
                             '<a href="https://www.cloudflare.com/developer-platform/products/r2/" target="_blank">Cloudflare R2</a> &amp; <a href="https://www.cloudflare.com/developer-platform/products/workers/" target="_blank">Workers</a>'
                         )
@@ -215,7 +215,7 @@ class ImgPro_CDN_Admin {
         <?php if (!$is_configured): ?>
             <?php // Empty State for Unconfigured Plugin ?>
             <div class="imgpro-cdn-card imgpro-cdn-empty-state">
-                <h2><?php esc_html_e('Welcome to Image CDN', 'imgpro-cdn'); ?></h2>
+                <h2><?php esc_html_e('Welcome to Bandwidth Saver', 'imgpro-cdn'); ?></h2>
                 <p class="imgpro-cdn-empty-state-description">
                     <?php esc_html_e('Choose how you want to deliver your images globally:', 'imgpro-cdn'); ?>
                 </p>
@@ -233,7 +233,7 @@ class ImgPro_CDN_Admin {
                         </button>
                         <p class="imgpro-cdn-setup-note">
                             <span class="dashicons dashicons-info"></span>
-                            <?php esc_html_e('One click setup, free trial', 'imgpro-cdn'); ?>
+                            <?php esc_html_e('One click setup, free for now', 'imgpro-cdn'); ?>
                         </p>
                     </div>
 
@@ -242,7 +242,7 @@ class ImgPro_CDN_Admin {
                             <span class="dashicons dashicons-admin-generic"></span>
                             <h3><?php esc_html_e('Cloudflare Account', 'imgpro-cdn'); ?></h3>
                         </div>
-                        <p><?php esc_html_e('Deploy the worker to your own Cloudflare account for full control.', 'imgpro-cdn'); ?></p>
+                        <p><?php esc_html_e('Deploy the bucket and worker to your own account for full control.', 'imgpro-cdn'); ?></p>
                         <a href="https://github.com/img-pro/wp-image-cdn-worker" target="_blank" class="button button-secondary button-hero">
                             <?php esc_html_e('View Setup Guide', 'imgpro-cdn'); ?>
                             <span class="dashicons dashicons-external"></span>
@@ -312,7 +312,7 @@ class ImgPro_CDN_Admin {
                         <span class="dashicons dashicons-cloud"></span>
                     </div>
                     <div class="imgpro-cdn-cloud-notice-content">
-                        <h4><?php esc_html_e('Using ImgPro Cloud', 'imgpro-cdn'); ?></h4>
+                        <h4><?php esc_html_e('ImgPro Cloud', 'imgpro-cdn'); ?></h4>
                         <p>
                             <?php esc_html_e('You\'re using our managed service. Your images are being delivered through our shared infrastructure.', 'imgpro-cdn'); ?>
                         </p>
@@ -321,8 +321,8 @@ class ImgPro_CDN_Admin {
                             echo wp_kses_post(
                                 sprintf(
                                     /* translators: %s: Link to worker setup guide */
-                                    __('Want to use your own Cloudflare account? %s to deploy the worker yourself.', 'imgpro-cdn'),
-                                    '<a href="https://github.com/img-pro/wp-image-cdn-worker" target="_blank">' . __('View setup guide', 'imgpro-cdn') . ' <span class="dashicons dashicons-external"></span></a>'
+                                    __('Want to use your Cloudflare account? %s to deploy bucket and worker domains.', 'imgpro-cdn'),
+                                    '<a href="https://github.com/img-pro/wp-image-cdn-worker" target="_blank">' . __('View the setup guide', 'imgpro-cdn') . ' <span class="dashicons dashicons-external"></span></a>'
                                 )
                             );
                             ?>
@@ -334,7 +334,7 @@ class ImgPro_CDN_Admin {
             <?php // Image CDN Settings ?>
             <div class="imgpro-cdn-card imgpro-cdn-settings-card">
                 <div class="imgpro-cdn-card-header">
-                    <h2><?php esc_html_e('Image CDN', 'imgpro-cdn'); ?></h2>
+                    <h2><?php esc_html_e('Image CDN and Worker', 'imgpro-cdn'); ?></h2>
                     <p class="imgpro-cdn-card-description"><?php esc_html_e('Setup your domains to start delivering images globally', 'imgpro-cdn'); ?></p>
                 </div>
 
@@ -357,7 +357,7 @@ class ImgPro_CDN_Admin {
                                             aria-required="true"
                                             aria-describedby="cdn-url-description"
                                         >
-                                        <p class="description" id="cdn-url-description"><?php esc_html_e('Your R2 bucket\'s public domain. Cached images are delivered from 300+ global locations.', 'imgpro-cdn'); ?></p>
+                                        <p class="description" id="cdn-url-description"><?php esc_html_e('Your bucket\'s public domain, where cached images are stored and delivered.', 'imgpro-cdn'); ?></p>
                                     </td>
                                 </tr>
 
@@ -377,7 +377,7 @@ class ImgPro_CDN_Admin {
                                             aria-required="true"
                                             aria-describedby="worker-url-description"
                                         >
-                                        <p class="description" id="worker-url-description"><?php esc_html_e('Your Cloudflare Worker domain. Processes new images and cache misses.', 'imgpro-cdn'); ?></p>
+                                        <p class="description" id="worker-url-description"><?php esc_html_e('Your worker domain, to fetch new images and handle cache misses.', 'imgpro-cdn'); ?></p>
                                     </td>
                                 </tr>
                             </table>

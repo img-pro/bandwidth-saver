@@ -1,6 +1,6 @@
 /**
  * ImgPro Admin JavaScript
- * @version 2.0
+ * @version 0.1.1
  */
 
 (function($) {

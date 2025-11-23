@@ -5,7 +5,7 @@
  * by hiding images until they load successfully.
  *
  * @package ImgPro
- * @version 0.0.5
+ * @version 0.1.1
  */
 
 /*
@@ -13,7 +13,7 @@
  * Uses visibility: hidden to prevent broken image icon
  * while maintaining layout space (no shift)
  */
-img[data-original-src]:not(.imgpro-loaded) {
+img[data-worker-domain]:not(.imgpro-loaded) {
     visibility: hidden;
 }
 
@@ -21,7 +21,7 @@ img[data-original-src]:not(.imgpro-loaded) {
  * Show image instantly when loaded
  * The imgpro-loaded class is added by onload handler
  */
-img[data-original-src].imgpro-loaded {
+img[data-worker-domain].imgpro-loaded {
     visibility: visible;
 }
 
@@ -29,6 +29,6 @@ img[data-original-src].imgpro-loaded {
  * Hide permanently failed images
  * data-fallback='2' means both CDN and origin failed
  */
-img[data-original-src][data-fallback='2'] {
+img[data-worker-domain][data-fallback='2'] {
     visibility: hidden !important;
 }

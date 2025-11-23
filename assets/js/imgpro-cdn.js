@@ -16,8 +16,8 @@ var ImgProCDN = (function() {
     /**
      * Extract origin URL from CDN URL
      *
-     * @param {string} cdnUrl - CDN URL (e.g., https://cdn.domain.com/origin.com/path/image.jpg)
-     * @return {string} Origin URL (e.g., https://origin.com/path/image.jpg)
+     * @param {string} cdnUrl - CDN URL (e.g., https://cdn.domain.com/origin.com/path/image.jpg?v=123#section)
+     * @return {string} Origin URL (e.g., https://origin.com/path/image.jpg?v=123#section)
      */
     function extractOriginFromCdnUrl(cdnUrl) {
         try {
@@ -37,8 +37,20 @@ var ImgProCDN = (function() {
             var originDomain = pathParts[0];
             var originPath = pathParts.slice(1).join('/');
 
-            // Reconstruct origin URL using same protocol as CDN URL
-            return url.protocol + '//' + originDomain + '/' + originPath;
+            // Reconstruct origin URL preserving protocol, query string, and fragment
+            var originUrl = url.protocol + '//' + originDomain + '/' + originPath;
+
+            // Preserve query string (e.g., ?v=123 for cache busting)
+            if (url.search) {
+                originUrl += url.search;
+            }
+
+            // Preserve fragment (e.g., #section for image maps or SVG references)
+            if (url.hash) {
+                originUrl += url.hash;
+            }
+
+            return originUrl;
         } catch (e) {
             // URL parsing failed - return as-is
             return cdnUrl;

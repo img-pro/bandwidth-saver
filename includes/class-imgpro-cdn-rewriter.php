@@ -248,7 +248,20 @@ class ImgPro_CDN_Rewriter {
             return $url;
         }
 
-        return 'https://' . $path_parts[0] . '/' . $path_parts[1];
+        // Reconstruct origin URL preserving query string and fragment
+        $origin_url = 'https://' . $path_parts[0] . '/' . $path_parts[1];
+
+        // Preserve query string if present
+        if (!empty($parsed['query'])) {
+            $origin_url .= '?' . $parsed['query'];
+        }
+
+        // Preserve fragment if present
+        if (!empty($parsed['fragment'])) {
+            $origin_url .= '#' . $parsed['fragment'];
+        }
+
+        return $origin_url;
     }
 
     /**
@@ -627,7 +640,18 @@ class ImgPro_CDN_Rewriter {
             return $url;
         }
 
+        // Build CDN URL preserving query string and fragment
         $cdn_url = sprintf('https://%s/%s%s', $cdn_domain, $parsed['host'], $parsed['path']);
+
+        // Append query string if present
+        if (!empty($parsed['query'])) {
+            $cdn_url .= '?' . $parsed['query'];
+        }
+
+        // Append fragment if present
+        if (!empty($parsed['fragment'])) {
+            $cdn_url .= '#' . $parsed['fragment'];
+        }
 
         $this->url_cache[$cache_key] = $cdn_url;
         return $cdn_url;
@@ -660,7 +684,18 @@ class ImgPro_CDN_Rewriter {
             return $url;
         }
 
+        // Build worker URL preserving query string and fragment
         $worker_url = sprintf('https://%s/%s%s', $worker_domain, $parsed['host'], $parsed['path']);
+
+        // Append query string if present
+        if (!empty($parsed['query'])) {
+            $worker_url .= '?' . $parsed['query'];
+        }
+
+        // Append fragment if present
+        if (!empty($parsed['fragment'])) {
+            $worker_url .= '#' . $parsed['fragment'];
+        }
 
         $this->url_cache[$cache_key] = $worker_url;
         return $worker_url;

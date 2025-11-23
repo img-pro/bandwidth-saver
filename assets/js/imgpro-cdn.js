@@ -59,7 +59,12 @@ var ImgProCDN = (function() {
 
     /**
      * Handle image load error
-     * Called from inline onerror handlers
+     * Called from inline onerror handlers or stub fallback
+     *
+     * RACE CONDITION HANDLING:
+     * If main script loads after image errors, the stub will have already
+     * set fallback='1' and switched to origin. This function adds enhanced
+     * features (warming, debug logging) for stub-processed images.
      *
      * @param {HTMLImageElement} img - The image element that failed
      */
@@ -257,6 +262,47 @@ var ImgProCDN = (function() {
             init: init
         };
     })();
+
+    /**
+     * Initialize and enhance stub-processed images
+     *
+     * If the main script loads after images have already failed,
+     * the stub will have handled fallback but missed advanced features.
+     * This function adds warming for those images.
+     */
+    function init() {
+        // Find images that were processed by stub (have fallback='1' but no warming)
+        var stubProcessed = document.querySelectorAll('img[data-fallback="1"][data-worker-domain]:not([data-warmed])');
+
+        if (stubProcessed.length > 0 && debugMode) {
+            console.log('ImgPro: Found ' + stubProcessed.length + ' stub-processed images, adding warming');
+        }
+
+        stubProcessed.forEach(function(img) {
+            // Mark as warmed to prevent duplicate warming
+            img.dataset.warmed = '1';
+
+            // Extract origin URL from current src (stub already set it to origin)
+            var originUrl = img.src;
+
+            // Warm CDN in background so next request is cached
+            if (img.dataset.workerDomain && originUrl) {
+                var warmUrl = 'https://' + img.dataset.workerDomain + '/' + originUrl.replace(/^https?:\/\//, '');
+                (new Image()).src = warmUrl;
+
+                if (debugMode) {
+                    console.log('ImgPro: Warming stub-processed image', originUrl, 'via', warmUrl);
+                }
+            }
+        });
+    }
+
+    // Initialize on load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 
     // Initialize lazy handler
     LazyHandler.init();

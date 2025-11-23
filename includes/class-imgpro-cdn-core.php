@@ -126,11 +126,29 @@ class ImgPro_CDN_Core {
                 false // Load in header
             );
 
-            // Output inline stub BEFORE main script to prevent errors if inline handlers execute early
+            // Output inline stub BEFORE main script to provide immediate fallback
+            // This ensures images can recover even if main script is slow/blocked
             $debug_enabled = $this->settings->get('debug_mode') && defined('WP_DEBUG') && WP_DEBUG;
             wp_add_inline_script(
                 'imgpro-cdn',
-                'window.imgproCdnConfig={debug:' . ($debug_enabled ? '1' : '0') . '};window.ImgProCDN=window.ImgProCDN||{handleError:function(){},_queue:[]};',
+                'window.imgproCdnConfig={debug:' . ($debug_enabled ? '1' : '0') . '};' .
+                'window.ImgProCDN=window.ImgProCDN||{' .
+                    'handleError:function(img){' .
+                        'if(!img.dataset.fallback){' .
+                            'try{' .
+                                'var u=new URL(img.currentSrc||img.src);' .
+                                'var p=u.pathname.substring(1).split("/");' .
+                                'if(p.length>=2){' .
+                                    'img.dataset.fallback="1";' .
+                                    'img.classList.remove("imgpro-loaded");' .
+                                    'img.removeAttribute("srcset");' .
+                                    'img.removeAttribute("sizes");' .
+                                    'img.src=u.protocol+"//"+p[0]+"/"+p.slice(1).join("/")+(u.search||"")+(u.hash||"");' .
+                                '}' .
+                            '}catch(e){}' .
+                        '}' .
+                    '}' .
+                '};',
                 'before'
             );
         }

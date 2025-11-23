@@ -3,7 +3,7 @@
  * ImgPro URL Rewriter
  *
  * @package ImgPro_CDN
- * @version 2.0
+ * @version 0.1.1
  */
 
 if (!defined('ABSPATH')) {
@@ -145,9 +145,6 @@ class ImgPro_CDN_Rewriter {
         add_filter('the_content', [$this, 'rewrite_content'], 999);
         add_filter('post_thumbnail_html', [$this, 'rewrite_content'], 999);
         add_filter('widget_text', [$this, 'rewrite_content'], 999);
-
-        // Lazy loading handler (fixes browser caching 404s on lazy images)
-        add_action('wp_footer', [$this, 'output_lazy_handler'], 999);
     }
 
     /**
@@ -261,7 +258,7 @@ class ImgPro_CDN_Rewriter {
      *
      * ARCHITECTURE:
      * - ALWAYS processes every image (no early returns except validation)
-     * - ALWAYS sets data-original-src to TRUE origin (never CDN/Worker)
+     * - ALWAYS sets data-worker-domain to identify plugin-managed images
      * - ALWAYS sets src to CDN URL
      * - Runs at priority 999 to override other plugins
      */
@@ -289,23 +286,14 @@ class ImgPro_CDN_Rewriter {
         // Set src to CDN
         $attributes['src'] = $cdn_url;
 
-        // CRITICAL: Store TRUE origin URL (never CDN/Worker)
-        $attributes['data-original-src'] = esc_url($origin_url);
+        // Store worker domain for CDN warming
         $attributes['data-worker-domain'] = esc_attr($this->settings->get('worker_url'));
 
         // Add onload handler to add 'imgpro-loaded' class for CSS transitions
-        $attributes['onload'] = 'this.classList.add("imgpro-loaded")';
+        $attributes['onload'] = "this.classList.add('imgpro-loaded')";
 
-        // Build onerror handler
-        $debug_enabled = $this->settings->get('debug_mode') && defined('WP_DEBUG') && WP_DEBUG;
-
-        if ($debug_enabled) {
-            // Debug version with console logging
-            $attributes['onerror'] = 'if(!this.dataset.fallback){var t0=Date.now();this.dataset.fallbackStart=t0;var failedCdnUrl=this.currentSrc||this.src;console.log("ImgPro: CDN failed for",failedCdnUrl,"→ Loading from",this.dataset.originalSrc);this.dataset.fallback="1";this.classList.remove("imgpro-loaded");this.removeAttribute("srcset");this.removeAttribute("sizes");this.src=this.dataset.originalSrc;this.onload=function(){console.log("ImgPro: Origin loaded in "+(Date.now()-t0)+"ms");this.classList.add("imgpro-loaded");this.onload=null};if(this.dataset.workerDomain){var failedFilename=failedCdnUrl.split("/").pop();var originBase=this.dataset.originalSrc;var originDir=originBase.substring(0,originBase.lastIndexOf("/")+1);var originVariantUrl=originDir+failedFilename;var warmUrl="https://"+this.dataset.workerDomain+"/"+originVariantUrl.replace(/^https?:\\/\\//,"");(new Image()).src=warmUrl;console.log("ImgPro: Warming origin variant",originVariantUrl,"via",warmUrl)}}else if(this.dataset.fallback==="1"){var elapsed=this.dataset.fallbackStart?(Date.now()-this.dataset.fallbackStart)+"ms":"unknown";console.error("ImgPro: Origin ALSO failed after",elapsed,"for",this.dataset.originalSrc);this.dataset.fallback="2";this.classList.remove("imgpro-loaded");this.onerror=null}else{console.warn("ImgPro: Unexpected fallback state:",this.dataset.fallback);this.onerror=null}';
-        } else {
-            // Production version (no logging)
-            $attributes['onerror'] = 'if(!this.dataset.fallback){var failedCdnUrl=this.currentSrc||this.src;this.dataset.fallback="1";this.classList.remove("imgpro-loaded");this.removeAttribute("srcset");this.removeAttribute("sizes");this.src=this.dataset.originalSrc;this.onload=function(){this.classList.add("imgpro-loaded")};if(this.dataset.workerDomain){var failedFilename=failedCdnUrl.split("/").pop();var originBase=this.dataset.originalSrc;var originDir=originBase.substring(0,originBase.lastIndexOf("/")+1);var originVariantUrl=originDir+failedFilename;var warmUrl="https://"+this.dataset.workerDomain+"/"+originVariantUrl.replace(/^https?:\\/\\//,"");(new Image()).src=warmUrl}}else{this.dataset.fallback="2";this.classList.remove("imgpro-loaded");this.onerror=null}';
-        }
+        // Add simple onerror handler that calls external JavaScript function
+        $attributes['onerror'] = 'ImgProCDN.handleError(this)';
 
         return $attributes;
     }
@@ -316,9 +304,9 @@ class ImgPro_CDN_Rewriter {
      * Processes images in HTML content that weren't processed by rewrite_attributes()
      *
      * ARCHITECTURE:
-     * - ONLY processes images WITHOUT data-original-src (not yet processed)
+     * - ONLY processes images WITHOUT data-worker-domain (not yet processed)
      * - NEVER modifies images already processed by rewrite_attributes()
-     * - ALWAYS sets data-original-src to TRUE origin (never CDN/Worker)
+     * - ALWAYS sets data-worker-domain to identify plugin-managed images
      * - Uses WP_HTML_Tag_Processor for safe, spec-compliant HTML parsing (requires WP 6.2+)
      */
     public function rewrite_content($content) {
@@ -368,8 +356,8 @@ class ImgPro_CDN_Rewriter {
                 continue;
             }
 
-            // Skip if already processed (has our data-original-src attribute)
-            if ($processor->get_attribute('data-original-src')) {
+            // Skip if already processed (has our data-worker-domain attribute)
+            if ($processor->get_attribute('data-worker-domain')) {
                 continue;
             }
 
@@ -396,23 +384,14 @@ class ImgPro_CDN_Rewriter {
             $worker_domain = esc_attr($this->settings->get('worker_url'));
             $debug_enabled = $this->settings->get('debug_mode') && defined('WP_DEBUG') && WP_DEBUG;
 
-            // CRITICAL: Store TRUE origin URL (never CDN/Worker)
-            $processor->set_attribute('data-original-src', esc_url($origin_url));
+            // Store worker domain to identify plugin-managed images
             $processor->set_attribute('data-worker-domain', $worker_domain);
 
             // Add onload handler
-            $processor->set_attribute('onload', 'this.classList.add("imgpro-loaded")');
+            $processor->set_attribute('onload', "this.classList.add('imgpro-loaded')");
 
-            // Build onerror handler
-            if ($debug_enabled) {
-                // Debug version with console logging
-                $onerror = 'if(!this.dataset.fallback){var t0=Date.now();this.dataset.fallbackStart=t0;var failedCdnUrl=this.currentSrc||this.src;console.log("ImgPro: CDN failed for",failedCdnUrl,"→ Loading from",this.dataset.originalSrc);this.dataset.fallback="1";this.classList.remove("imgpro-loaded");this.removeAttribute("srcset");this.removeAttribute("sizes");this.src=this.dataset.originalSrc;this.onload=function(){console.log("ImgPro: Origin loaded in "+(Date.now()-t0)+"ms");this.classList.add("imgpro-loaded");this.onload=null};if(this.dataset.workerDomain){var failedFilename=failedCdnUrl.split("/").pop();var originBase=this.dataset.originalSrc;var originDir=originBase.substring(0,originBase.lastIndexOf("/")+1);var originVariantUrl=originDir+failedFilename;var warmUrl="https://"+this.dataset.workerDomain+"/"+originVariantUrl.replace(/^https?:\\/\\//,"");(new Image()).src=warmUrl;console.log("ImgPro: Warming origin variant",originVariantUrl,"via",warmUrl)}}else if(this.dataset.fallback==="1"){var elapsed=this.dataset.fallbackStart?(Date.now()-this.dataset.fallbackStart)+"ms":"unknown";console.error("ImgPro: Origin ALSO failed after",elapsed,"for",this.dataset.originalSrc);this.dataset.fallback="2";this.classList.remove("imgpro-loaded");this.onerror=null}else{console.warn("ImgPro: Unexpected fallback state:",this.dataset.fallback);this.onerror=null}';
-            } else {
-                // Production version (no logging)
-                $onerror = 'if(!this.dataset.fallback){var failedCdnUrl=this.currentSrc||this.src;this.dataset.fallback="1";this.classList.remove("imgpro-loaded");this.removeAttribute("srcset");this.removeAttribute("sizes");this.src=this.dataset.originalSrc;this.onload=function(){this.classList.add("imgpro-loaded")};if(this.dataset.workerDomain){var failedFilename=failedCdnUrl.split("/").pop();var originBase=this.dataset.originalSrc;var originDir=originBase.substring(0,originBase.lastIndexOf("/")+1);var originVariantUrl=originDir+failedFilename;var warmUrl="https://"+this.dataset.workerDomain+"/"+originVariantUrl.replace(/^https?:\\/\\//,"");(new Image()).src=warmUrl}}else{this.dataset.fallback="2";this.classList.remove("imgpro-loaded");this.onerror=null}';
-            }
-
-            $processor->set_attribute('onerror', $onerror);
+            // Add simple onerror handler that calls external JavaScript function
+            $processor->set_attribute('onerror', 'ImgProCDN.handleError(this)');
         }
 
         return $processor->get_updated_html();
@@ -438,8 +417,8 @@ class ImgPro_CDN_Rewriter {
             $src = $matches[3];            // src value
             $after = $matches[4];          // attributes after src
 
-            // Skip if already processed (has our data-original-src attribute)
-            if (stripos($matches[0], 'data-original-src') !== false) {
+            // Skip if already processed (has our data-worker-domain attribute)
+            if (stripos($matches[0], 'data-worker-domain') !== false) {
                 return $matches[0];
             }
 
@@ -455,26 +434,15 @@ class ImgPro_CDN_Rewriter {
             $cdn_url = $this->build_cdn_url($origin_url);
 
             // Build replacement HTML
-            // CRITICAL: Store TRUE origin URL (never CDN/Worker)
+            // Store worker domain to identify plugin-managed images
             $worker_domain = esc_attr($this->settings->get('worker_url'));
-            $data_attr = sprintf(' data-original-src="%s" data-worker-domain="%s"',
-                esc_url($origin_url),
-                $worker_domain
-            );
+            $data_attr = sprintf(' data-worker-domain="%s"', $worker_domain);
 
             // Add onload handler to add 'imgpro-loaded' class for CSS transitions
-            $onload = ' onload="this.classList.add(&quot;imgpro-loaded&quot;)"';
+            $onload = " onload=\"this.classList.add('imgpro-loaded')\"";
 
-            // Build onerror handler
-            $debug_enabled = $this->settings->get('debug_mode') && defined('WP_DEBUG') && WP_DEBUG;
-
-            if ($debug_enabled) {
-                // Debug version with console logging
-                $onerror = ' onerror="if(!this.dataset.fallback){var t0=Date.now();this.dataset.fallbackStart=t0;var failedCdnUrl=this.currentSrc||this.src;console.log(&quot;ImgPro: CDN failed for&quot;,failedCdnUrl,&quot;→ Loading from&quot;,this.dataset.originalSrc);this.dataset.fallback=&quot;1&quot;;this.classList.remove(&quot;imgpro-loaded&quot;);this.removeAttribute(&quot;srcset&quot;);this.removeAttribute(&quot;sizes&quot;);this.src=this.dataset.originalSrc;this.onload=function(){console.log(&quot;ImgPro: Origin loaded in &quot;+(Date.now()-t0)+&quot;ms&quot;);this.classList.add(&quot;imgpro-loaded&quot;);this.onload=null};if(this.dataset.workerDomain){var failedFilename=failedCdnUrl.split(&quot;/&quot;).pop();var originBase=this.dataset.originalSrc;var originDir=originBase.substring(0,originBase.lastIndexOf(&quot;/&quot;)+1);var originVariantUrl=originDir+failedFilename;var warmUrl=&quot;https://&quot;+this.dataset.workerDomain+&quot;/&quot;+originVariantUrl.replace(/^https?:\\/\\//,&quot;&quot;);(new Image()).src=warmUrl;console.log(&quot;ImgPro: Warming origin variant&quot;,originVariantUrl,&quot;via&quot;,warmUrl)}}else if(this.dataset.fallback===&quot;1&quot;){var elapsed=this.dataset.fallbackStart?(Date.now()-this.dataset.fallbackStart)+&quot;ms&quot;:&quot;unknown&quot;;console.error(&quot;ImgPro: Origin ALSO failed after&quot;,elapsed,&quot;for&quot;,this.dataset.originalSrc);this.dataset.fallback=&quot;2&quot;;this.classList.remove(&quot;imgpro-loaded&quot;);this.onerror=null}else{console.warn(&quot;ImgPro: Unexpected fallback state:&quot;,this.dataset.fallback);this.onerror=null}"';
-            } else {
-                // Production version (no logging)
-                $onerror = ' onerror="if(!this.dataset.fallback){var failedCdnUrl=this.currentSrc||this.src;this.dataset.fallback=&quot;1&quot;;this.classList.remove(&quot;imgpro-loaded&quot;);this.removeAttribute(&quot;srcset&quot;);this.removeAttribute(&quot;sizes&quot;);this.src=this.dataset.originalSrc;this.onload=function(){this.classList.add(&quot;imgpro-loaded&quot;)};if(this.dataset.workerDomain){var failedFilename=failedCdnUrl.split(&quot;/&quot;).pop();var originBase=this.dataset.originalSrc;var originDir=originBase.substring(0,originBase.lastIndexOf(&quot;/&quot;)+1);var originVariantUrl=originDir+failedFilename;var warmUrl=&quot;https://&quot;+this.dataset.workerDomain+&quot;/&quot;+originVariantUrl.replace(/^https?:\\/\\//,&quot;&quot;);(new Image()).src=warmUrl}}else{this.dataset.fallback=&quot;2&quot;;this.classList.remove(&quot;imgpro-loaded&quot;);this.onerror=null}"';
-            }
+            // Add simple onerror handler that calls external JavaScript function
+            $onerror = ' onerror="ImgProCDN.handleError(this)"';
 
             return sprintf('<%s%s%ssrc="%s"%s%s%s%s>', $tag_name, $before ? ' ' . $before : '', $before ? '' : ' ', esc_url($cdn_url), $data_attr, $onload, $onerror, $after);
         }, $content);
@@ -727,165 +695,6 @@ class ImgPro_CDN_Rewriter {
         }
 
         return rtrim(home_url(), '/') . '/' . ltrim($url, '/');
-    }
-
-    /**
-     * Output lazy loading handler
-     *
-     * Fixes browser caching issue with lazy-loaded images:
-     * - Browser caches CDN 404 response when page loads
-     * - When lazy image scrolls into view, browser uses cached 404
-     * - onerror doesn't fire because no network request is made
-     * - This handler checks all lazy images and triggers fallback for failed ones
-     */
-    public function output_lazy_handler() {
-        $debug_enabled = $this->settings->get('debug_mode') && defined('WP_DEBUG') && WP_DEBUG;
-
-        ?>
-        <script>
-        (function() {
-            'use strict';
-
-            var intervalId = null;
-            var checkCount = 0;
-            var maxChecks = 10; // Stop after 20 seconds (10 * 2s)
-
-            /**
-             * Check and fix failed lazy-loaded images
-             * Returns true if all images are resolved
-             */
-            function checkLazyImages() {
-                var lazyImages = document.querySelectorAll('img[loading="lazy"][data-original-src]');
-                var needsChecking = false;
-
-                <?php if ($debug_enabled): ?>
-                console.log('ImgPro: Checking ' + lazyImages.length + ' lazy-loaded images (check #' + (checkCount + 1) + ')');
-                <?php endif; ?>
-
-                lazyImages.forEach(function(img) {
-                    // Already fell back - skip
-                    if (img.dataset.fallback) {
-                        return;
-                    }
-
-                    // Check if image failed to load
-                    if (img.complete && img.naturalWidth === 0) {
-                        // CRITICAL: Capture failed URL BEFORE changing img.src
-                        var failedCdnUrl = img.currentSrc || img.src;
-
-                        // Image failed - trigger fallback
-                        <?php if ($debug_enabled): ?>
-                        var t0 = Date.now();
-                        img.dataset.fallbackStart = t0;
-                        console.log('ImgPro: Lazy image failed (cached 404) for', failedCdnUrl, '→ Loading from', img.dataset.originalSrc);
-                        <?php endif; ?>
-
-                        img.dataset.fallback = '1';
-                        img.removeAttribute('srcset');
-                        img.removeAttribute('sizes');
-                        img.src = img.dataset.originalSrc;
-
-                        <?php if ($debug_enabled): ?>
-                        img.onload = function() {
-                            console.log('ImgPro: Lazy origin loaded in ' + (Date.now() - t0) + 'ms');
-                            img.onload = null;
-                        };
-                        <?php endif; ?>
-
-                        // Warm CDN in background (origin-centric approach)
-                        if (img.dataset.workerDomain) {
-                            var failedFilename = failedCdnUrl.split('/').pop();
-                            var originBase = img.dataset.originalSrc;
-                            var originDir = originBase.substring(0, originBase.lastIndexOf('/') + 1);
-                            var originVariantUrl = originDir + failedFilename;
-                            var warmUrl = 'https://' + img.dataset.workerDomain + '/' + originVariantUrl.replace(/^https?:\/\//, '');
-                            (new Image()).src = warmUrl;
-
-                            <?php if ($debug_enabled): ?>
-                            console.log('ImgPro: Warming lazy origin variant', originVariantUrl, 'via', warmUrl);
-                            <?php endif; ?>
-                        }
-                    } else if (!img.complete || img.naturalWidth === 0) {
-                        // Still loading or waiting - keep checking
-                        needsChecking = true;
-                    }
-                });
-
-                // Stop interval if all images resolved or max checks reached
-                checkCount++;
-                if (!needsChecking || checkCount >= maxChecks) {
-                    if (intervalId) {
-                        clearInterval(intervalId);
-                        intervalId = null;
-                        <?php if ($debug_enabled): ?>
-                        console.log('ImgPro: Stopped checking lazy images' + (checkCount >= maxChecks ? ' (max checks reached)' : ' (all resolved)'));
-                        <?php endif; ?>
-                    }
-                }
-            }
-
-            /**
-             * Start checking interval if not already running
-             */
-            function startChecking() {
-                if (!intervalId) {
-                    checkCount = 0; // Reset counter
-                    checkLazyImages();
-                    intervalId = setInterval(checkLazyImages, 2000);
-                    <?php if ($debug_enabled): ?>
-                    console.log('ImgPro: Started checking lazy images');
-                    <?php endif; ?>
-                }
-            }
-
-            // Check on page load
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function() {
-                    setTimeout(startChecking, 100);
-                });
-            } else {
-                setTimeout(startChecking, 100);
-            }
-
-            // Watch for new images added via infinite scroll/AJAX
-            if ('MutationObserver' in window) {
-                var observer = new MutationObserver(function(mutations) {
-                    var hasNewLazyImages = false;
-                    mutations.forEach(function(mutation) {
-                        mutation.addedNodes.forEach(function(node) {
-                            if (node.nodeType === 1) {
-                                // Check if node itself is a lazy image
-                                if (node.tagName === 'IMG' && node.loading === 'lazy' && node.dataset.originalSrc) {
-                                    hasNewLazyImages = true;
-                                }
-                                // Check children
-                                if (node.querySelectorAll) {
-                                    var lazyImgs = node.querySelectorAll('img[loading="lazy"][data-original-src]');
-                                    if (lazyImgs.length > 0) {
-                                        hasNewLazyImages = true;
-                                    }
-                                }
-                            }
-                        });
-                    });
-
-                    // Restart checking if new lazy images detected
-                    if (hasNewLazyImages) {
-                        <?php if ($debug_enabled): ?>
-                        console.log('ImgPro: New lazy images detected, restarting checks');
-                        <?php endif; ?>
-                        startChecking();
-                    }
-                });
-
-                observer.observe(document.body, {
-                    childList: true,
-                    subtree: true
-                });
-            }
-        })();
-        </script>
-        <?php
     }
 
 }

@@ -3,7 +3,7 @@
  * ImgPro CDN Core
  *
  * @package ImgPro_CDN
- * @version 1.0
+ * @version 0.1.1
  */
 
 if (!defined('ABSPATH')) {
@@ -112,6 +112,26 @@ class ImgPro_CDN_Core {
                 [],
                 IMGPRO_CDN_VERSION,
                 'all'
+            );
+        }
+
+        // Enqueue frontend JavaScript (error handler + lazy loader)
+        $js_file = IMGPRO_CDN_PLUGIN_DIR . 'assets/js/imgpro-cdn.js';
+        if (file_exists($js_file)) {
+            wp_enqueue_script(
+                'imgpro-cdn',
+                IMGPRO_CDN_PLUGIN_URL . 'assets/js/imgpro-cdn.js',
+                [],
+                IMGPRO_CDN_VERSION,
+                false // Load in header
+            );
+
+            // Output inline stub BEFORE main script to prevent errors if inline handlers execute early
+            $debug_enabled = $this->settings->get('debug_mode') && defined('WP_DEBUG') && WP_DEBUG;
+            wp_add_inline_script(
+                'imgpro-cdn',
+                'window.imgproCdnConfig={debug:' . ($debug_enabled ? '1' : '0') . '};window.ImgProCDN=window.ImgProCDN||{handleError:function(){},_queue:[]};',
+                'before'
             );
         }
     }

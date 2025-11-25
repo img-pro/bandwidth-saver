@@ -164,13 +164,9 @@ class ImgPro_CDN_Admin {
             $merged['debug_mode'] = false;
         }
 
-        // Auto-disable plugin if no backend is configured
-        $has_cloud = ($merged['cloud_tier'] === 'active');
-        // For Cloudflare mode, check if setup_mode is 'cloudflare' AND URLs are configured
-        // (Cloud mode URLs are auto-generated, so we only check setup_mode for cloud)
-        $has_cloudflare = ($merged['setup_mode'] === 'cloudflare' && !empty($merged['cdn_url']) && !empty($merged['worker_url']));
-
-        if (!$has_cloud && !$has_cloudflare) {
+        // Auto-disable plugin if the ACTIVE mode is not properly configured
+        // The plugin should only be enabled when the current setup_mode has valid configuration
+        if (!$this->is_mode_valid($merged['setup_mode'] ?? '', $merged)) {
             $merged['enabled'] = false;
         }
 
@@ -272,6 +268,12 @@ class ImgPro_CDN_Admin {
             if (in_array($new_mode, ['cloud', 'cloudflare'], true)) {
                 // Update setup_mode
                 $settings['setup_mode'] = $new_mode;
+
+                // Auto-disable if switching to an unconfigured mode
+                if (!$this->is_mode_valid($new_mode, $settings)) {
+                    $settings['enabled'] = false;
+                }
+
                 update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
             }
         }
@@ -911,6 +913,25 @@ class ImgPro_CDN_Admin {
             </table>
         </div>
         <?php
+    }
+
+    /**
+     * Check if a given mode has valid configuration
+     *
+     * Cloud mode requires an active subscription.
+     * Cloudflare mode requires both CDN and Worker URLs to be configured.
+     *
+     * @param string $mode The mode to check ('cloud' or 'cloudflare')
+     * @param array $settings The settings array to check against
+     * @return bool True if the mode is properly configured
+     */
+    private function is_mode_valid($mode, $settings) {
+        if ($mode === 'cloud') {
+            return ($settings['cloud_tier'] ?? '') === 'active';
+        } elseif ($mode === 'cloudflare') {
+            return !empty($settings['cdn_url']) && !empty($settings['worker_url']);
+        }
+        return false;
     }
 
     /**

@@ -614,18 +614,18 @@ class ImgPro_CDN_Rewriter {
         $parsed = wp_parse_url($normalized);
 
         // wp_parse_url() can return false on severely malformed URLs
-        // Cache the original URL to avoid re-parsing on subsequent calls
+        // Cache the normalized URL to maintain consistency (cache key is based on normalized)
         if ($parsed === false || !is_array($parsed) || empty($parsed['host']) || empty($parsed['path'])) {
-            $this->url_cache[$cache_key] = $url;
-            return $url;
+            $this->url_cache[$cache_key] = $normalized;
+            return $normalized;
         }
 
         $cdn_domain = $this->settings->get('cdn_url');
 
-        // Guard against empty domain - cache and return original URL
+        // Guard against empty domain - cache and return normalized URL
         if (empty($cdn_domain)) {
-            $this->url_cache[$cache_key] = $url;
-            return $url;
+            $this->url_cache[$cache_key] = $normalized;
+            return $normalized;
         }
 
         // Build CDN URL preserving query string and fragment
@@ -663,18 +663,18 @@ class ImgPro_CDN_Rewriter {
         $parsed = wp_parse_url($normalized);
 
         // wp_parse_url() can return false on severely malformed URLs
-        // Cache the original URL to avoid re-parsing on subsequent calls
+        // Cache the normalized URL to maintain consistency (cache key is based on normalized)
         if ($parsed === false || !is_array($parsed) || empty($parsed['host']) || empty($parsed['path'])) {
-            $this->url_cache[$cache_key] = $url;
-            return $url;
+            $this->url_cache[$cache_key] = $normalized;
+            return $normalized;
         }
 
         $worker_domain = $this->settings->get('worker_url');
 
-        // Guard against empty domain - cache and return original URL
+        // Guard against empty domain - cache and return normalized URL
         if (empty($worker_domain)) {
-            $this->url_cache[$cache_key] = $url;
-            return $url;
+            $this->url_cache[$cache_key] = $normalized;
+            return $normalized;
         }
 
         // Build worker URL preserving query string and fragment

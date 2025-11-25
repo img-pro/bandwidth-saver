@@ -202,7 +202,8 @@
             $('.imgpro-cdn-toggle-notice').remove();
 
             const $notice = $('<div class="notice notice-' + type + ' is-dismissible imgpro-cdn-toggle-notice"><p>' + message + '</p></div>');
-            $('.imgpro-cdn-toggle-card').after($notice);
+            // Insert after the toggle form, not inside it
+            $('.imgpro-cdn-toggle-form').after($notice);
 
             // Auto dismiss after 3 seconds
             setTimeout(function() {

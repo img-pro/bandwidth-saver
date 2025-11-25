@@ -31,6 +31,11 @@
     margin: 20px 0 0;
 }
 
+/* Hide WordPress default "Settings saved" notice - we show our own inline */
+#setting-error-settings_updated {
+    display: none !important;
+}
+
 /* ===== Header ===== */
 .imgpro-cdn-header {
     display: flex;

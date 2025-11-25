@@ -179,15 +179,21 @@ class ImgPro_CDN_Admin {
 
     /**
      * Show admin notices
+     *
+     * On our settings page, we suppress all default WordPress notices
+     * and render our own notices inline via render_inline_notices().
      */
     public function show_notices() {
-        // Verify we're on the correct admin page
-        $page = filter_input(INPUT_GET, 'page', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        // Don't output anything on our settings page
+        // All notices are rendered inline via render_inline_notices()
+    }
 
-        if ($page !== 'imgpro-cdn-settings') {
-            return;
-        }
-
+    /**
+     * Render inline notices within the settings page
+     *
+     * Called from render_settings_page() to show notices in the correct position.
+     */
+    private function render_inline_notices() {
         // Handle payment success - attempt recovery (single attempt, no blocking)
         $payment_status = filter_input(INPUT_GET, 'payment', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
@@ -201,9 +207,8 @@ class ImgPro_CDN_Admin {
                 exit;
             } else {
                 // Webhook hasn't processed yet - show pending notice
-                // Transient check on next page load will retry
                 ?>
-                <div class="notice notice-info is-dismissible">
+                <div class="notice notice-info is-dismissible imgpro-cdn-inline-notice">
                     <p>
                         <strong><?php esc_html_e('Payment received! Your account is being set up.', 'bandwidth-saver'); ?></strong>
                         <?php esc_html_e('Refresh this page in a few seconds to complete activation.', 'bandwidth-saver'); ?>
@@ -216,7 +221,7 @@ class ImgPro_CDN_Admin {
         // Show activation success message
         if (filter_input(INPUT_GET, 'activated', FILTER_VALIDATE_BOOLEAN)) {
             ?>
-            <div class="notice notice-success is-dismissible">
+            <div class="notice notice-success is-dismissible imgpro-cdn-inline-notice">
                 <p>
                     <strong><?php esc_html_e('Subscription activated successfully!', 'bandwidth-saver'); ?></strong>
                 </p>
@@ -224,12 +229,10 @@ class ImgPro_CDN_Admin {
             <?php
         }
 
-        // Suppress default WordPress "Settings saved" notice to avoid duplicate
-        // (We show our own custom message below)
+        // Show settings saved message
         if (filter_input(INPUT_GET, 'settings-updated', FILTER_VALIDATE_BOOLEAN)) {
             ?>
-            <style>#setting-error-settings_updated { display: none; }</style>
-            <div class="notice notice-success is-dismissible">
+            <div class="notice notice-success is-dismissible imgpro-cdn-inline-notice">
                 <p>
                     <strong><?php esc_html_e('Settings saved successfully!', 'bandwidth-saver'); ?></strong>
                 </p>
@@ -303,7 +306,13 @@ class ImgPro_CDN_Admin {
                 </div>
             </div>
 
+            <?php // WordPress looks for .wp-header-end to position admin notices ?>
+            <hr class="wp-header-end">
+
             <?php
+            // Show inline notices (settings saved, payment status, etc.)
+            $this->render_inline_notices();
+
             // Show toggle if configured
             $this->render_main_toggle($settings);
 
@@ -999,7 +1008,8 @@ class ImgPro_CDN_Admin {
         $settings['cloud_api_key'] = sanitize_text_field($body['api_key']);
         $settings['cloud_email'] = sanitize_email($body['email']);
         $settings['cloud_tier'] = in_array($body['tier'], ['active', 'cancelled', 'none'], true) ? $body['tier'] : 'none';
-        $settings['enabled'] = true; // Auto-enable plugin after successful subscription
+        // Only auto-enable if subscription is active (not cancelled or none)
+        $settings['enabled'] = ($settings['cloud_tier'] === 'active');
 
         $result = update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
         $this->settings->clear_cache(); // Ensure subsequent reads get fresh data

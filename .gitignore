@@ -32,3 +32,8 @@ node_modules/
 
 # Claude
 .claude/
+
+# WordPress.org Release
+*.zip
+.svnignore
+.svn-credentials

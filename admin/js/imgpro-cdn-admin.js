@@ -25,9 +25,14 @@
                     nonce: imgproCdnAdmin.checkoutNonce
                 },
                 success: function(response) {
-                    if (response.success && response.data.checkout_url) {
-                        // Redirect to Stripe checkout
-                        window.location.href = response.data.checkout_url;
+                    if (response.success) {
+                        if (response.data.checkout_url) {
+                            // Redirect to Stripe checkout
+                            window.location.href = response.data.checkout_url;
+                        } else if (response.data.recovered) {
+                            // Existing subscription was recovered - reload page
+                            window.location.reload();
+                        }
                     } else {
                         $button.prop('disabled', false).text(originalText);
                         alert(response.data.message || imgproCdnAdmin.i18n.checkoutError);
@@ -117,6 +122,15 @@
             const $card = $('.imgpro-cdn-main-toggle-card');
             const isEnabled = $toggle.is(':checked');
 
+            // Get current tab from URL or active tab
+            const urlParams = new URLSearchParams(window.location.search);
+            let currentTab = urlParams.get('tab') || '';
+            if (!currentTab) {
+                // Fallback to active tab's data attribute
+                const $activeTab = $('.imgpro-cdn-nav-tabs .nav-tab-active');
+                currentTab = $activeTab.data('tab') || '';
+            }
+
             // Add loading state
             $card.addClass('imgpro-cdn-loading');
 
@@ -127,10 +141,20 @@
                 data: {
                     action: 'imgpro_cdn_toggle_enabled',
                     enabled: isEnabled ? 1 : 0,
+                    current_tab: currentTab,
                     nonce: imgproCdnAdmin.nonce
                 },
                 success: function(response) {
                     if (response.success) {
+                        // Check if we need to redirect (smart enable switched modes)
+                        if (response.data.redirect) {
+                            showNotice('success', response.data.message);
+                            setTimeout(function() {
+                                window.location.href = response.data.redirect;
+                            }, 500);
+                            return;
+                        }
+
                         // Update UI
                         updateToggleUI($card, isEnabled);
 

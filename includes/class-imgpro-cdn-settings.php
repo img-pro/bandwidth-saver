@@ -23,8 +23,9 @@ class ImgPro_CDN_Settings {
      * @var array
      */
     private $defaults = [
-        'enabled'         => false,
-        'setup_mode'      => '',  // 'cloud' or 'cloudflare' - persists user choice
+        'enabled'            => false,
+        'previously_enabled' => false, // Remembers enabled state when switching to unconfigured tab
+        'setup_mode'         => '',    // 'cloud' or 'cloudflare' - persists user choice
 
         // Cloud mode settings
         'cloud_api_key'   => '',
@@ -136,6 +137,11 @@ class ImgPro_CDN_Settings {
         // Enabled (boolean)
         if (isset($settings['enabled'])) {
             $validated['enabled'] = (bool) $settings['enabled'];
+        }
+
+        // Previously enabled (boolean) - tracks enabled state when switching tabs
+        if (isset($settings['previously_enabled'])) {
+            $validated['previously_enabled'] = (bool) $settings['previously_enabled'];
         }
 
         // Cloud-specific fields

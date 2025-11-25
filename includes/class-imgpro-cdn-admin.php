@@ -144,6 +144,14 @@ class ImgPro_CDN_Admin {
             $merged['debug_mode'] = false;
         }
 
+        // Auto-disable plugin if no backend is configured
+        $has_cloud = ($merged['cloud_tier'] === 'active');
+        $has_cloudflare = !empty($merged['cdn_url']) && !empty($merged['worker_url']);
+
+        if (!$has_cloud && !$has_cloudflare) {
+            $merged['enabled'] = false;
+        }
+
         return $merged;
     }
 
@@ -243,6 +251,18 @@ class ImgPro_CDN_Admin {
     public function render_settings_page() {
         if (!current_user_can('manage_options')) {
             return;
+        }
+
+        // Check if there's a pending payment and attempt recovery
+        if (get_transient('imgpro_cdn_pending_payment')) {
+            // Attempt recovery (webhook might have completed)
+            if ($this->recover_account()) {
+                delete_transient('imgpro_cdn_pending_payment');
+                // Redirect to show success
+                wp_safe_redirect(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&payment=success'));
+                exit;
+            }
+            // Keep transient for next page load if recovery failed
         }
 
         $settings = $this->settings->get_all();
@@ -394,7 +414,6 @@ class ImgPro_CDN_Admin {
             return;
         }
 
-        $pricing = $this->get_pricing();
         ?>
         <div class="imgpro-cdn-account-card">
             <div class="imgpro-cdn-account-header">
@@ -403,13 +422,7 @@ class ImgPro_CDN_Admin {
                     <div>
                         <h3><?php esc_html_e('ImgPro Cloud Account', 'bandwidth-saver'); ?></h3>
                         <p class="imgpro-cdn-account-plan">
-                            <?php
-                            printf(
-                                /* translators: %s: Pricing amount (e.g., $29/month) */
-                                esc_html__('%s • Active Subscription', 'bandwidth-saver'),
-                                esc_html($pricing['formatted']['full'] ?? '$29/month')
-                            );
-                            ?>
+                            <?php esc_html_e('Active Subscription', 'bandwidth-saver'); ?>
                         </p>
                     </div>
                 </div>
@@ -1012,6 +1025,9 @@ class ImgPro_CDN_Admin {
         }
 
         if (isset($body['url'])) {
+            // Set transient flag to check for payment on next page load (expires in 1 hour)
+            set_transient('imgpro_cdn_pending_payment', true, HOUR_IN_SECONDS);
+
             wp_send_json_success(['checkout_url' => $body['url']]);
         } else {
             wp_send_json_error([
@@ -1048,6 +1064,7 @@ class ImgPro_CDN_Admin {
         $settings['cloud_api_key'] = $body['api_key'];
         $settings['cloud_email'] = $body['email'];
         $settings['cloud_tier'] = $body['tier'];
+        $settings['enabled'] = true; // Auto-enable plugin after successful subscription
 
         return update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
     }

@@ -98,9 +98,9 @@ class ImgPro_CDN_Admin {
                     'genericError' => __('An error occurred. Please try again.', 'bandwidth-saver'),
                     'settingsError' => __('Failed to update settings', 'bandwidth-saver'),
                     // Confirm dialogs
-                    'recoverConfirm' => __('This will recover your subscription details from ImgPro Cloud. Continue?', 'bandwidth-saver'),
+                    'recoverConfirm' => __('This will recover your subscription details. Continue?', 'bandwidth-saver'),
                     // Success messages
-                    'subscriptionActivated' => __('Subscription activated successfully! Your ImgPro Cloud account is now active.', 'bandwidth-saver'),
+                    'subscriptionActivated' => __('Subscription activated successfully!', 'bandwidth-saver'),
                     'checkoutCancelled' => __('Checkout was cancelled. You can try again anytime.', 'bandwidth-saver'),
                     // Toggle UI text
                     'cdnActiveHeading' => __('Image CDN is Active', 'bandwidth-saver'),
@@ -157,11 +157,15 @@ class ImgPro_CDN_Admin {
         $merged = array_merge($existing, $validated);
 
         // Handle unchecked checkboxes (HTML doesn't submit unchecked values)
-        if (!isset($input['enabled'])) {
-            $merged['enabled'] = false;
-        }
-        if (!isset($input['debug_mode'])) {
-            $merged['debug_mode'] = false;
+        // Only apply this logic when the form that contains these fields was submitted
+        // The toggle form includes a hidden '_has_enabled_field' marker to identify it
+        if (isset($input['_has_enabled_field'])) {
+            if (!isset($input['enabled'])) {
+                $merged['enabled'] = false;
+            }
+            if (!isset($input['debug_mode'])) {
+                $merged['debug_mode'] = false;
+            }
         }
 
         // Auto-disable plugin if the ACTIVE mode is not properly configured
@@ -214,7 +218,7 @@ class ImgPro_CDN_Admin {
             ?>
             <div class="notice notice-success is-dismissible">
                 <p>
-                    <strong><?php esc_html_e('Subscription activated! Your ImgPro Cloud account is now active.', 'bandwidth-saver'); ?></strong>
+                    <strong><?php esc_html_e('Subscription activated successfully!', 'bandwidth-saver'); ?></strong>
                 </p>
             </div>
             <?php
@@ -314,7 +318,7 @@ class ImgPro_CDN_Admin {
             <div class="imgpro-cdn-tab-content">
                 <?php
                 if ($current_tab === 'cloud') {
-                    // ImgPro Cloud tab
+                    // Managed tab
                     $this->render_cloud_tab($settings);
                 } else {
                     // Self-Host (Cloudflare) tab
@@ -364,6 +368,8 @@ class ImgPro_CDN_Admin {
         <form method="post" action="options.php" class="imgpro-cdn-toggle-form">
             <?php settings_fields('imgpro_cdn_settings_group'); ?>
             <input type="hidden" name="imgpro_cdn_settings[setup_mode]" value="<?php echo esc_attr($setup_mode); ?>">
+            <?php // Marker to identify this form contains the enabled checkbox ?>
+            <input type="hidden" name="imgpro_cdn_settings[_has_enabled_field]" value="1">
 
             <div class="imgpro-cdn-main-toggle-card <?php echo $is_enabled ? 'is-active' : 'is-inactive'; ?>">
                 <div class="imgpro-cdn-toggle-wrapper">
@@ -409,7 +415,7 @@ class ImgPro_CDN_Admin {
      * Render account status (Cloud subscription info - shown regardless of active tab)
      */
     private function render_account_status($settings) {
-        // Only show if user has ImgPro Cloud subscription
+        // Only show if user has Managed subscription
         $has_subscription = ($settings['cloud_tier'] === 'active');
         if (!$has_subscription) {
             return;
@@ -421,7 +427,7 @@ class ImgPro_CDN_Admin {
                 <div class="imgpro-cdn-account-info">
                     <span class="imgpro-cdn-account-icon dashicons dashicons-cloud"></span>
                     <div>
-                        <h3><?php esc_html_e('ImgPro Cloud Account', 'bandwidth-saver'); ?></h3>
+                        <h3><?php esc_html_e('Cloud Account', 'bandwidth-saver'); ?></h3>
                         <p class="imgpro-cdn-account-plan">
                             <?php esc_html_e('Active Subscription', 'bandwidth-saver'); ?>
                         </p>
@@ -434,33 +440,6 @@ class ImgPro_CDN_Admin {
                     </button>
                 </div>
             </div>
-        </div>
-        <?php
-    }
-
-    /**
-     * Render dual-backend warning notice (when both Cloud and Cloudflare are configured)
-     */
-    private function render_dual_backend_warning($settings, $current_tab) {
-        // Check if both modes are configured
-        $has_cloud = ($settings['cloud_tier'] === 'active');
-        $has_cloudflare = !empty($settings['cdn_url']) && !empty($settings['worker_url']);
-        $both_configured = $has_cloud && $has_cloudflare;
-
-        if (!$both_configured) {
-            return;
-        }
-
-        ?>
-        <div class="imgpro-cdn-mode-warning">
-            <span class="dashicons dashicons-info"></span>
-            <?php
-            printf(
-                /* translators: %s: active mode name (ImgPro Cloud or Self-Hosted) */
-                esc_html__('You have both backends configured. Currently using %s. Switch tabs to change.', 'bandwidth-saver'),
-                '<strong>' . ($current_tab === 'cloud' ? esc_html__('ImgPro Cloud', 'bandwidth-saver') : esc_html__('Self-Hosted', 'bandwidth-saver')) . '</strong>'
-            );
-            ?>
         </div>
         <?php
     }
@@ -496,7 +475,7 @@ class ImgPro_CDN_Admin {
                class="nav-tab <?php echo $current_tab === 'cloud' ? 'nav-tab-active' : ''; ?> <?php echo $current_tab === 'cloud' ? ($is_enabled ? 'is-enabled' : 'is-disabled') : ''; ?>"
                data-tab="cloud">
                 <span class="dashicons dashicons-cloud"></span>
-                <?php esc_html_e('ImgPro Cloud', 'bandwidth-saver'); ?>
+                <?php esc_html_e('Managed', 'bandwidth-saver'); ?>
             </a>
             <a href="<?php echo esc_url($cloudflare_url); ?>"
                class="nav-tab <?php echo $current_tab === 'cloudflare' ? 'nav-tab-active' : ''; ?> <?php echo $current_tab === 'cloudflare' ? ($is_enabled ? 'is-enabled' : 'is-disabled') : ''; ?>"
@@ -509,127 +488,7 @@ class ImgPro_CDN_Admin {
     }
 
     /**
-     * Render status bar (when mode is configured)
-     */
-    private function render_status_bar($settings, $current_tab) {
-        // Only show status bar on Cloudflare tab (Cloud has account card instead)
-        if ($current_tab !== 'cloudflare') {
-            return;
-        }
-
-        $is_configured = !empty($settings['cdn_url']) && !empty($settings['worker_url']);
-        if (!$is_configured) {
-            return; // Don't show status bar if not configured
-        }
-
-        ?>
-        <div class="imgpro-cdn-status-bar status-active">
-            <div class="imgpro-cdn-status-bar-content">
-                <span class="imgpro-cdn-status-badge">
-                    <span class="dashicons dashicons-yes-alt"></span>
-                    <?php esc_html_e('Configured', 'bandwidth-saver'); ?>
-                </span>
-                <span class="imgpro-cdn-status-mode"><?php esc_html_e('Cloudflare', 'bandwidth-saver'); ?></span>
-            </div>
-        </div>
-        <?php
-    }
-
-    /**
-     * Render empty state (no mode selected)
-     */
-    private function render_empty_state() {
-        $settings = $this->settings->get_all();
-
-        // Check if user has either mode configured
-        $has_cloud = ($settings['cloud_tier'] === 'active');
-        $has_cloudflare = !empty($settings['cdn_url']) && !empty($settings['worker_url']);
-
-        // If user has both configured, show mode selection with warning
-        if ($has_cloud && $has_cloudflare) {
-            ?>
-            <div class="imgpro-cdn-mode-switch">
-                <div class="imgpro-cdn-mode-switch-header">
-                    <span class="dashicons dashicons-warning"></span>
-                    <div>
-                        <h2><?php esc_html_e('Multiple Configurations Detected', 'bandwidth-saver'); ?></h2>
-                        <p><?php esc_html_e('You have both ImgPro Cloud and Cloudflare configured. Choose which backend you want to use:', 'bandwidth-saver'); ?></p>
-                    </div>
-                </div>
-
-                <div class="imgpro-cdn-mode-options">
-                    <a href="<?php echo esc_url(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud')); ?>"
-                       class="imgpro-cdn-mode-option">
-                        <span class="dashicons dashicons-cloud"></span>
-                        <strong><?php esc_html_e('Use ImgPro Cloud', 'bandwidth-saver'); ?></strong>
-                        <span class="imgpro-cdn-mode-status imgpro-cdn-mode-ready"><?php esc_html_e('Ready', 'bandwidth-saver'); ?></span>
-                    </a>
-
-                    <a href="<?php echo esc_url(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloudflare')); ?>"
-                       class="imgpro-cdn-mode-option">
-                        <span class="dashicons dashicons-admin-generic"></span>
-                        <strong><?php esc_html_e('Use Self-Hosted', 'bandwidth-saver'); ?></strong>
-                        <span class="imgpro-cdn-mode-status imgpro-cdn-mode-ready"><?php esc_html_e('Ready', 'bandwidth-saver'); ?></span>
-                    </a>
-                </div>
-            </div>
-            <?php
-            return;
-        }
-
-        // Standard empty state - no configuration
-        ?>
-        <div class="imgpro-cdn-empty-state">
-            <div class="imgpro-cdn-empty-state-hero">
-                <h2><?php esc_html_e('Speed Up Your Website Globally', 'bandwidth-saver'); ?></h2>
-                <p class="imgpro-cdn-empty-state-description">
-                    <?php esc_html_e('Deliver optimized images from edge locations worldwide. Reduce bandwidth costs by up to 80%.', 'bandwidth-saver'); ?>
-                </p>
-            </div>
-
-            <div class="imgpro-cdn-setup-options">
-                <div class="imgpro-cdn-setup-option imgpro-cdn-setup-cloud">
-                    <div class="imgpro-cdn-setup-icon">
-                        <span class="dashicons dashicons-cloud"></span>
-                    </div>
-                    <h3><?php esc_html_e('ImgPro Cloud', 'bandwidth-saver'); ?></h3>
-                    <p><?php esc_html_e('Fully managed CDN. No setup required.', 'bandwidth-saver'); ?></p>
-                    <ul class="imgpro-cdn-setup-benefits">
-                        <li><span class="dashicons dashicons-yes"></span> <?php esc_html_e('Ready in 2 minutes', 'bandwidth-saver'); ?></li>
-                        <li><span class="dashicons dashicons-yes"></span> <?php esc_html_e('Unlimited images', 'bandwidth-saver'); ?></li>
-                        <li><span class="dashicons dashicons-yes"></span> <?php esc_html_e('Auto WebP/AVIF', 'bandwidth-saver'); ?></li>
-                    </ul>
-                    <a href="<?php echo esc_url(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud')); ?>"
-                       class="button button-primary button-large imgpro-cdn-setup-btn">
-                        <?php esc_html_e('Get Started', 'bandwidth-saver'); ?>
-                    </a>
-                    <p class="imgpro-cdn-setup-price"><?php esc_html_e('$29/month', 'bandwidth-saver'); ?></p>
-                </div>
-
-                <div class="imgpro-cdn-setup-option imgpro-cdn-setup-cloudflare">
-                    <div class="imgpro-cdn-setup-icon">
-                        <span class="dashicons dashicons-admin-generic"></span>
-                    </div>
-                    <h3><?php esc_html_e('Your Cloudflare', 'bandwidth-saver'); ?></h3>
-                    <p><?php esc_html_e('Deploy to your own infrastructure.', 'bandwidth-saver'); ?></p>
-                    <ul class="imgpro-cdn-setup-benefits">
-                        <li><span class="dashicons dashicons-yes"></span> <?php esc_html_e('Full control', 'bandwidth-saver'); ?></li>
-                        <li><span class="dashicons dashicons-yes"></span> <?php esc_html_e('Transparent costs', 'bandwidth-saver'); ?></li>
-                        <li><span class="dashicons dashicons-yes"></span> <?php esc_html_e('Open source', 'bandwidth-saver'); ?></li>
-                    </ul>
-                    <a href="<?php echo esc_url(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloudflare')); ?>"
-                       class="button button-secondary button-large imgpro-cdn-setup-btn">
-                        <?php esc_html_e('Self-Host', 'bandwidth-saver'); ?>
-                    </a>
-                    <p class="imgpro-cdn-setup-price"><?php esc_html_e('Free plugin', 'bandwidth-saver'); ?></p>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
-
-    /**
-     * Get pricing from ImgPro Cloud API with caching
+     * Get pricing from Managed API with caching
      *
      * @return array Pricing information with fallback
      */
@@ -679,7 +538,7 @@ class ImgPro_CDN_Admin {
     }
 
     /**
-     * Render ImgPro Cloud tab
+     * Render Managed tab
      */
     private function render_cloud_tab($settings) {
         $is_configured = !empty($settings['cloud_api_key']);
@@ -695,31 +554,31 @@ class ImgPro_CDN_Admin {
                 <?php // No Subscription - Conversion-focused CTA ?>
                 <div class="imgpro-cdn-subscribe-hero">
                     <div class="imgpro-cdn-subscribe-content">
-                        <h2><?php esc_html_e('Activate Your Global Image CDN', 'bandwidth-saver'); ?></h2>
+                        <h2><?php esc_html_e('Deliver Images from Cloudflare\'s Global Network', 'bandwidth-saver'); ?></h2>
                         <p class="imgpro-cdn-subscribe-description">
-                            <?php esc_html_e('Start delivering faster images and reducing bandwidth costs in minutes.', 'bandwidth-saver'); ?>
+                            <?php esc_html_e('Serve your WordPress images from 300+ edge locations worldwide. No configuration needed.', 'bandwidth-saver'); ?>
                         </p>
 
                         <div class="imgpro-cdn-subscribe-features">
                             <div class="imgpro-cdn-feature">
-                                <span class="dashicons dashicons-performance"></span>
+                                <span class="dashicons dashicons-admin-site-alt3"></span>
                                 <div>
-                                    <strong><?php esc_html_e('Faster Page Loads', 'bandwidth-saver'); ?></strong>
-                                    <p><?php esc_html_e('Edge caching worldwide', 'bandwidth-saver'); ?></p>
+                                    <strong><?php esc_html_e('Global Edge Network', 'bandwidth-saver'); ?></strong>
+                                    <p><?php esc_html_e('Images load fast everywhere', 'bandwidth-saver'); ?></p>
                                 </div>
                             </div>
                             <div class="imgpro-cdn-feature">
-                                <span class="dashicons dashicons-chart-line"></span>
+                                <span class="dashicons dashicons-database"></span>
                                 <div>
-                                    <strong><?php esc_html_e('Lower Costs', 'bandwidth-saver'); ?></strong>
-                                    <p><?php esc_html_e('Reduce bandwidth up to 80%', 'bandwidth-saver'); ?></p>
+                                    <strong><?php esc_html_e('Zero Egress Fees', 'bandwidth-saver'); ?></strong>
+                                    <p><?php esc_html_e('Cloudflare R2 advantage', 'bandwidth-saver'); ?></p>
                                 </div>
                             </div>
                             <div class="imgpro-cdn-feature">
-                                <span class="dashicons dashicons-images-alt2"></span>
+                                <span class="dashicons dashicons-yes-alt"></span>
                                 <div>
-                                    <strong><?php esc_html_e('Auto Optimization', 'bandwidth-saver'); ?></strong>
-                                    <p><?php esc_html_e('WebP, AVIF, resizing', 'bandwidth-saver'); ?></p>
+                                    <strong><?php esc_html_e('Works with Everything', 'bandwidth-saver'); ?></strong>
+                                    <p><?php esc_html_e('Any theme, plugin, or builder', 'bandwidth-saver'); ?></p>
                                 </div>
                             </div>
                         </div>
@@ -1048,7 +907,7 @@ class ImgPro_CDN_Admin {
             update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
         }
 
-        // Call ImgPro Cloud billing API
+        // Call Managed billing API
         $response = wp_remote_post('https://cloud.wp.img.pro/api/checkout', [
             'headers' => ['Content-Type' => 'application/json'],
             'body' => wp_json_encode([
@@ -1093,7 +952,7 @@ class ImgPro_CDN_Admin {
     }
 
     /**
-     * Recover account details from ImgPro Cloud
+     * Recover account details from Managed
      */
     private function recover_account() {
         $site_url = get_site_url();

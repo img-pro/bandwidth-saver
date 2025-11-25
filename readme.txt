@@ -26,7 +26,7 @@ Deliver images from Cloudflare's global network. Save bandwidth costs with free-
 = Key Benefits =
 
 * **Free Tier Compatible** - Most sites pay $0/month
-* **One-Click Setup** - Start with ImgPro Cloud instantly
+* **One-Click Setup** - Start with Managed instantly
 * **Works with WordPress** - No fighting against WP image handling
 * **Works with ANY Plugin** - Use your favorite optimization plugins
 * **Global Edge Delivery** - Fast worldwide
@@ -61,11 +61,11 @@ Deliver images from Cloudflare's global network. Save bandwidth costs with free-
 
 = Quick Start (Recommended) =
 
-**ImgPro Cloud** - No Cloudflare account needed:
+**Managed** - No Cloudflare account needed:
 
 1. Install and activate the plugin
 2. Go to Settings → Image CDN
-3. Click "Use ImgPro Cloud"
+3. Click "Use Managed"
 4. Done! Your images now load from Cloudflare's global edge network
 
 Free while in beta. No credit card required.
@@ -133,8 +133,8 @@ This plugin is specifically designed for Cloudflare R2. If you need a different 
 
 == Screenshots ==
 
-1. Welcome screen - Choose between ImgPro Cloud (one-click setup) or self-hosted Cloudflare
-2. Active state - Plugin enabled with ImgPro Cloud, images delivered globally
+1. Welcome screen - Choose between Managed (one-click setup) or self-hosted Cloudflare
+2. Active state - Plugin enabled with Managed, images delivered globally
 3. Settings interface - Configure CDN domains, allowed domains, and excluded paths
 
 == Changelog ==
@@ -153,9 +153,9 @@ This plugin is specifically designed for Cloudflare R2. If you need a different 
 * Overall code quality improvements following WordPress standards
 
 = 0.1.0 (2025-11-10) =
-* NEW: ImgPro Cloud quick-start option with one-click setup
-* NEW: Empty state with two setup options (ImgPro Cloud vs self-hosted Cloudflare)
-* NEW: Cloud usage indicator when using ImgPro Cloud domains
+* NEW: Managed quick-start option with one-click setup
+* NEW: Empty state with two setup options (Managed vs self-hosted Cloudflare)
+* NEW: Cloud usage indicator when using Managed domains
 * NEW: Direct link to worker setup guide for self-hosting
 * UI: Complete admin interface redesign with modern design system
 * UI: Comprehensive accessibility improvements (ARIA labels, focus states, keyboard navigation)
@@ -225,7 +225,7 @@ This plugin is specifically designed for Cloudflare R2. If you need a different 
 Security improvements, better Cloud mode reliability, and faster image loading. Recommended update for all users.
 
 = 0.1.0 =
-Major update with ImgPro Cloud quick-start, completely redesigned admin interface, and comprehensive accessibility improvements. Recommended for all users.
+Major update with Managed quick-start, completely redesigned admin interface, and comprehensive accessibility improvements. Recommended for all users.
 
 = 0.0.8 =
 CRITICAL UPDATE: Fixes JavaScript errors preventing images from displaying. Update immediately if experiencing blank/hidden images.

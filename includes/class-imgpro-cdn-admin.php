@@ -279,6 +279,7 @@ class ImgPro_CDN_Admin {
                 }
 
                 update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
+                $this->settings->clear_cache(); // Ensure subsequent reads get fresh data
             }
         }
 
@@ -850,6 +851,7 @@ class ImgPro_CDN_Admin {
         // Save settings - update_option returns false if value unchanged OR on error
         // Since we checked for unchanged value above, false here means actual error
         $result = update_option(ImgPro_CDN_Settings::OPTION_KEY, $current_settings);
+        $this->settings->clear_cache(); // Ensure subsequent reads get fresh data
 
         if ($result !== false) {
             $message = $enabled
@@ -905,6 +907,7 @@ class ImgPro_CDN_Admin {
             $settings['cloud_api_key'] = $api_key;
             $settings['setup_mode'] = 'cloud';
             update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
+            $this->settings->clear_cache(); // Ensure subsequent reads get fresh data
         }
 
         // Call Managed billing API
@@ -998,7 +1001,10 @@ class ImgPro_CDN_Admin {
         $settings['cloud_tier'] = in_array($body['tier'], ['active', 'cancelled', 'none'], true) ? $body['tier'] : 'none';
         $settings['enabled'] = true; // Auto-enable plugin after successful subscription
 
-        return update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
+        $result = update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
+        $this->settings->clear_cache(); // Ensure subsequent reads get fresh data
+
+        return $result;
     }
 
     /**

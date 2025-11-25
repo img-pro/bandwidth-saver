@@ -614,14 +614,17 @@ class ImgPro_CDN_Rewriter {
         $parsed = wp_parse_url($normalized);
 
         // wp_parse_url() can return false on severely malformed URLs
+        // Cache the original URL to avoid re-parsing on subsequent calls
         if ($parsed === false || !is_array($parsed) || empty($parsed['host']) || empty($parsed['path'])) {
+            $this->url_cache[$cache_key] = $url;
             return $url;
         }
 
         $cdn_domain = $this->settings->get('cdn_url');
 
-        // Guard against empty domain - return original URL
+        // Guard against empty domain - cache and return original URL
         if (empty($cdn_domain)) {
+            $this->url_cache[$cache_key] = $url;
             return $url;
         }
 
@@ -660,14 +663,17 @@ class ImgPro_CDN_Rewriter {
         $parsed = wp_parse_url($normalized);
 
         // wp_parse_url() can return false on severely malformed URLs
+        // Cache the original URL to avoid re-parsing on subsequent calls
         if ($parsed === false || !is_array($parsed) || empty($parsed['host']) || empty($parsed['path'])) {
+            $this->url_cache[$cache_key] = $url;
             return $url;
         }
 
         $worker_domain = $this->settings->get('worker_url');
 
-        // Guard against empty domain - return original URL
+        // Guard against empty domain - cache and return original URL
         if (empty($worker_domain)) {
+            $this->url_cache[$cache_key] = $url;
             return $url;
         }
 

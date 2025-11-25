@@ -257,6 +257,18 @@ class ImgPro_CDN_Settings {
     }
 
     /**
+     * Clear the settings cache
+     *
+     * Call this after direct update_option() calls to ensure
+     * subsequent get_all() calls return fresh data.
+     *
+     * @return void
+     */
+    public function clear_cache() {
+        $this->settings = null;
+    }
+
+    /**
      * Get default value for a setting
      *
      * @param string $key Setting key

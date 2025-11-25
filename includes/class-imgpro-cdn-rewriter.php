@@ -501,14 +501,6 @@ class ImgPro_CDN_Rewriter {
             return false;
         }
 
-        // Excluded paths (with wildcard support)
-        $excluded = $this->settings->get('excluded_paths', []);
-        foreach ($excluded as $pattern) {
-            if (!empty($pattern) && $this->matches_pattern($url, $pattern)) {
-                return false;
-            }
-        }
-
         // Allowed domains (with subdomain support)
         $allowed = $this->settings->get('allowed_domains', []);
         if (!empty($allowed)) {

@@ -8,29 +8,100 @@
 
     $(document).ready(function() {
 
-        // Handle "Use ImgPro Cloud" button
-        $('#imgpro-cdn-use-cloud').on('click', function() {
+        // Handle Subscribe button (Stripe checkout)
+        $('#imgpro-cdn-subscribe').on('click', function() {
             const $button = $(this);
             const originalText = $button.text();
 
             // Disable button and show loading state
-            $button.prop('disabled', true).text('Setting up...');
+            $button.prop('disabled', true).text('Creating checkout session...');
 
-            // AJAX request to save ImgPro Cloud domains
+            // AJAX request to create Stripe checkout session
             $.ajax({
-                url: ajaxurl,
+                url: imgproCdnAdmin.ajaxUrl,
                 type: 'POST',
                 data: {
-                    action: 'imgpro_cdn_use_cloud',
-                    nonce: imgproCdnAdmin.nonce
+                    action: 'imgpro_cdn_checkout',
+                    nonce: imgproCdnAdmin.checkoutNonce
+                },
+                success: function(response) {
+                    if (response.success && response.data.checkout_url) {
+                        // Redirect to Stripe checkout
+                        window.location.href = response.data.checkout_url;
+                    } else {
+                        $button.prop('disabled', false).text(originalText);
+                        alert(response.data.message || 'Failed to create checkout session');
+                    }
+                },
+                error: function() {
+                    $button.prop('disabled', false).text(originalText);
+                    alert('An error occurred. Please try again.');
+                }
+            });
+        });
+
+        // Handle Recover Account button
+        $('#imgpro-cdn-recover-account').on('click', function() {
+            const $button = $(this);
+            const originalText = $button.text();
+
+            if (!confirm('This will recover your subscription details from ImgPro Cloud. Continue?')) {
+                return;
+            }
+
+            // Disable button and show loading state
+            $button.prop('disabled', true).text('Recovering...');
+
+            // AJAX request to recover account
+            $.ajax({
+                url: imgproCdnAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'imgpro_cdn_recover_account',
+                    nonce: imgproCdnAdmin.checkoutNonce
                 },
                 success: function(response) {
                     if (response.success) {
-                        // Reload page to show configured state
-                        window.location.reload();
+                        // Reload page to show active subscription
+                        showNotice('success', response.data.message);
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1000);
                     } else {
                         $button.prop('disabled', false).text(originalText);
-                        alert(response.data.message || 'Failed to configure ImgPro Cloud');
+                        alert(response.data.message || 'Failed to recover account');
+                    }
+                },
+                error: function() {
+                    $button.prop('disabled', false).text(originalText);
+                    alert('An error occurred. Please try again.');
+                }
+            });
+        });
+
+        // Handle Manage Subscription button
+        $('#imgpro-cdn-manage-subscription').on('click', function() {
+            const $button = $(this);
+            const originalText = $button.text();
+
+            // Disable button and show loading state
+            $button.prop('disabled', true).text('Opening portal...');
+
+            // AJAX request to create customer portal session
+            $.ajax({
+                url: imgproCdnAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'imgpro_cdn_manage_subscription',
+                    nonce: imgproCdnAdmin.checkoutNonce
+                },
+                success: function(response) {
+                    if (response.success && response.data.portal_url) {
+                        // Redirect to Stripe customer portal
+                        window.location.href = response.data.portal_url;
+                    } else {
+                        $button.prop('disabled', false).text(originalText);
+                        alert(response.data.message || 'Failed to open customer portal');
                     }
                 },
                 error: function() {
@@ -43,7 +114,7 @@
         // Handle main toggle switch
         $('#enabled').on('change', function() {
             const $toggle = $(this);
-            const $card = $('.imgpro-cdn-toggle-card');
+            const $card = $('.imgpro-cdn-main-toggle-card');
             const isEnabled = $toggle.is(':checked');
 
             // Add loading state
@@ -51,7 +122,7 @@
 
             // AJAX request to update setting
             $.ajax({
-                url: ajaxurl,
+                url: imgproCdnAdmin.ajaxUrl || ajaxurl,
                 type: 'POST',
                 data: {
                     action: 'imgpro_cdn_toggle_enabled',
@@ -84,36 +155,44 @@
 
         // Update toggle card UI
         function updateToggleUI($card, isEnabled) {
-            const $icon = $card.find('.imgpro-cdn-toggle-icon .dashicons');
-            const $content = $card.find('.imgpro-cdn-toggle-content');
+            const $icon = $card.find('.imgpro-cdn-toggle-status .dashicons');
+            const $heading = $card.find('.imgpro-cdn-toggle-status h3');
+            const $description = $card.find('.imgpro-cdn-toggle-description');
             const $checkbox = $('#enabled');
+            const $activeTab = $('.imgpro-cdn-nav-tabs .nav-tab-active');
 
             if (isEnabled) {
-                // Update card background
-                $card.removeClass('imgpro-cdn-toggle-disabled').addClass('imgpro-cdn-toggle-active');
+                // Update card state classes
+                $card.removeClass('is-inactive').addClass('is-active');
 
                 // Update icon
-                $icon.removeClass('dashicons-warning').addClass('dashicons-yes-alt');
+                $icon.removeClass('dashicons-marker').addClass('dashicons-yes-alt');
 
                 // Update text
-                $content.find('h2').text(imgproCdnAdmin.i18n.activeLabel);
-                $content.find('p').html(imgproCdnAdmin.i18n.activeMessage);
+                $heading.text('Image CDN is Active');
+                $description.text('Images are being optimized and delivered from edge locations worldwide.');
 
                 // Update ARIA attribute for screen readers
                 $checkbox.attr('aria-checked', 'true');
+
+                // Update active tab color to green
+                $activeTab.removeClass('is-disabled').addClass('is-enabled');
             } else {
-                // Update card background
-                $card.removeClass('imgpro-cdn-toggle-active').addClass('imgpro-cdn-toggle-disabled');
+                // Update card state classes
+                $card.removeClass('is-active').addClass('is-inactive');
 
                 // Update icon
-                $icon.removeClass('dashicons-yes-alt').addClass('dashicons-warning');
+                $icon.removeClass('dashicons-yes-alt').addClass('dashicons-marker');
 
                 // Update text
-                $content.find('h2').text(imgproCdnAdmin.i18n.disabledLabel);
-                $content.find('p').text(imgproCdnAdmin.i18n.disabledMessage);
+                $heading.text('Image CDN is Inactive');
+                $description.text('Turn on to optimize images and reduce bandwidth costs.');
 
                 // Update ARIA attribute for screen readers
                 $checkbox.attr('aria-checked', 'false');
+
+                // Update active tab color to amber
+                $activeTab.removeClass('is-enabled').addClass('is-disabled');
             }
         }
 
@@ -132,6 +211,38 @@
                 });
             }, 3000);
         }
+
+        // Handle payment success/cancel query params
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('payment') === 'success') {
+            showNotice('success', 'Subscription activated successfully! Your ImgPro Cloud account is now active.');
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname + '?page=imgpro-cdn-settings&tab=cloud');
+        } else if (urlParams.get('payment') === 'cancelled') {
+            showNotice('warning', 'Checkout was cancelled. You can try again anytime.');
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname + '?page=imgpro-cdn-settings&tab=cloud');
+        }
+
+        // Handle Advanced Settings collapse/expand
+        $('.imgpro-cdn-advanced-toggle').on('click', function() {
+            const $button = $(this);
+            const contentId = $button.attr('aria-controls');
+            const $content = $('#' + contentId);
+            const isExpanded = $button.attr('aria-expanded') === 'true';
+
+            if (isExpanded) {
+                // Collapse
+                $button.attr('aria-expanded', 'false');
+                $content.attr('hidden', '');
+                $content.slideUp(200);
+            } else {
+                // Expand
+                $button.attr('aria-expanded', 'true');
+                $content.removeAttr('hidden');
+                $content.slideDown(200);
+            }
+        });
 
     });
 

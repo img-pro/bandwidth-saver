@@ -24,10 +24,19 @@ class ImgPro_CDN_Settings {
      */
     private $defaults = [
         'enabled'         => false,
+        'setup_mode'      => '',  // 'cloud' or 'cloudflare' - persists user choice
+
+        // Cloud mode settings
+        'cloud_api_key'   => '',
+        'cloud_email'     => '',
+        'cloud_tier'      => 'none',  // 'none', 'active', 'cancelled'
+
+        // Cloudflare mode settings
         'cdn_url'         => '',
         'worker_url'      => '',
+
+        // Common settings
         'allowed_domains' => [],
-        'excluded_paths'  => [],
         'debug_mode'      => false,
     ];
 
@@ -106,9 +115,31 @@ class ImgPro_CDN_Settings {
     public function validate($settings) {
         $validated = [];
 
+        // Setup mode (string: 'cloud' or 'cloudflare')
+        if (isset($settings['setup_mode'])) {
+            $mode = sanitize_text_field($settings['setup_mode']);
+            if (in_array($mode, ['cloud', 'cloudflare'], true)) {
+                $validated['setup_mode'] = $mode;
+            }
+        }
+
         // Enabled (boolean)
         if (isset($settings['enabled'])) {
             $validated['enabled'] = (bool) $settings['enabled'];
+        }
+
+        // Cloud-specific fields
+        if (isset($settings['cloud_api_key'])) {
+            $validated['cloud_api_key'] = sanitize_text_field($settings['cloud_api_key']);
+        }
+        if (isset($settings['cloud_email'])) {
+            $validated['cloud_email'] = sanitize_email($settings['cloud_email']);
+        }
+        if (isset($settings['cloud_tier'])) {
+            $tier = sanitize_text_field($settings['cloud_tier']);
+            if (in_array($tier, ['none', 'active', 'cancelled'], true)) {
+                $validated['cloud_tier'] = $tier;
+            }
         }
 
         // CDN URL (domain only)
@@ -132,20 +163,6 @@ class ImgPro_CDN_Settings {
             $validated['allowed_domains'] = array_map(
                 [$this, 'sanitize_domain'],
                 array_filter($domains)
-            );
-        }
-
-        // Excluded paths (array)
-        if (isset($settings['excluded_paths'])) {
-            if (is_string($settings['excluded_paths'])) {
-                $paths = array_map('trim', explode("\n", $settings['excluded_paths']));
-            } else {
-                $paths = (array) $settings['excluded_paths'];
-            }
-
-            $validated['excluded_paths'] = array_map(
-                'sanitize_text_field',
-                array_filter($paths)
             );
         }
 

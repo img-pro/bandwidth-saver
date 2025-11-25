@@ -1,6 +1,6 @@
 === Bandwidth Saver: Image CDN ===
 Contributors: imgpro
-Tags: cdn, images, cloudflare, performance, speed, bandwidth, optimization, cache, r2, edge
+Tags: cdn, images, cloudflare, performance, bandwidth
 Requires at least: 6.2
 Tested up to: 6.8
 Requires PHP: 7.4

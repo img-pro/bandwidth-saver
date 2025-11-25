@@ -366,6 +366,19 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
+        // Handle other client errors (400, 404, 422, etc.)
+        if ($status_code >= 400 && $status_code < 500) {
+            ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $data], 'portal');
+            $error_message = isset($data['error']) && is_string($data['error'])
+                ? $data['error']
+                : __('Unable to access subscription portal. Please try again or contact support.', 'bandwidth-saver');
+            wp_send_json_error([
+                'message' => $error_message,
+                'code' => 'client_error'
+            ]);
+            return;
+        }
+
         // Handle server errors
         if ($status_code >= 500) {
             ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $data], 'portal');
@@ -376,14 +389,16 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
+        // Success - check for portal URL
         if (!empty($data['portal_url'])) {
             wp_send_json_success([
                 'portal_url' => $data['portal_url']
             ]);
         } else {
+            // Unexpected response format (success status but no portal_url)
             ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $data], 'portal');
             wp_send_json_error([
-                'message' => $data['error'] ?? __('Failed to create portal session', 'bandwidth-saver'),
+                'message' => __('Failed to create portal session. Please try again.', 'bandwidth-saver'),
                 'code' => 'invalid_response'
             ]);
         }

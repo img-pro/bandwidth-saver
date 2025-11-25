@@ -12,6 +12,8 @@ release.sh
 README.md
 .dev
 .claude
+.svn-credentials
+.svnignore
 
 # OS files
 .DS_Store

@@ -27,6 +27,12 @@ echo ""
 
 # Extract version from main plugin file
 VERSION=$(grep "^ \* Version:" "${PLUGIN_DIR}/imgpro-cdn.php" | head -1 | awk '{print $3}' | tr -d '\r\n ')
+
+if [ -z "$VERSION" ]; then
+    echo -e "${RED}ERROR: Could not extract version from imgpro-cdn.php${NC}"
+    exit 1
+fi
+
 echo -e "Plugin Version: ${YELLOW}${VERSION}${NC}"
 echo ""
 
@@ -97,3 +103,85 @@ echo -e "📍 Location: ${YELLOW}${OUTPUT_DIR}/${NC}"
 echo ""
 echo -e "${GREEN}Ready for WordPress.org submission!${NC}"
 echo ""
+
+# Ask if user wants to deploy to SVN
+echo -e "${YELLOW}Deploy to WordPress.org SVN?${NC}"
+echo -e "1) Yes - Deploy to SVN"
+echo -e "2) No - Just create zip"
+read -p "Choose [1-2]: " DEPLOY_CHOICE
+
+if [ "$DEPLOY_CHOICE" = "1" ]; then
+    echo ""
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${GREEN}  SVN Deployment${NC}"
+    echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    # Get SVN directory
+    DEFAULT_SVN_DIR="${HOME}/svn/bandwidth-saver"
+    read -p "SVN directory path [${DEFAULT_SVN_DIR}]: " SVN_DIR
+    SVN_DIR="${SVN_DIR:-$DEFAULT_SVN_DIR}"
+
+    # Check if SVN directory exists
+    if [ ! -d "$SVN_DIR" ]; then
+        echo -e "${YELLOW}→${NC} SVN directory not found. Checking out..."
+        mkdir -p "$(dirname "$SVN_DIR")"
+        svn checkout https://plugins.svn.wordpress.org/bandwidth-saver/ "$SVN_DIR"
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}ERROR: Failed to checkout SVN repository${NC}"
+            exit 1
+        fi
+    fi
+
+    echo -e "${YELLOW}→${NC} Cleaning trunk..."
+    rm -rf "${SVN_DIR}/trunk/"*
+
+    echo -e "${YELLOW}→${NC} Extracting files to trunk..."
+    unzip -q "${OUTPUT_DIR}/${PLUGIN_SLUG}.zip" -d "/tmp/"
+    rsync -av --delete "/tmp/${FOLDER_NAME}/" "${SVN_DIR}/trunk/" > /dev/null
+    rm -rf "/tmp/${FOLDER_NAME}"
+
+    # Copy WordPress.org assets if they exist (replace mode)
+    if [ -d "${PLUGIN_DIR}/assets/.wordpress-org" ]; then
+        echo -e "${YELLOW}→${NC} Syncing WordPress.org assets (replace mode)..."
+        rsync -av --delete "${PLUGIN_DIR}/assets/.wordpress-org/" "${SVN_DIR}/assets/" > /dev/null
+        echo -e "  ${GREEN}✓${NC} Assets synced (banners, icons, screenshots)"
+    fi
+
+    echo -e "${YELLOW}→${NC} Checking SVN status..."
+    cd "$SVN_DIR"
+
+    # Add new files in trunk
+    svn status trunk | grep "^?" | awk '{print $2}' | xargs -I {} svn add {} 2>/dev/null || true
+
+    # Remove deleted files in trunk
+    svn status trunk | grep "^!" | awk '{print $2}' | xargs -I {} svn rm {} 2>/dev/null || true
+
+    # Add new files in assets
+    svn status assets | grep "^?" | awk '{print $2}' | xargs -I {} svn add {} 2>/dev/null || true
+
+    # Remove deleted files in assets
+    svn status assets | grep "^!" | awk '{print $2}' | xargs -I {} svn rm {} 2>/dev/null || true
+
+    echo ""
+    echo -e "${YELLOW}SVN Status:${NC}"
+    svn status
+
+    echo ""
+    echo -e "${YELLOW}Next steps:${NC}"
+    echo -e "1. Review changes: ${GREEN}cd ${SVN_DIR} && svn status${NC}"
+    echo -e "2. Commit all changes: ${GREEN}svn ci -m \"Update to version ${VERSION}\"${NC}"
+    echo -e "3. Create tag: ${GREEN}svn cp trunk tags/${VERSION}${NC}"
+    echo -e "4. Commit tag: ${GREEN}svn ci -m \"Tagging version ${VERSION}\"${NC}"
+    echo ""
+    echo -e "${YELLOW}Or use these combined commands:${NC}"
+    echo -e "${GREEN}cd ${SVN_DIR} && svn ci -m \"Update to version ${VERSION}\" && svn cp trunk tags/${VERSION} && svn ci -m \"Tagging version ${VERSION}\"${NC}"
+    echo ""
+    echo -e "${YELLOW}Assets included:${NC}"
+    if [ -d "${SVN_DIR}/assets" ] && [ "$(ls -A ${SVN_DIR}/assets 2>/dev/null)" ]; then
+        ls -1 "${SVN_DIR}/assets" | sed 's/^/  • /'
+    else
+        echo -e "  ${YELLOW}(none)${NC}"
+    fi
+    echo ""
+fi

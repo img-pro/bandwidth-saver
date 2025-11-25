@@ -1,6 +1,6 @@
 /**
  * ImgPro Admin JavaScript
- * @version 0.1.1
+ * @version 0.1.2
  */
 
 (function($) {
@@ -14,7 +14,7 @@
             const originalText = $button.text();
 
             // Disable button and show loading state
-            $button.prop('disabled', true).text('Creating checkout session...');
+            $button.prop('disabled', true).text(imgproCdnAdmin.i18n.creatingCheckout);
 
             // AJAX request to create Stripe checkout session
             $.ajax({
@@ -30,12 +30,12 @@
                         window.location.href = response.data.checkout_url;
                     } else {
                         $button.prop('disabled', false).text(originalText);
-                        alert(response.data.message || 'Failed to create checkout session');
+                        alert(response.data.message || imgproCdnAdmin.i18n.checkoutError);
                     }
                 },
                 error: function() {
                     $button.prop('disabled', false).text(originalText);
-                    alert('An error occurred. Please try again.');
+                    alert(imgproCdnAdmin.i18n.genericError);
                 }
             });
         });
@@ -45,12 +45,12 @@
             const $button = $(this);
             const originalText = $button.text();
 
-            if (!confirm('This will recover your subscription details from ImgPro Cloud. Continue?')) {
+            if (!confirm(imgproCdnAdmin.i18n.recoverConfirm)) {
                 return;
             }
 
             // Disable button and show loading state
-            $button.prop('disabled', true).text('Recovering...');
+            $button.prop('disabled', true).text(imgproCdnAdmin.i18n.recovering);
 
             // AJAX request to recover account
             $.ajax({
@@ -69,12 +69,12 @@
                         }, 1000);
                     } else {
                         $button.prop('disabled', false).text(originalText);
-                        alert(response.data.message || 'Failed to recover account');
+                        alert(response.data.message || imgproCdnAdmin.i18n.recoverError);
                     }
                 },
                 error: function() {
                     $button.prop('disabled', false).text(originalText);
-                    alert('An error occurred. Please try again.');
+                    alert(imgproCdnAdmin.i18n.genericError);
                 }
             });
         });
@@ -85,7 +85,7 @@
             const originalText = $button.text();
 
             // Disable button and show loading state
-            $button.prop('disabled', true).text('Opening portal...');
+            $button.prop('disabled', true).text(imgproCdnAdmin.i18n.openingPortal);
 
             // AJAX request to create customer portal session
             $.ajax({
@@ -101,12 +101,12 @@
                         window.location.href = response.data.portal_url;
                     } else {
                         $button.prop('disabled', false).text(originalText);
-                        alert(response.data.message || 'Failed to open customer portal');
+                        alert(response.data.message || imgproCdnAdmin.i18n.portalError);
                     }
                 },
                 error: function() {
                     $button.prop('disabled', false).text(originalText);
-                    alert('An error occurred. Please try again.');
+                    alert(imgproCdnAdmin.i18n.genericError);
                 }
             });
         });
@@ -139,13 +139,13 @@
                     } else {
                         // Revert toggle
                         $toggle.prop('checked', !isEnabled);
-                        showNotice('error', response.data.message || 'Failed to update settings');
+                        showNotice('error', response.data.message || imgproCdnAdmin.i18n.settingsError);
                     }
                 },
                 error: function() {
                     // Revert toggle
                     $toggle.prop('checked', !isEnabled);
-                    showNotice('error', 'An error occurred. Please try again.');
+                    showNotice('error', imgproCdnAdmin.i18n.genericError);
                 },
                 complete: function() {
                     $card.removeClass('imgpro-cdn-loading');
@@ -169,8 +169,8 @@
                 $icon.removeClass('dashicons-marker').addClass('dashicons-yes-alt');
 
                 // Update text
-                $heading.text('Image CDN is Active');
-                $description.text('Images are being optimized and delivered from edge locations worldwide.');
+                $heading.text(imgproCdnAdmin.i18n.cdnActiveHeading);
+                $description.text(imgproCdnAdmin.i18n.cdnActiveDesc);
 
                 // Update ARIA attribute for screen readers
                 $checkbox.attr('aria-checked', 'true');
@@ -185,8 +185,8 @@
                 $icon.removeClass('dashicons-yes-alt').addClass('dashicons-marker');
 
                 // Update text
-                $heading.text('Image CDN is Inactive');
-                $description.text('Turn on to optimize images and reduce bandwidth costs.');
+                $heading.text(imgproCdnAdmin.i18n.cdnInactiveHeading);
+                $description.text(imgproCdnAdmin.i18n.cdnInactiveDesc);
 
                 // Update ARIA attribute for screen readers
                 $checkbox.attr('aria-checked', 'false');
@@ -215,11 +215,11 @@
         // Handle payment success/cancel query params
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('payment') === 'success') {
-            showNotice('success', 'Subscription activated successfully! Your ImgPro Cloud account is now active.');
+            showNotice('success', imgproCdnAdmin.i18n.subscriptionActivated);
             // Clean up URL
             window.history.replaceState({}, document.title, window.location.pathname + '?page=imgpro-cdn-settings&tab=cloud');
         } else if (urlParams.get('payment') === 'cancelled') {
-            showNotice('warning', 'Checkout was cancelled. You can try again anytime.');
+            showNotice('warning', imgproCdnAdmin.i18n.checkoutCancelled);
             // Clean up URL
             window.history.replaceState({}, document.title, window.location.pathname + '?page=imgpro-cdn-settings&tab=cloud');
         }

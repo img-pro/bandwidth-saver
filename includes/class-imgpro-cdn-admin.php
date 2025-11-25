@@ -3,7 +3,7 @@
  * ImgPro Admin Interface
  *
  * @package ImgPro_CDN
- * @version 0.1.1
+ * @version 0.1.2
  */
 
 if (!defined('ABSPATH')) {
@@ -87,6 +87,26 @@ class ImgPro_CDN_Admin {
                     'disabledLabel' => __('Disabled', 'bandwidth-saver'),
                     'activeMessage' => '<span class="imgpro-cdn-nowrap imgpro-cdn-hide-mobile">' . __('Images load faster worldwide.', 'bandwidth-saver') . '</span> <span class="imgpro-cdn-nowrap">' . __('Your bandwidth costs are being reduced.', 'bandwidth-saver') . '</span>',
                     'disabledMessage' => __('Enable to cut bandwidth costs and speed up image delivery globally', 'bandwidth-saver'),
+                    // Button states
+                    'creatingCheckout' => __('Creating checkout session...', 'bandwidth-saver'),
+                    'recovering' => __('Recovering...', 'bandwidth-saver'),
+                    'openingPortal' => __('Opening portal...', 'bandwidth-saver'),
+                    // Error messages
+                    'checkoutError' => __('Failed to create checkout session', 'bandwidth-saver'),
+                    'recoverError' => __('Failed to recover account', 'bandwidth-saver'),
+                    'portalError' => __('Failed to open customer portal', 'bandwidth-saver'),
+                    'genericError' => __('An error occurred. Please try again.', 'bandwidth-saver'),
+                    'settingsError' => __('Failed to update settings', 'bandwidth-saver'),
+                    // Confirm dialogs
+                    'recoverConfirm' => __('This will recover your subscription details from ImgPro Cloud. Continue?', 'bandwidth-saver'),
+                    // Success messages
+                    'subscriptionActivated' => __('Subscription activated successfully! Your ImgPro Cloud account is now active.', 'bandwidth-saver'),
+                    'checkoutCancelled' => __('Checkout was cancelled. You can try again anytime.', 'bandwidth-saver'),
+                    // Toggle UI text
+                    'cdnActiveHeading' => __('Image CDN is Active', 'bandwidth-saver'),
+                    'cdnInactiveHeading' => __('Image CDN is Inactive', 'bandwidth-saver'),
+                    'cdnActiveDesc' => __('Images are being optimized and delivered from edge locations worldwide.', 'bandwidth-saver'),
+                    'cdnInactiveDesc' => __('Turn on to optimize images and reduce bandwidth costs.', 'bandwidth-saver'),
                 ]
             ]);
         }
@@ -146,7 +166,9 @@ class ImgPro_CDN_Admin {
 
         // Auto-disable plugin if no backend is configured
         $has_cloud = ($merged['cloud_tier'] === 'active');
-        $has_cloudflare = !empty($merged['cdn_url']) && !empty($merged['worker_url']);
+        // For Cloudflare mode, check if setup_mode is 'cloudflare' AND URLs are configured
+        // (Cloud mode URLs are auto-generated, so we only check setup_mode for cloud)
+        $has_cloudflare = ($merged['setup_mode'] === 'cloudflare' && !empty($merged['cdn_url']) && !empty($merged['worker_url']));
 
         if (!$has_cloud && !$has_cloudflare) {
             $merged['enabled'] = false;
@@ -166,56 +188,27 @@ class ImgPro_CDN_Admin {
             return;
         }
 
-        // Handle payment success - attempt recovery with retry
+        // Handle payment success - attempt recovery (single attempt, no blocking)
         $payment_status = filter_input(INPUT_GET, 'payment', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
         if ($payment_status === 'success') {
-            $max_retries = 3;
-            $retry_delay = 2; // seconds
-            $recovered = false;
-
-            // Try multiple times with delay (webhook might take a moment)
-            for ($i = 0; $i < $max_retries; $i++) {
-                if ($i > 0) {
-                    sleep($retry_delay);
-                }
-
-                if ($this->recover_account()) {
-                    $recovered = true;
-                    break;
-                }
-            }
-
-            if ($recovered) {
-                ?>
-                <div class="notice notice-success is-dismissible">
-                    <p>
-                        <strong><?php esc_html_e('Subscription activated! Your ImgPro Cloud account is now active.', 'bandwidth-saver'); ?></strong>
-                    </p>
-                </div>
-                <?php
-
-                // Redirect to clean URL (remove payment param) and reload to show updated UI
+            // Single recovery attempt without blocking
+            if ($this->recover_account()) {
+                // Success! Redirect to show activation
+                delete_transient('imgpro_cdn_pending_payment');
                 $clean_url = admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&activated=1');
-                ?>
-                <script>
-                window.location.href = '<?php echo esc_js($clean_url); ?>';
-                </script>
-                <?php
+                wp_safe_redirect($clean_url);
+                exit;
             } else {
+                // Webhook hasn't processed yet - show pending notice
+                // Transient check on next page load will retry
                 ?>
-                <div class="notice notice-warning is-dismissible">
+                <div class="notice notice-info is-dismissible">
                     <p>
                         <strong><?php esc_html_e('Payment received! Your account is being set up.', 'bandwidth-saver'); ?></strong>
-                        <?php esc_html_e('Please refresh the page in a few seconds.', 'bandwidth-saver'); ?>
+                        <?php esc_html_e('Refresh this page in a few seconds to complete activation.', 'bandwidth-saver'); ?>
                     </p>
                 </div>
-                <script>
-                // Auto-refresh after 3 seconds
-                setTimeout(function() {
-                    window.location.reload();
-                }, 3000);
-                </script>
                 <?php
             }
         }
@@ -269,7 +262,13 @@ class ImgPro_CDN_Admin {
 
         // Handle mode switching (when user clicks tabs)
         if (isset($_GET['switch_mode'])) {
-            $new_mode = sanitize_text_field($_GET['switch_mode']);
+            // Verify nonce for CSRF protection
+            $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
+            if (!wp_verify_nonce($nonce, 'imgpro_switch_mode')) {
+                wp_die(esc_html__('Security check failed', 'bandwidth-saver'));
+            }
+
+            $new_mode = sanitize_text_field(wp_unslash($_GET['switch_mode']));
             if (in_array($new_mode, ['cloud', 'cloudflare'], true)) {
                 // Update setup_mode
                 $settings['setup_mode'] = $new_mode;
@@ -278,7 +277,7 @@ class ImgPro_CDN_Admin {
         }
 
         // Determine current tab from URL or settings
-        $current_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : '';
+        $current_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : '';
 
         // If no tab specified, use setup_mode from settings or default to 'cloud'
         if (empty($current_tab)) {
@@ -474,9 +473,17 @@ class ImgPro_CDN_Admin {
         $has_cloud = ($settings['cloud_tier'] === 'active');
         $has_cloudflare = !empty($settings['cdn_url']) && !empty($settings['worker_url']);
 
-        // Always add switch_mode parameter when clicking tabs
-        $cloud_url = $base_url . '&tab=cloud&switch_mode=cloud';
-        $cloudflare_url = $base_url . '&tab=cloudflare&switch_mode=cloudflare';
+        // Always add switch_mode parameter with nonce when clicking tabs
+        $cloud_url = add_query_arg([
+            'tab' => 'cloud',
+            'switch_mode' => 'cloud',
+            '_wpnonce' => wp_create_nonce('imgpro_switch_mode')
+        ], $base_url);
+        $cloudflare_url = add_query_arg([
+            'tab' => 'cloudflare',
+            'switch_mode' => 'cloudflare',
+            '_wpnonce' => wp_create_nonce('imgpro_switch_mode')
+        ], $base_url);
 
         // Get enabled state for color coding the active tab
         $is_enabled = $settings['enabled'] ?? false;
@@ -648,20 +655,25 @@ class ImgPro_CDN_Admin {
             ],
         ];
 
-        // Parse response
+        // Parse and validate response
         if (is_wp_error($response)) {
             // Cache fallback for 1 minute on error
-            set_transient('imgpro_cdn_pricing', $fallback, 60);
+            set_transient('imgpro_cdn_pricing', $fallback, MINUTE_IN_SECONDS);
             return $fallback;
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
-        $pricing = $body ?? $fallback;
+
+        // Validate pricing response structure
+        if (!is_array($body) || !isset($body['amount']) || !isset($body['currency'])) {
+            set_transient('imgpro_cdn_pricing', $fallback, MINUTE_IN_SECONDS);
+            return $fallback;
+        }
 
         // Cache for 5 minutes
-        set_transient('imgpro_cdn_pricing', $pricing, 300);
+        set_transient('imgpro_cdn_pricing', $body, 5 * MINUTE_IN_SECONDS);
 
-        return $pricing;
+        return $body;
     }
 
     /**
@@ -901,6 +913,27 @@ class ImgPro_CDN_Admin {
         <?php
     }
 
+    /**
+     * Handle API error with action hook for logging
+     *
+     * Fires an action hook that developers can use to log errors.
+     * This follows WordPress patterns by using hooks instead of direct logging.
+     *
+     * @param WP_Error|array $error Error object or error data
+     * @param string $context Context for logging (e.g., 'checkout', 'recovery')
+     * @return void
+     */
+    private function handle_api_error($error, $context = '') {
+        /**
+         * Fires when an API error occurs.
+         *
+         * @since 1.0.0
+         *
+         * @param WP_Error|array $error Error object or error data.
+         * @param string $context Context for the error (e.g., 'checkout', 'recovery').
+         */
+        do_action('imgpro_cdn_api_error', $error, $context);
+    }
 
     public function ajax_toggle_enabled() {
         // Verify nonce
@@ -1006,6 +1039,7 @@ class ImgPro_CDN_Admin {
         ]);
 
         if (is_wp_error($response)) {
+            $this->handle_api_error($response, 'checkout');
             wp_send_json_error([
                 'message' => __('Failed to connect to billing service. Please try again.', 'bandwidth-saver')
             ]);
@@ -1030,6 +1064,7 @@ class ImgPro_CDN_Admin {
 
             wp_send_json_success(['checkout_url' => $body['url']]);
         } else {
+            $this->handle_api_error(['status' => $status_code, 'body' => $body], 'checkout');
             wp_send_json_error([
                 'message' => __('Failed to create checkout session. Please try again.', 'bandwidth-saver')
             ]);
@@ -1049,21 +1084,38 @@ class ImgPro_CDN_Admin {
         ]);
 
         if (is_wp_error($response)) {
+            $this->handle_api_error($response, 'recovery');
             return false;
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
-        if (empty($body['api_key'])) {
+        // Validate response structure
+        if (!is_array($body)) {
+            $this->handle_api_error(['error' => 'Invalid response structure'], 'recovery');
             return false;
         }
 
-        // Update settings with recovered data
+        // Validate required fields with proper types
+        if (empty($body['api_key']) || !is_string($body['api_key'])) {
+            $this->handle_api_error(['error' => 'Missing or invalid api_key'], 'recovery');
+            return false;
+        }
+        if (empty($body['email']) || !is_string($body['email'])) {
+            $this->handle_api_error(['error' => 'Missing or invalid email'], 'recovery');
+            return false;
+        }
+        if (empty($body['tier']) || !is_string($body['tier'])) {
+            $this->handle_api_error(['error' => 'Missing or invalid tier'], 'recovery');
+            return false;
+        }
+
+        // Update settings with validated and sanitized data
         $settings = $this->settings->get_all();
         $settings['setup_mode'] = 'cloud';
-        $settings['cloud_api_key'] = $body['api_key'];
-        $settings['cloud_email'] = $body['email'];
-        $settings['cloud_tier'] = $body['tier'];
+        $settings['cloud_api_key'] = sanitize_text_field($body['api_key']);
+        $settings['cloud_email'] = sanitize_email($body['email']);
+        $settings['cloud_tier'] = in_array($body['tier'], ['active', 'cancelled', 'none'], true) ? $body['tier'] : 'none';
         $settings['enabled'] = true; // Auto-enable plugin after successful subscription
 
         return update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
@@ -1134,6 +1186,7 @@ class ImgPro_CDN_Admin {
         ]);
 
         if (is_wp_error($response)) {
+            $this->handle_api_error($response, 'portal');
             wp_send_json_error([
                 'message' => __('Failed to connect to billing service. Please try again.', 'bandwidth-saver')
             ]);
@@ -1148,6 +1201,7 @@ class ImgPro_CDN_Admin {
                 'portal_url' => $data['portal_url']
             ]);
         } else {
+            $this->handle_api_error(['status' => wp_remote_retrieve_response_code($response), 'body' => $data], 'portal');
             wp_send_json_error([
                 'message' => $data['error'] ?? __('Failed to create portal session', 'bandwidth-saver')
             ]);

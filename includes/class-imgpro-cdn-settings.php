@@ -3,7 +3,7 @@
  * ImgPro CDN Settings Management
  *
  * @package ImgPro_CDN
- * @version 0.1.1
+ * @version 0.1.2
  */
 
 if (!defined('ABSPATH')) {
@@ -72,6 +72,16 @@ class ImgPro_CDN_Settings {
      */
     public function get($key, $default = null) {
         $settings = $this->get_all();
+
+        // Auto-configure Cloud mode URLs
+        if ($settings['setup_mode'] === 'cloud') {
+            if ($key === 'cdn_url') {
+                return 'wp.img.pro';
+            }
+            if ($key === 'worker_url') {
+                return 'fetch.wp.img.pro';
+            }
+        }
 
         if (isset($settings[$key])) {
             return $settings[$key];

@@ -1,6 +1,6 @@
 /**
  * ImgPro CDN - Frontend JavaScript
- * @version 0.1.1
+ * @version 0.1.2
  *
  * Handles:
  * 1. Image error fallback (CDN → Origin)
@@ -295,6 +295,85 @@ var ImgProCDN = (function() {
                 }
             }
         });
+
+        // Attach load/error handlers to existing images with data-imgpro-cdn attribute
+        // (CSP-compliant, replaces inline onload/onerror handlers)
+        function attachImageHandlers(img) {
+            if (img.dataset.imgproCdn === '1' && !img.dataset.handlersAttached) {
+                img.dataset.handlersAttached = '1';
+
+                if (debugMode) {
+                    console.log('ImgPro: Attaching handlers to', img.src, 'complete:', img.complete, 'naturalWidth:', img.naturalWidth);
+                }
+
+                // Check if image already loaded (sync from cache)
+                if (img.complete) {
+                    if (img.naturalWidth > 0) {
+                        // Image loaded successfully
+                        img.classList.add('imgpro-loaded');
+                        if (debugMode) {
+                            console.log('ImgPro: Image already loaded successfully', img.src);
+                        }
+                    } else {
+                        // Image failed to load
+                        if (debugMode) {
+                            console.log('ImgPro: Image already failed, triggering error handler', img.src);
+                        }
+                        handleError(img);
+                    }
+                } else {
+                    // Add load handler for images still loading
+                    img.addEventListener('load', function() {
+                        if (debugMode) {
+                            console.log('ImgPro: Load event fired for', this.src);
+                        }
+                        this.classList.add('imgpro-loaded');
+                    });
+
+                    // Add error handler
+                    img.addEventListener('error', function() {
+                        if (debugMode) {
+                            console.log('ImgPro: Error event fired for', this.src);
+                        }
+                        handleError(this);
+                    });
+                }
+            }
+        }
+
+        // Attach to all existing images
+        var imagesWithAttr = document.querySelectorAll('img[data-imgpro-cdn]');
+        if (debugMode) {
+            console.log('ImgPro: Found', imagesWithAttr.length, 'images with data-imgpro-cdn attribute');
+        }
+        imagesWithAttr.forEach(attachImageHandlers);
+
+        // Watch for new images added via AJAX/dynamic content
+        if ('MutationObserver' in window) {
+            var imageObserver = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            // Check if node itself is an image
+                            if (node.tagName === 'IMG' && node.dataset.imgproCdn === '1') {
+                                attachImageHandlers(node);
+                            }
+                            // Check children
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll('img[data-imgpro-cdn]').forEach(attachImageHandlers);
+                            }
+                        }
+                    });
+                });
+            });
+
+            if (document.body) {
+                imageObserver.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            }
+        }
     }
 
     // Initialize on load

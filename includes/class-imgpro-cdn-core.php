@@ -3,7 +3,7 @@
  * ImgPro CDN Core
  *
  * @package ImgPro_CDN
- * @version 0.1.1
+ * @version 0.1.2
  */
 
 if (!defined('ABSPATH')) {

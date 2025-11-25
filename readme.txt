@@ -4,7 +4,7 @@ Tags: cdn, images, cloudflare, performance, bandwidth
 Requires at least: 6.2
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.1.1
+Stable tag: 0.1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -139,6 +139,19 @@ This plugin is specifically designed for Cloudflare R2. If you need a different 
 
 == Changelog ==
 
+= 0.1.2 (2025-01-25) =
+* Security hardening: Enhanced protection against potential security vulnerabilities
+* Improved compatibility with strict Content Security Policy (CSP) requirements
+* Fixed issue where plugin would disable itself after saving settings in Cloud mode
+* Improved image loading reliability for images already in browser cache
+* Better handling of dynamically loaded images (infinite scroll, AJAX)
+* Faster payment processing - removed unnecessary waiting periods
+* More reliable image URL caching to prevent conflicts
+* Full translation support - now ready for localization in any language
+* Cloud mode now automatically configures itself - no manual setup needed
+* Better error reporting for developers using WordPress hooks
+* Overall code quality improvements following WordPress standards
+
 = 0.1.0 (2025-11-10) =
 * NEW: ImgPro Cloud quick-start option with one-click setup
 * NEW: Empty state with two setup options (ImgPro Cloud vs self-hosted Cloudflare)
@@ -207,6 +220,9 @@ This plugin is specifically designed for Cloudflare R2. If you need a different 
 * Compatible with all WordPress optimization plugins
 
 == Upgrade Notice ==
+
+= 0.1.2 =
+Security improvements, better Cloud mode reliability, and faster image loading. Recommended update for all users.
 
 = 0.1.0 =
 Major update with ImgPro Cloud quick-start, completely redesigned admin interface, and comprehensive accessibility improvements. Recommended for all users.

@@ -3,7 +3,7 @@
  * ImgPro URL Rewriter
  *
  * @package ImgPro_CDN
- * @version 0.1.1
+ * @version 0.1.2
  */
 
 if (!defined('ABSPATH')) {
@@ -302,11 +302,8 @@ class ImgPro_CDN_Rewriter {
         // Store worker domain for CDN warming
         $attributes['data-worker-domain'] = esc_attr($this->settings->get('worker_url'));
 
-        // Add onload handler to add 'imgpro-loaded' class for CSS transitions
-        $attributes['onload'] = "this.classList.add('imgpro-loaded')";
-
-        // Add simple onerror handler that calls external JavaScript function
-        $attributes['onerror'] = 'ImgProCDN.handleError(this)';
+        // Add data attribute for event delegation (CSP-compliant, no inline handlers)
+        $attributes['data-imgpro-cdn'] = '1';
 
         return $attributes;
     }
@@ -400,11 +397,8 @@ class ImgPro_CDN_Rewriter {
             // Store worker domain to identify plugin-managed images
             $processor->set_attribute('data-worker-domain', $worker_domain);
 
-            // Add onload handler
-            $processor->set_attribute('onload', "this.classList.add('imgpro-loaded')");
-
-            // Add simple onerror handler that calls external JavaScript function
-            $processor->set_attribute('onerror', 'ImgProCDN.handleError(this)');
+            // Add data attribute for event delegation (CSP-compliant, no inline handlers)
+            $processor->set_attribute('data-imgpro-cdn', '1');
         }
 
         return $processor->get_updated_html();
@@ -451,13 +445,10 @@ class ImgPro_CDN_Rewriter {
             $worker_domain = esc_attr($this->settings->get('worker_url'));
             $data_attr = sprintf(' data-worker-domain="%s"', $worker_domain);
 
-            // Add onload handler to add 'imgpro-loaded' class for CSS transitions
-            $onload = " onload=\"this.classList.add('imgpro-loaded')\"";
+            // Add data attribute for event delegation (CSP-compliant)
+            $data_cdn_attr = ' data-imgpro-cdn="1"';
 
-            // Add simple onerror handler that calls external JavaScript function
-            $onerror = ' onerror="ImgProCDN.handleError(this)"';
-
-            return sprintf('<%s%s%ssrc="%s"%s%s%s%s>', $tag_name, $before ? ' ' . $before : '', $before ? '' : ' ', esc_url($cdn_url), $data_attr, $onload, $onerror, $after);
+            return sprintf('<%s%s%ssrc="%s"%s%s%s>', $tag_name, $before ? ' ' . $before : '', $before ? '' : ' ', esc_url($cdn_url), $data_attr, $data_cdn_attr, $after);
         }, $content);
     }
 
@@ -612,12 +603,14 @@ class ImgPro_CDN_Rewriter {
      * @return string CDN URL or original URL if conversion fails
      */
     private function build_cdn_url($url) {
-        $cache_key = 'cdn_' . md5($url);
+        // Normalize first to ensure consistent cache keys
+        $normalized = $this->normalize_url($url);
+        $cache_key = 'cdn_' . md5($normalized);
+
         if (isset($this->url_cache[$cache_key])) {
             return $this->url_cache[$cache_key];
         }
 
-        $normalized = $this->normalize_url($url);
         $parsed = wp_parse_url($normalized);
 
         // wp_parse_url() can return false on severely malformed URLs
@@ -656,12 +649,14 @@ class ImgPro_CDN_Rewriter {
      * @return string Worker URL or original URL if conversion fails
      */
     private function build_worker_url($url) {
-        $cache_key = 'worker_' . md5($url);
+        // Normalize first to ensure consistent cache keys
+        $normalized = $this->normalize_url($url);
+        $cache_key = 'worker_' . md5($normalized);
+
         if (isset($this->url_cache[$cache_key])) {
             return $this->url_cache[$cache_key];
         }
 
-        $normalized = $this->normalize_url($url);
         $parsed = wp_parse_url($normalized);
 
         // wp_parse_url() can return false on severely malformed URLs

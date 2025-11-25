@@ -3,7 +3,7 @@
  * Plugin Name: Bandwidth Saver: Image CDN
  * Plugin URI: https://github.com/img-pro/bandwidth-saver
  * Description: Deliver images from Cloudflare's global network. Save bandwidth costs with free-tier friendly R2 storage and zero egress fees.
- * Version: 0.1.2
+ * Version: 0.1.3
  * Author: ImgPro
  * Author URI: https://img.pro
  * License: GPLv2 or later
@@ -46,7 +46,7 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
 
 // Define plugin constants
 if (!defined('IMGPRO_CDN_VERSION')) {
-    define('IMGPRO_CDN_VERSION', '0.1.2');
+    define('IMGPRO_CDN_VERSION', '0.1.3');
 }
 if (!defined('IMGPRO_CDN_PLUGIN_DIR')) {
     define('IMGPRO_CDN_PLUGIN_DIR', plugin_dir_path(__FILE__));
@@ -65,6 +65,7 @@ if (!defined('IMGPRO_CDN_PLUGIN_BASENAME')) {
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-settings.php';
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-rewriter.php';
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-admin.php';
+require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-admin-ajax.php';
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-core.php';
 
 // Initialize the plugin
@@ -77,6 +78,9 @@ register_deactivation_hook(__FILE__, ['ImgPro_CDN_Core', 'deactivate']);
 /**
  * Add version info to HTML output for easy production verification
  * Only adds on frontend when not in admin
+ *
+ * @since 0.1.0
+ * @return void
  */
 function imgpro_cdn_add_version_html() {
     if (!is_admin()) {
@@ -88,6 +92,9 @@ add_action('wp_footer', 'imgpro_cdn_add_version_html', 999);
 /**
  * Add version header to HTTP response for easy curl checking
  * Only adds on frontend when plugin is enabled
+ *
+ * @since 0.1.0
+ * @return void
  */
 function imgpro_cdn_add_version_header() {
     if (!is_admin() && !headers_sent()) {

@@ -3,25 +3,35 @@
  * ImgPro CDN Core
  *
  * @package ImgPro_CDN
- * @version 0.1.2
+ * @since   0.1.0
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * Main plugin orchestrator class
+ *
+ * Implements singleton pattern to manage plugin lifecycle and coordinate
+ * between Settings, Rewriter, and Admin components.
+ *
+ * @since 0.1.0
+ */
 class ImgPro_CDN_Core {
 
     /**
      * Plugin instance
      *
-     * @var ImgPro_CDN_Core
+     * @since 0.1.0
+     * @var ImgPro_CDN_Core|null
      */
     private static $instance = null;
 
     /**
      * Settings instance
      *
+     * @since 0.1.0
      * @var ImgPro_CDN_Settings
      */
     private $settings;
@@ -29,6 +39,7 @@ class ImgPro_CDN_Core {
     /**
      * Rewriter instance
      *
+     * @since 0.1.0
      * @var ImgPro_CDN_Rewriter
      */
     private $rewriter;
@@ -36,13 +47,23 @@ class ImgPro_CDN_Core {
     /**
      * Admin instance
      *
-     * @var ImgPro_CDN_Admin
+     * @since 0.1.0
+     * @var ImgPro_CDN_Admin|null
      */
     private $admin;
 
     /**
+     * Admin AJAX handler instance
+     *
+     * @since 0.1.2
+     * @var ImgPro_CDN_Admin_Ajax|null
+     */
+    private $admin_ajax;
+
+    /**
      * Get plugin instance
      *
+     * @since 0.1.0
      * @return ImgPro_CDN_Core
      */
     public static function get_instance() {
@@ -54,6 +75,8 @@ class ImgPro_CDN_Core {
 
     /**
      * Constructor
+     *
+     * @since 0.1.0
      */
     private function __construct() {
         $this->init();
@@ -61,6 +84,9 @@ class ImgPro_CDN_Core {
 
     /**
      * Initialize plugin
+     *
+     * @since 0.1.0
+     * @return void
      */
     private function init() {
         // Initialize settings
@@ -74,6 +100,9 @@ class ImgPro_CDN_Core {
         if (is_admin()) {
             $this->admin = new ImgPro_CDN_Admin($this->settings);
             $this->admin->register_hooks();
+
+            $this->admin_ajax = new ImgPro_CDN_Admin_Ajax($this->settings);
+            $this->admin_ajax->register_hooks();
         }
 
         // Register core hooks
@@ -82,6 +111,9 @@ class ImgPro_CDN_Core {
 
     /**
      * Register plugin hooks
+     *
+     * @since 0.1.0
+     * @return void
      */
     private function register_hooks() {
         // Add settings link to plugins page
@@ -96,6 +128,9 @@ class ImgPro_CDN_Core {
 
     /**
      * Enqueue frontend assets
+     *
+     * @since 0.1.0
+     * @return void
      */
     public function enqueue_frontend_assets() {
         // Only enqueue if CDN is enabled
@@ -157,8 +192,9 @@ class ImgPro_CDN_Core {
     /**
      * Add action links to plugins page
      *
-     * @param array $links Existing plugin action links
-     * @return array Modified plugin action links
+     * @since 0.1.0
+     * @param array $links Existing plugin action links.
+     * @return array Modified plugin action links.
      */
     public function add_action_links($links) {
         $settings_link = sprintf(
@@ -172,6 +208,9 @@ class ImgPro_CDN_Core {
 
     /**
      * Check plugin version and run upgrades if needed
+     *
+     * @since 0.1.0
+     * @return void
      */
     public function check_version() {
         $current_version = get_option('imgpro_cdn_version');
@@ -185,7 +224,9 @@ class ImgPro_CDN_Core {
     /**
      * Run upgrade routines
      *
-     * @param string|false $old_version Previous version number or false if new install
+     * @since 0.1.0
+     * @param string|false $old_version Previous version number or false if new install.
+     * @return void
      */
     private function upgrade($old_version) {
         // Future upgrade routines can be added here
@@ -205,6 +246,9 @@ class ImgPro_CDN_Core {
 
     /**
      * Plugin activation
+     *
+     * @since 0.1.0
+     * @return void
      */
     public static function activate() {
         // Check capabilities (shouldn't be needed but defense in depth)
@@ -223,6 +267,9 @@ class ImgPro_CDN_Core {
 
     /**
      * Plugin deactivation
+     *
+     * @since 0.1.0
+     * @return void
      */
     public static function deactivate() {
         // Check capabilities
@@ -239,7 +286,8 @@ class ImgPro_CDN_Core {
     /**
      * Get settings instance
      *
-     * @return ImgPro_CDN_Settings Settings instance
+     * @since 0.1.0
+     * @return ImgPro_CDN_Settings Settings instance.
      */
     public function get_settings() {
         return $this->settings;
@@ -248,7 +296,8 @@ class ImgPro_CDN_Core {
     /**
      * Get rewriter instance
      *
-     * @return ImgPro_CDN_Rewriter Rewriter instance
+     * @since 0.1.0
+     * @return ImgPro_CDN_Rewriter Rewriter instance.
      */
     public function get_rewriter() {
         return $this->rewriter;
@@ -257,7 +306,8 @@ class ImgPro_CDN_Core {
     /**
      * Get admin instance
      *
-     * @return ImgPro_CDN_Admin|null Admin instance or null if not in admin area
+     * @since 0.1.0
+     * @return ImgPro_CDN_Admin|null Admin instance or null if not in admin area.
      */
     public function get_admin() {
         return $this->admin;
@@ -265,13 +315,18 @@ class ImgPro_CDN_Core {
 
     /**
      * Prevent cloning
+     *
+     * @since 0.1.0
+     * @return void
      */
     private function __clone() {}
 
     /**
      * Prevent unserialization
      *
-     * @throws Exception When attempting to unserialize singleton
+     * @since 0.1.0
+     * @throws Exception When attempting to unserialize singleton.
+     * @return void
      */
     public function __wakeup() {
         throw new Exception('Cannot unserialize singleton');

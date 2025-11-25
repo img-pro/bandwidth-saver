@@ -1,11 +1,11 @@
 /**
- * ImgPro CDN - Frontend JavaScript
- * @version 0.1.2
+ * ImgPro CDN Frontend JavaScript
  *
- * Handles:
- * 1. Image error fallback (CDN → Origin)
- * 2. Lazy loading cache miss detection
- * 3. Worker warming for future requests
+ * Handles image error fallback, lazy loading cache miss detection,
+ * and worker warming for future requests.
+ *
+ * @package ImgPro_CDN
+ * @since   0.1.0
  */
 
 var ImgProCDN = (function() {

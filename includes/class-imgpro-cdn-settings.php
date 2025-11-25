@@ -3,34 +3,85 @@
  * ImgPro CDN Settings Management
  *
  * @package ImgPro_CDN
- * @version 0.1.2
+ * @since   0.1.0
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * Settings management class
+ *
+ * Handles storage, retrieval, validation, and sanitization of plugin settings.
+ *
+ * @since 0.1.0
+ */
 class ImgPro_CDN_Settings {
 
     /**
      * Option key for storing settings
+     *
+     * @since 0.1.0
+     * @var string
      */
     const OPTION_KEY = 'imgpro_cdn_settings';
 
     /**
+     * Setup mode: Cloud (Managed)
+     *
+     * @since 0.1.2
+     * @var string
+     */
+    const MODE_CLOUD = 'cloud';
+
+    /**
+     * Setup mode: Cloudflare (Self-Hosted)
+     *
+     * @since 0.1.2
+     * @var string
+     */
+    const MODE_CLOUDFLARE = 'cloudflare';
+
+    /**
+     * Subscription tier: None
+     *
+     * @since 0.1.2
+     * @var string
+     */
+    const TIER_NONE = 'none';
+
+    /**
+     * Subscription tier: Active
+     *
+     * @since 0.1.2
+     * @var string
+     */
+    const TIER_ACTIVE = 'active';
+
+    /**
+     * Subscription tier: Cancelled
+     *
+     * @since 0.1.2
+     * @var string
+     */
+    const TIER_CANCELLED = 'cancelled';
+
+    /**
      * Default settings
      *
+     * @since 0.1.0
      * @var array
      */
     private $defaults = [
         'enabled'            => false,
-        'previously_enabled' => false, // Remembers enabled state when switching to unconfigured tab
-        'setup_mode'         => '',    // 'cloud' or 'cloudflare' - persists user choice
+        'previously_enabled' => false,
+        'setup_mode'         => '',
 
         // Cloud mode settings
         'cloud_api_key'   => '',
         'cloud_email'     => '',
-        'cloud_tier'      => 'none',  // 'none', 'active', 'cancelled'
+        'cloud_tier'      => self::TIER_NONE,
 
         // Cloudflare mode settings
         'cdn_url'         => '',
@@ -44,6 +95,7 @@ class ImgPro_CDN_Settings {
     /**
      * Cached settings
      *
+     * @since 0.1.0
      * @var array|null
      */
     private $settings = null;
@@ -51,6 +103,7 @@ class ImgPro_CDN_Settings {
     /**
      * Get all settings
      *
+     * @since 0.1.0
      * @return array
      */
     public function get_all() {
@@ -67,19 +120,20 @@ class ImgPro_CDN_Settings {
     /**
      * Get specific setting
      *
-     * @param string $key     Setting key
-     * @param mixed  $default Default value if not found
+     * @since 0.1.0
+     * @param string $key     Setting key.
+     * @param mixed  $default Default value if not found.
      * @return mixed
      */
     public function get($key, $default = null) {
         $settings = $this->get_all();
 
         // Auto-configure Cloud mode URLs
-        if ($settings['setup_mode'] === 'cloud') {
-            if ($key === 'cdn_url') {
+        if (self::MODE_CLOUD === $settings['setup_mode']) {
+            if ('cdn_url' === $key) {
                 return 'wp.img.pro';
             }
-            if ($key === 'worker_url') {
+            if ('worker_url' === $key) {
                 return 'fetch.wp.img.pro';
             }
         }
@@ -94,7 +148,8 @@ class ImgPro_CDN_Settings {
     /**
      * Update settings
      *
-     * @param array $new_settings New settings to merge
+     * @since 0.1.0
+     * @param array $new_settings New settings to merge.
      * @return bool
      */
     public function update($new_settings) {
@@ -120,7 +175,8 @@ class ImgPro_CDN_Settings {
     /**
      * Validate settings
      *
-     * @param array $settings Settings to validate
+     * @since 0.1.0
+     * @param array $settings Settings to validate.
      * @return array
      */
     public function validate($settings) {
@@ -129,7 +185,7 @@ class ImgPro_CDN_Settings {
         // Setup mode (string: 'cloud' or 'cloudflare')
         if (isset($settings['setup_mode'])) {
             $mode = sanitize_text_field($settings['setup_mode']);
-            if (in_array($mode, ['cloud', 'cloudflare'], true)) {
+            if (in_array($mode, [self::MODE_CLOUD, self::MODE_CLOUDFLARE], true)) {
                 $validated['setup_mode'] = $mode;
             }
         }
@@ -153,7 +209,7 @@ class ImgPro_CDN_Settings {
         }
         if (isset($settings['cloud_tier'])) {
             $tier = sanitize_text_field($settings['cloud_tier']);
-            if (in_array($tier, ['none', 'active', 'cancelled'], true)) {
+            if (in_array($tier, [self::TIER_NONE, self::TIER_ACTIVE, self::TIER_CANCELLED], true)) {
                 $validated['cloud_tier'] = $tier;
             }
         }
@@ -202,8 +258,9 @@ class ImgPro_CDN_Settings {
      * Converts to lowercase
      * Validates basic domain format
      *
-     * @param string $domain Domain to sanitize
-     * @return string Sanitized domain or empty string if invalid
+     * @since 0.1.0
+     * @param string $domain Domain to sanitize.
+     * @return string Sanitized domain or empty string if invalid.
      */
     private function sanitize_domain($domain) {
         // Remove protocol
@@ -245,6 +302,7 @@ class ImgPro_CDN_Settings {
     /**
      * Reset to defaults
      *
+     * @since 0.1.0
      * @return bool
      */
     public function reset() {
@@ -255,6 +313,7 @@ class ImgPro_CDN_Settings {
     /**
      * Delete all settings
      *
+     * @since 0.1.0
      * @return bool
      */
     public function delete() {
@@ -268,6 +327,7 @@ class ImgPro_CDN_Settings {
      * Call this after direct update_option() calls to ensure
      * subsequent get_all() calls return fresh data.
      *
+     * @since 0.1.0
      * @return void
      */
     public function clear_cache() {
@@ -277,7 +337,8 @@ class ImgPro_CDN_Settings {
     /**
      * Get default value for a setting
      *
-     * @param string $key Setting key
+     * @since 0.1.0
+     * @param string $key Setting key.
      * @return mixed
      */
     public function get_default($key) {

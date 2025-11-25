@@ -229,17 +229,12 @@ class ImgPro_CDN_Core {
      * @return void
      */
     private function upgrade($old_version) {
-        // Future upgrade routines can be added here
-        // Example:
-        // if (version_compare($old_version, '1.0.0', '<')) {
-        //     $this->upgrade_to_1_0_0();
-        // }
-
         /**
          * Fires after ImgPro CDN upgrade routines have completed
          *
-         * @param string|false $old_version Previous version number or false if new install
-         * @param string $new_version New version number
+         * @since 0.1.0
+         * @param string|false $old_version Previous version number or false if new install.
+         * @param string       $new_version New version number.
          */
         do_action('imgpro_cdn_upgraded', $old_version, IMGPRO_CDN_VERSION);
     }

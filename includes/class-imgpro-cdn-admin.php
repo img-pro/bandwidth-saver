@@ -21,14 +21,6 @@ if (!defined('ABSPATH')) {
 class ImgPro_CDN_Admin {
 
     /**
-     * API base URL for cloud services
-     *
-     * @since 0.1.2
-     * @var string
-     */
-    const API_BASE_URL = 'https://cloud.wp.img.pro';
-
-    /**
      * Settings instance
      *
      * @since 0.1.0
@@ -57,24 +49,6 @@ class ImgPro_CDN_Admin {
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_notices', [$this, 'show_notices']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
-    }
-
-    /**
-     * Get API base URL with filter support
-     *
-     * @since 0.1.2
-     * @return string API base URL.
-     */
-    private function get_api_base_url() {
-        /**
-         * Filter the API base URL for cloud services.
-         *
-         * Useful for testing or staging environments.
-         *
-         * @since 0.1.2
-         * @param string $api_base_url The default API base URL.
-         */
-        return apply_filters('imgpro_cdn_api_base_url', self::API_BASE_URL);
     }
 
     /**
@@ -226,7 +200,7 @@ class ImgPro_CDN_Admin {
         $mode_is_changing = isset($input['setup_mode']) && ($input['setup_mode'] !== ($existing['setup_mode'] ?? ''));
 
         if ($enabled_field_submitted || $mode_is_changing) {
-            if (!$this->is_mode_valid($merged['setup_mode'] ?? '', $merged)) {
+            if (!ImgPro_CDN_Settings::is_mode_valid($merged['setup_mode'] ?? '', $merged)) {
                 $merged['enabled'] = false;
             }
         }
@@ -262,7 +236,7 @@ class ImgPro_CDN_Admin {
 
         if ('success' === $payment_status) {
             // Single recovery attempt without blocking
-            if ($this->recover_account()) {
+            if (ImgPro_CDN_Settings::recover_account($this->settings)) {
                 // Success! Redirect to show activation
                 delete_transient('imgpro_cdn_pending_payment');
                 $clean_url = admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&activated=1');
@@ -318,7 +292,7 @@ class ImgPro_CDN_Admin {
         // Check if there's a pending payment and attempt recovery
         if (get_transient('imgpro_cdn_pending_payment')) {
             // Attempt recovery (webhook might have completed)
-            if ($this->recover_account()) {
+            if (ImgPro_CDN_Settings::recover_account($this->settings)) {
                 delete_transient('imgpro_cdn_pending_payment');
                 // Redirect to show success
                 wp_safe_redirect(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&payment=success'));
@@ -341,7 +315,7 @@ class ImgPro_CDN_Admin {
             if (in_array($new_mode, [ImgPro_CDN_Settings::MODE_CLOUD, ImgPro_CDN_Settings::MODE_CLOUDFLARE], true)) {
                 $old_mode = $settings['setup_mode'] ?? '';
                 $was_enabled = $settings['enabled'] ?? false;
-                $new_mode_is_valid = $this->is_mode_valid($new_mode, $settings);
+                $new_mode_is_valid = ImgPro_CDN_Settings::is_mode_valid($new_mode, $settings);
 
                 // Update setup_mode
                 $settings['setup_mode'] = $new_mode;
@@ -606,7 +580,7 @@ class ImgPro_CDN_Admin {
         }
 
         // Fetch from API
-        $response = wp_remote_get($this->get_api_base_url() . '/api/pricing', [
+        $response = wp_remote_get(ImgPro_CDN_Settings::get_api_base_url() . '/api/pricing', [
             'timeout' => 5,
         ]);
 
@@ -931,108 +905,5 @@ class ImgPro_CDN_Admin {
             </table>
         </div>
         <?php
-    }
-
-    /**
-     * Check if a given mode has valid configuration
-     *
-     * Cloud mode requires an active subscription.
-     * Cloudflare mode requires both CDN and Worker URLs to be configured.
-     *
-     * @since 0.1.0
-     * @param string $mode     The mode to check ('cloud' or 'cloudflare').
-     * @param array  $settings The settings array to check against.
-     * @return bool True if the mode is properly configured.
-     */
-    private function is_mode_valid($mode, $settings) {
-        if (ImgPro_CDN_Settings::MODE_CLOUD === $mode) {
-            return ImgPro_CDN_Settings::TIER_ACTIVE === ($settings['cloud_tier'] ?? '');
-        } elseif (ImgPro_CDN_Settings::MODE_CLOUDFLARE === $mode) {
-            return !empty($settings['cdn_url']) && !empty($settings['worker_url']);
-        }
-        return false;
-    }
-
-    /**
-     * Handle API error with action hook for logging
-     *
-     * Fires an action hook that developers can use to log errors.
-     * This follows WordPress patterns by using hooks instead of direct logging.
-     *
-     * @since 0.1.0
-     * @param WP_Error|array $error   Error object or error data.
-     * @param string         $context Context for logging (e.g., 'checkout', 'recovery').
-     * @return void
-     */
-    private function handle_api_error($error, $context = '') {
-        /**
-         * Fires when an API error occurs.
-         *
-         * @since 0.1.0
-         *
-         * @param WP_Error|array $error Error object or error data.
-         * @param string $context Context for the error (e.g., 'checkout', 'recovery').
-         */
-        do_action('imgpro_cdn_api_error', $error, $context);
-    }
-
-    /**
-     * Recover account details from Managed API
-     *
-     * Used by render_inline_notices() and render_settings_page() for
-     * handling payment success redirects.
-     *
-     * @since 0.1.0
-     * @return bool True if recovery was successful.
-     */
-    private function recover_account() {
-        $site_url = get_site_url();
-
-        $response = wp_remote_post($this->get_api_base_url() . '/api/recover', [
-            'headers' => ['Content-Type' => 'application/json'],
-            'body' => wp_json_encode(['site_url' => $site_url]),
-            'timeout' => 10,
-        ]);
-
-        if (is_wp_error($response)) {
-            $this->handle_api_error($response, 'recovery');
-            return false;
-        }
-
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-
-        // Validate response structure
-        if (!is_array($body)) {
-            $this->handle_api_error(['error' => 'Invalid response structure'], 'recovery');
-            return false;
-        }
-
-        // Validate required fields with proper types
-        if (empty($body['api_key']) || !is_string($body['api_key'])) {
-            $this->handle_api_error(['error' => 'Missing or invalid api_key'], 'recovery');
-            return false;
-        }
-        if (empty($body['email']) || !is_string($body['email'])) {
-            $this->handle_api_error(['error' => 'Missing or invalid email'], 'recovery');
-            return false;
-        }
-        if (empty($body['tier']) || !is_string($body['tier'])) {
-            $this->handle_api_error(['error' => 'Missing or invalid tier'], 'recovery');
-            return false;
-        }
-
-        // Update settings with validated and sanitized data
-        $settings = $this->settings->get_all();
-        $settings['setup_mode'] = ImgPro_CDN_Settings::MODE_CLOUD;
-        $settings['cloud_api_key'] = sanitize_text_field($body['api_key']);
-        $settings['cloud_email'] = sanitize_email($body['email']);
-        $settings['cloud_tier'] = in_array($body['tier'], [ImgPro_CDN_Settings::TIER_ACTIVE, ImgPro_CDN_Settings::TIER_CANCELLED, ImgPro_CDN_Settings::TIER_NONE], true) ? $body['tier'] : ImgPro_CDN_Settings::TIER_NONE;
-        // Only auto-enable if subscription is active (not cancelled or none)
-        $settings['enabled'] = (ImgPro_CDN_Settings::TIER_ACTIVE === $settings['cloud_tier']);
-
-        $result = update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
-        $this->settings->clear_cache();
-
-        return $result;
     }
 }

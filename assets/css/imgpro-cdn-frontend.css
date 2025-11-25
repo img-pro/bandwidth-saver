@@ -1,11 +1,11 @@
 /**
- * ImgPro Frontend Styles
+ * ImgPro CDN Frontend Styles
  *
  * Prevents "broken image" flash during CDN fallback
  * by hiding images until they load successfully.
  *
- * @package ImgPro
- * @version 0.1.2
+ * @package ImgPro_CDN
+ * @since   0.1.0
  */
 
 /*

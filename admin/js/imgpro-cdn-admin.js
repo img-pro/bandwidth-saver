@@ -1,6 +1,11 @@
 /**
- * ImgPro Admin JavaScript
- * @version 0.1.2
+ * ImgPro CDN Admin JavaScript
+ *
+ * Handles admin interface interactions including toggle switches,
+ * subscription management, and AJAX operations.
+ *
+ * @package ImgPro_CDN
+ * @since   0.1.0
  */
 
 (function($) {
@@ -225,7 +230,13 @@
             // Remove any existing notices first
             $('.imgpro-cdn-toggle-notice').remove();
 
-            const $notice = $('<div class="notice notice-' + type + ' is-dismissible imgpro-cdn-toggle-notice"><p>' + message + '</p></div>');
+            // Build notice element safely to prevent XSS
+            const $notice = $('<div>', {
+                'class': 'notice notice-' + type + ' is-dismissible imgpro-cdn-toggle-notice'
+            }).append(
+                $('<p>').text(message)
+            );
+
             // Insert after the toggle form, not inside it
             $('.imgpro-cdn-toggle-form').after($notice);
 

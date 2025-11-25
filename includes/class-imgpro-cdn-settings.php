@@ -3,34 +3,93 @@
  * ImgPro CDN Settings Management
  *
  * @package ImgPro_CDN
- * @version 0.1.2
+ * @since   0.1.0
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * Settings management class
+ *
+ * Handles storage, retrieval, validation, and sanitization of plugin settings.
+ *
+ * @since 0.1.0
+ */
 class ImgPro_CDN_Settings {
 
     /**
      * Option key for storing settings
+     *
+     * @since 0.1.0
+     * @var string
      */
     const OPTION_KEY = 'imgpro_cdn_settings';
 
     /**
+     * Setup mode: Cloud (Managed)
+     *
+     * @since 0.1.2
+     * @var string
+     */
+    const MODE_CLOUD = 'cloud';
+
+    /**
+     * Setup mode: Cloudflare (Self-Hosted)
+     *
+     * @since 0.1.2
+     * @var string
+     */
+    const MODE_CLOUDFLARE = 'cloudflare';
+
+    /**
+     * Subscription tier: None
+     *
+     * @since 0.1.2
+     * @var string
+     */
+    const TIER_NONE = 'none';
+
+    /**
+     * Subscription tier: Active
+     *
+     * @since 0.1.2
+     * @var string
+     */
+    const TIER_ACTIVE = 'active';
+
+    /**
+     * Subscription tier: Cancelled
+     *
+     * @since 0.1.2
+     * @var string
+     */
+    const TIER_CANCELLED = 'cancelled';
+
+    /**
+     * API base URL for cloud services
+     *
+     * @since 0.1.3
+     * @var string
+     */
+    const API_BASE_URL = 'https://cloud.wp.img.pro';
+
+    /**
      * Default settings
      *
+     * @since 0.1.0
      * @var array
      */
     private $defaults = [
         'enabled'            => false,
-        'previously_enabled' => false, // Remembers enabled state when switching to unconfigured tab
-        'setup_mode'         => '',    // 'cloud' or 'cloudflare' - persists user choice
+        'previously_enabled' => false,
+        'setup_mode'         => '',
 
         // Cloud mode settings
         'cloud_api_key'   => '',
         'cloud_email'     => '',
-        'cloud_tier'      => 'none',  // 'none', 'active', 'cancelled'
+        'cloud_tier'      => self::TIER_NONE,
 
         // Cloudflare mode settings
         'cdn_url'         => '',
@@ -44,6 +103,7 @@ class ImgPro_CDN_Settings {
     /**
      * Cached settings
      *
+     * @since 0.1.0
      * @var array|null
      */
     private $settings = null;
@@ -51,6 +111,7 @@ class ImgPro_CDN_Settings {
     /**
      * Get all settings
      *
+     * @since 0.1.0
      * @return array
      */
     public function get_all() {
@@ -67,19 +128,20 @@ class ImgPro_CDN_Settings {
     /**
      * Get specific setting
      *
-     * @param string $key     Setting key
-     * @param mixed  $default Default value if not found
+     * @since 0.1.0
+     * @param string $key     Setting key.
+     * @param mixed  $default Default value if not found.
      * @return mixed
      */
     public function get($key, $default = null) {
         $settings = $this->get_all();
 
         // Auto-configure Cloud mode URLs
-        if ($settings['setup_mode'] === 'cloud') {
-            if ($key === 'cdn_url') {
+        if (self::MODE_CLOUD === $settings['setup_mode']) {
+            if ('cdn_url' === $key) {
                 return 'wp.img.pro';
             }
-            if ($key === 'worker_url') {
+            if ('worker_url' === $key) {
                 return 'fetch.wp.img.pro';
             }
         }
@@ -94,7 +156,8 @@ class ImgPro_CDN_Settings {
     /**
      * Update settings
      *
-     * @param array $new_settings New settings to merge
+     * @since 0.1.0
+     * @param array $new_settings New settings to merge.
      * @return bool
      */
     public function update($new_settings) {
@@ -120,7 +183,8 @@ class ImgPro_CDN_Settings {
     /**
      * Validate settings
      *
-     * @param array $settings Settings to validate
+     * @since 0.1.0
+     * @param array $settings Settings to validate.
      * @return array
      */
     public function validate($settings) {
@@ -129,7 +193,7 @@ class ImgPro_CDN_Settings {
         // Setup mode (string: 'cloud' or 'cloudflare')
         if (isset($settings['setup_mode'])) {
             $mode = sanitize_text_field($settings['setup_mode']);
-            if (in_array($mode, ['cloud', 'cloudflare'], true)) {
+            if (in_array($mode, [self::MODE_CLOUD, self::MODE_CLOUDFLARE], true)) {
                 $validated['setup_mode'] = $mode;
             }
         }
@@ -153,7 +217,7 @@ class ImgPro_CDN_Settings {
         }
         if (isset($settings['cloud_tier'])) {
             $tier = sanitize_text_field($settings['cloud_tier']);
-            if (in_array($tier, ['none', 'active', 'cancelled'], true)) {
+            if (in_array($tier, [self::TIER_NONE, self::TIER_ACTIVE, self::TIER_CANCELLED], true)) {
                 $validated['cloud_tier'] = $tier;
             }
         }
@@ -202,8 +266,9 @@ class ImgPro_CDN_Settings {
      * Converts to lowercase
      * Validates basic domain format
      *
-     * @param string $domain Domain to sanitize
-     * @return string Sanitized domain or empty string if invalid
+     * @since 0.1.0
+     * @param string $domain Domain to sanitize.
+     * @return string Sanitized domain or empty string if invalid.
      */
     private function sanitize_domain($domain) {
         // Remove protocol
@@ -245,6 +310,7 @@ class ImgPro_CDN_Settings {
     /**
      * Reset to defaults
      *
+     * @since 0.1.0
      * @return bool
      */
     public function reset() {
@@ -255,6 +321,7 @@ class ImgPro_CDN_Settings {
     /**
      * Delete all settings
      *
+     * @since 0.1.0
      * @return bool
      */
     public function delete() {
@@ -268,6 +335,7 @@ class ImgPro_CDN_Settings {
      * Call this after direct update_option() calls to ensure
      * subsequent get_all() calls return fresh data.
      *
+     * @since 0.1.0
      * @return void
      */
     public function clear_cache() {
@@ -277,10 +345,134 @@ class ImgPro_CDN_Settings {
     /**
      * Get default value for a setting
      *
-     * @param string $key Setting key
+     * @since 0.1.0
+     * @param string $key Setting key.
      * @return mixed
      */
     public function get_default($key) {
         return $this->defaults[$key] ?? null;
+    }
+
+    /**
+     * Get API base URL with filter support
+     *
+     * Static method to allow usage without instance.
+     *
+     * @since 0.1.3
+     * @return string API base URL.
+     */
+    public static function get_api_base_url() {
+        /**
+         * Filter the API base URL for cloud services.
+         *
+         * Useful for testing or staging environments.
+         *
+         * @since 0.1.2
+         * @param string $api_base_url The default API base URL.
+         */
+        return apply_filters('imgpro_cdn_api_base_url', self::API_BASE_URL);
+    }
+
+    /**
+     * Check if a given mode has valid configuration
+     *
+     * Cloud mode requires an active subscription.
+     * Cloudflare mode requires both CDN and Worker URLs to be configured.
+     *
+     * @since 0.1.3
+     * @param string $mode     The mode to check ('cloud' or 'cloudflare').
+     * @param array  $settings The settings array to check against.
+     * @return bool True if the mode is properly configured.
+     */
+    public static function is_mode_valid($mode, $settings) {
+        if (self::MODE_CLOUD === $mode) {
+            return self::TIER_ACTIVE === ($settings['cloud_tier'] ?? '');
+        } elseif (self::MODE_CLOUDFLARE === $mode) {
+            return !empty($settings['cdn_url']) && !empty($settings['worker_url']);
+        }
+        return false;
+    }
+
+    /**
+     * Handle API error with action hook for logging
+     *
+     * Static method for error handling that fires an action hook.
+     *
+     * @since 0.1.3
+     * @param WP_Error|array $error   Error object or error data.
+     * @param string         $context Context for logging (e.g., 'checkout', 'recovery').
+     * @return void
+     */
+    public static function handle_api_error($error, $context = '') {
+        /**
+         * Fires when an API error occurs.
+         *
+         * @since 0.1.0
+         * @param WP_Error|array $error   Error object or error data.
+         * @param string         $context Context for the error.
+         */
+        do_action('imgpro_cdn_api_error', $error, $context);
+    }
+
+    /**
+     * Recover account details from Managed API
+     *
+     * Attempts to recover subscription details for the current site.
+     *
+     * @since 0.1.3
+     * @param ImgPro_CDN_Settings $settings_instance Settings instance to update.
+     * @return bool True if recovery was successful.
+     */
+    public static function recover_account($settings_instance) {
+        $site_url = get_site_url();
+
+        $response = wp_remote_post(self::get_api_base_url() . '/api/recover', [
+            'headers' => ['Content-Type' => 'application/json'],
+            'body' => wp_json_encode(['site_url' => $site_url]),
+            'timeout' => 10,
+        ]);
+
+        if (is_wp_error($response)) {
+            self::handle_api_error($response, 'recovery');
+            return false;
+        }
+
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+
+        // Validate response structure
+        if (!is_array($body)) {
+            self::handle_api_error(['error' => 'Invalid response structure'], 'recovery');
+            return false;
+        }
+
+        // Validate required fields with proper types
+        if (empty($body['api_key']) || !is_string($body['api_key'])) {
+            self::handle_api_error(['error' => 'Missing or invalid api_key'], 'recovery');
+            return false;
+        }
+        if (empty($body['email']) || !is_string($body['email'])) {
+            self::handle_api_error(['error' => 'Missing or invalid email'], 'recovery');
+            return false;
+        }
+        if (empty($body['tier']) || !is_string($body['tier'])) {
+            self::handle_api_error(['error' => 'Missing or invalid tier'], 'recovery');
+            return false;
+        }
+
+        // Update settings with validated and sanitized data
+        $settings = $settings_instance->get_all();
+        $settings['setup_mode'] = self::MODE_CLOUD;
+        $settings['cloud_api_key'] = sanitize_text_field($body['api_key']);
+        $settings['cloud_email'] = sanitize_email($body['email']);
+        $settings['cloud_tier'] = in_array($body['tier'], [self::TIER_ACTIVE, self::TIER_CANCELLED, self::TIER_NONE], true)
+            ? $body['tier']
+            : self::TIER_NONE;
+        // Only auto-enable if subscription is active
+        $settings['enabled'] = (self::TIER_ACTIVE === $settings['cloud_tier']);
+
+        $result = update_option(self::OPTION_KEY, $settings);
+        $settings_instance->clear_cache();
+
+        return $result;
     }
 }

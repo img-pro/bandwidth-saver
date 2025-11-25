@@ -3,18 +3,27 @@
  * ImgPro URL Rewriter
  *
  * @package ImgPro_CDN
- * @version 0.1.2
+ * @since   0.1.0
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * URL rewriting engine
+ *
+ * Transforms image URLs to point to CDN, handles context detection,
+ * and processes various WordPress image output hooks.
+ *
+ * @since 0.1.0
+ */
 class ImgPro_CDN_Rewriter {
 
     /**
      * Settings instance
      *
+     * @since 0.1.0
      * @var ImgPro_CDN_Settings
      */
     private $settings;
@@ -22,6 +31,7 @@ class ImgPro_CDN_Rewriter {
     /**
      * URL cache
      *
+     * @since 0.1.0
      * @var array
      */
     private $url_cache = [];
@@ -29,6 +39,7 @@ class ImgPro_CDN_Rewriter {
     /**
      * Processing flag
      *
+     * @since 0.1.0
      * @var bool
      */
     private $processing = false;
@@ -36,6 +47,7 @@ class ImgPro_CDN_Rewriter {
     /**
      * Context check cache (performance optimization)
      *
+     * @since 0.1.0
      * @var bool|null
      */
     private $is_unsafe_context_cache = null;
@@ -43,7 +55,8 @@ class ImgPro_CDN_Rewriter {
     /**
      * Constructor
      *
-     * @param ImgPro_CDN_Settings $settings Settings instance
+     * @since 0.1.0
+     * @param ImgPro_CDN_Settings $settings Settings instance.
      */
     public function __construct(ImgPro_CDN_Settings $settings) {
         $this->settings = $settings;
@@ -65,7 +78,8 @@ class ImgPro_CDN_Rewriter {
      * - CLI/Cron operations
      * - Any non-frontend rendering context
      *
-     * @return bool True if context is unsafe for rewriting
+     * @since 0.1.0
+     * @return bool True if context is unsafe for rewriting.
      */
     private function is_unsafe_context() {
         // Return cached result if available (performance optimization)
@@ -125,6 +139,9 @@ class ImgPro_CDN_Rewriter {
      * ARCHITECTURE: Always register hooks, but check context when they execute.
      * This is necessary because WordPress hasn't parsed the request yet at
      * plugins_loaded time, so we can't reliably determine request type here.
+     *
+     * @since 0.1.0
+     * @return void
      */
     public function init() {
         if (!$this->settings->get('enabled')) {
@@ -150,8 +167,9 @@ class ImgPro_CDN_Rewriter {
     /**
      * Rewrite URL
      *
-     * @param string $url           Image URL
-     * @param int    $attachment_id Attachment ID
+     * @since 0.1.0
+     * @param string   $url           Image URL.
+     * @param int|null $attachment_id Attachment ID.
      * @return string
      */
     public function rewrite_url($url, $attachment_id = null) {
@@ -172,6 +190,13 @@ class ImgPro_CDN_Rewriter {
 
     /**
      * Rewrite image src array
+     *
+     * @since 0.1.0
+     * @param array|false $image         Image data array or false.
+     * @param int         $attachment_id Attachment ID.
+     * @param string      $size          Image size.
+     * @param bool        $icon          Whether to use icon.
+     * @return array|false
      */
     public function rewrite_image_src($image, $attachment_id, $size, $icon) {
         // Check context (lazy evaluation)
@@ -192,6 +217,14 @@ class ImgPro_CDN_Rewriter {
 
     /**
      * Rewrite srcset
+     *
+     * @since 0.1.0
+     * @param array  $sources       Srcset sources array.
+     * @param array  $size_array    Size array.
+     * @param string $image_src     Image source URL.
+     * @param array  $image_meta    Image metadata.
+     * @param int    $attachment_id Attachment ID.
+     * @return array
      */
     public function rewrite_srcset($sources, $size_array, $image_src, $image_meta, $attachment_id) {
         // Check context (lazy evaluation)
@@ -215,10 +248,11 @@ class ImgPro_CDN_Rewriter {
     /**
      * Get true origin URL from any URL type (origin/CDN/worker)
      *
-     * SINGLE SOURCE OF TRUTH for origin extraction
+     * SINGLE SOURCE OF TRUTH for origin extraction.
      *
-     * @param string $url Input URL (origin, CDN, or worker)
-     * @return string Origin URL
+     * @since 0.1.0
+     * @param string $url Input URL (origin, CDN, or worker).
+     * @return string Origin URL.
      */
     private function get_true_origin($url) {
         if (empty($url)) {
@@ -274,6 +308,12 @@ class ImgPro_CDN_Rewriter {
      * - ALWAYS sets data-worker-domain to identify plugin-managed images
      * - ALWAYS sets src to CDN URL
      * - Runs at priority 999 to override other plugins
+     *
+     * @since 0.1.0
+     * @param array        $attributes Image attributes.
+     * @param WP_Post      $attachment Attachment post object.
+     * @param string|array $size       Image size.
+     * @return array
      */
     public function rewrite_attributes($attributes, $attachment, $size) {
         // Check context (lazy evaluation)
@@ -318,6 +358,10 @@ class ImgPro_CDN_Rewriter {
      * - NEVER modifies images already processed by rewrite_attributes()
      * - ALWAYS sets data-worker-domain to identify plugin-managed images
      * - Uses WP_HTML_Tag_Processor for safe, spec-compliant HTML parsing (requires WP 6.2+)
+     *
+     * @since 0.1.0
+     * @param string $content HTML content.
+     * @return string
      */
     public function rewrite_content($content) {
         // Check context (lazy evaluation)
@@ -330,16 +374,17 @@ class ImgPro_CDN_Rewriter {
             return $content;
         }
 
+        // Early bail-out: Skip processing if no image tags present
+        // This is a performance optimization for text-only content
+        if (false === stripos($content, '<img') && false === stripos($content, '<amp-img') && false === stripos($content, '<amp-anim')) {
+            return $content;
+        }
+
         $this->processing = true;
 
         // Use WordPress HTML Tag Processor (WP 6.2+) for safe HTML parsing
         // This is more robust than regex and handles malformed HTML gracefully
-        if (class_exists('WP_HTML_Tag_Processor')) {
-            $content = $this->rewrite_content_with_tag_processor($content);
-        } else {
-            // Fallback to regex for WordPress < 6.2 (though plugin requires 6.2+)
-            $content = $this->rewrite_content_with_regex($content);
-        }
+        $content = $this->rewrite_content_with_tag_processor($content);
 
         $this->processing = false;
 
@@ -349,8 +394,9 @@ class ImgPro_CDN_Rewriter {
     /**
      * Rewrite content using WP_HTML_Tag_Processor (modern approach)
      *
-     * @param string $content HTML content
-     * @return string Modified content
+     * @since 0.1.0
+     * @param string $content HTML content.
+     * @return string Modified content.
      */
     private function rewrite_content_with_tag_processor($content) {
         $processor = new WP_HTML_Tag_Processor($content);
@@ -405,55 +451,11 @@ class ImgPro_CDN_Rewriter {
     }
 
     /**
-     * Rewrite content using regex (legacy fallback for WordPress < 6.2)
-     *
-     * @param string $content HTML content
-     * @return string Modified content
-     */
-    private function rewrite_content_with_regex($content) {
-        // IMPROVED REGEX PATTERN:
-        // - Supports AMP images (amp-img, amp-anim) in addition to standard img tags
-        // - Uses 's' modifier for multi-line attribute handling
-        // - More robust whitespace and src attribute matching
-        // - Captures: $1=tag name, $2=before src, $3=src value, $4=after src
-        $pattern = '#<(img|amp-img|amp-anim)\s+([^>]*?\s+)?src=["\']([^"\']+)["\']([^>]*)>#is';
-
-        return preg_replace_callback($pattern, function($matches) {
-            $tag_name = $matches[1];      // img, amp-img, or amp-anim
-            $before = $matches[2] ?? '';   // attributes before src (may be empty)
-            $src = $matches[3];            // src value
-            $after = $matches[4];          // attributes after src
-
-            // Skip if already processed (has our data-worker-domain attribute)
-            if (stripos($matches[0], 'data-worker-domain') !== false) {
-                return $matches[0];
-            }
-
-            // Get true origin URL (extracts if already CDN/Worker)
-            $origin_url = $this->get_true_origin($src);
-
-            // Skip if not a valid image URL
-            if (!$this->should_rewrite($origin_url)) {
-                return $matches[0];
-            }
-
-            // Build CDN URL from origin
-            $cdn_url = $this->build_cdn_url($origin_url);
-
-            // Build replacement HTML
-            // Store worker domain to identify plugin-managed images
-            $worker_domain = esc_attr($this->settings->get('worker_url'));
-            $data_attr = sprintf(' data-worker-domain="%s"', $worker_domain);
-
-            // Add data attribute for event delegation (CSP-compliant)
-            $data_cdn_attr = ' data-imgpro-cdn="1"';
-
-            return sprintf('<%s%s%ssrc="%s"%s%s%s>', $tag_name, $before ? ' ' . $before : '', $before ? '' : ' ', esc_url($cdn_url), $data_attr, $data_cdn_attr, $after);
-        }, $content);
-    }
-
-    /**
      * Check if URL is a CDN URL
+     *
+     * @since 0.1.0
+     * @param string $url URL to check.
+     * @return bool
      */
     private function is_cdn_url($url) {
         if (empty($url) || !is_string($url)) {
@@ -465,6 +467,10 @@ class ImgPro_CDN_Rewriter {
 
     /**
      * Check if URL is a worker URL
+     *
+     * @since 0.1.0
+     * @param string $url URL to check.
+     * @return bool
      */
     private function is_worker_url($url) {
         if (empty($url) || !is_string($url)) {
@@ -476,6 +482,10 @@ class ImgPro_CDN_Rewriter {
 
     /**
      * Check if URL should be rewritten
+     *
+     * @since 0.1.0
+     * @param string $url URL to check.
+     * @return bool
      */
     private function should_rewrite($url) {
         if (empty($url) || !is_string($url)) {
@@ -512,8 +522,9 @@ class ImgPro_CDN_Rewriter {
     /**
      * Check if URL is an image
      *
-     * @param string $url URL to check
-     * @return bool True if URL points to an image file
+     * @since 0.1.0
+     * @param string $url URL to check.
+     * @return bool True if URL points to an image file.
      */
     private function is_image_url($url) {
         /**
@@ -543,6 +554,11 @@ class ImgPro_CDN_Rewriter {
 
     /**
      * Check if domain matches allowed domains (with subdomain support)
+     *
+     * @since 0.1.0
+     * @param string $host            Host to check.
+     * @param array  $allowed_domains Allowed domains list.
+     * @return bool
      */
     private function is_domain_allowed($host, $allowed_domains) {
         if (empty($host) || empty($allowed_domains)) {
@@ -573,34 +589,11 @@ class ImgPro_CDN_Rewriter {
     }
 
     /**
-     * Check if URL matches exclusion pattern
-     */
-    private function matches_pattern($url, $pattern) {
-        // Trim whitespace
-        $pattern = trim($pattern);
-
-        if (empty($pattern)) {
-            return false;
-        }
-
-        // Check if pattern contains wildcard
-        if (strpos($pattern, '*') !== false) {
-            // Convert wildcard pattern to regex
-            $regex_pattern = preg_quote($pattern, '/');
-            $regex_pattern = str_replace('\*', '.*', $regex_pattern);
-            return preg_match('/^' . $regex_pattern . '$/i', $url) === 1 ||
-                   preg_match('/' . $regex_pattern . '/i', $url) === 1;
-        }
-
-        // Simple substring match for backwards compatibility
-        return strpos($url, $pattern) !== false;
-    }
-
-    /**
      * Build CDN URL
      *
-     * @param string $url Original image URL
-     * @return string CDN URL or original URL if conversion fails
+     * @since 0.1.0
+     * @param string $url Original image URL.
+     * @return string CDN URL or original URL if conversion fails.
      */
     private function build_cdn_url($url) {
         // Normalize first to ensure consistent cache keys
@@ -646,61 +639,13 @@ class ImgPro_CDN_Rewriter {
     }
 
     /**
-     * Build worker URL
-     *
-     * @param string $url Original image URL
-     * @return string Worker URL or original URL if conversion fails
-     */
-    private function build_worker_url($url) {
-        // Normalize first to ensure consistent cache keys
-        $normalized = $this->normalize_url($url);
-        $cache_key = 'worker_' . md5($normalized);
-
-        if (isset($this->url_cache[$cache_key])) {
-            return $this->url_cache[$cache_key];
-        }
-
-        $parsed = wp_parse_url($normalized);
-
-        // wp_parse_url() can return false on severely malformed URLs
-        // Cache the normalized URL to maintain consistency (cache key is based on normalized)
-        if ($parsed === false || !is_array($parsed) || empty($parsed['host']) || empty($parsed['path'])) {
-            $this->url_cache[$cache_key] = $normalized;
-            return $normalized;
-        }
-
-        $worker_domain = $this->settings->get('worker_url');
-
-        // Guard against empty domain - cache and return normalized URL
-        if (empty($worker_domain)) {
-            $this->url_cache[$cache_key] = $normalized;
-            return $normalized;
-        }
-
-        // Build worker URL preserving query string and fragment
-        $worker_url = sprintf('https://%s/%s%s', $worker_domain, $parsed['host'], $parsed['path']);
-
-        // Append query string if present
-        if (!empty($parsed['query'])) {
-            $worker_url .= '?' . $parsed['query'];
-        }
-
-        // Append fragment if present
-        if (!empty($parsed['fragment'])) {
-            $worker_url .= '#' . $parsed['fragment'];
-        }
-
-        $this->url_cache[$cache_key] = $worker_url;
-        return $worker_url;
-    }
-
-    /**
      * Normalize URL
      *
-     * Converts relative and protocol-relative URLs to absolute URLs
+     * Converts relative and protocol-relative URLs to absolute URLs.
      *
-     * @param string $url URL to normalize
-     * @return string Normalized absolute URL
+     * @since 0.1.0
+     * @param string $url URL to normalize.
+     * @return string Normalized absolute URL.
      */
     private function normalize_url($url) {
         if (preg_match('/^https?:\/\//i', $url)) {

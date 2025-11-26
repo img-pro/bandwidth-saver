@@ -8,50 +8,92 @@ Stable tag: 0.1.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Serve images from Cloudflare's global CDN. Zero egress fees, one-click setup, works with any theme.
+Faster images without touching DNS. No Cloudflare account needed. Install, activate, done.
 
 == Description ==
 
-**Your images are slowing down your site.** Every visitor downloads them from your server, eating bandwidth and making pages load slowly for users far from your hosting location.
+**Bandwidth Saver** rewrites your image URLs so they load through Cloudflare's global edge network instead of your server. Your visitors get images from the nearest edge location. Your server handles less traffic.
 
-**Bandwidth Saver** fixes this by serving your images from Cloudflare's global network of 300+ data centers. Your visitors get images from the server nearest to them — whether they're in Tokyo, London, or New York.
-
-= Why Bandwidth Saver? =
-
-**Zero Egress Fees:** Built on Cloudflare R2, which doesn't charge for data transfer. Most sites pay nothing for image delivery after the initial cache.
-
-**One-Click Setup:** No Cloudflare account needed. No DNS changes. No configuration headaches. Just activate and go.
-
-**Works With Everything:** Any theme, any page builder, any caching plugin. It doesn't fight with your existing setup — it enhances it.
-
-**Bulletproof Fallback:** If the CDN is ever unavailable, images automatically load from your server. Your site never breaks.
+No DNS changes. No caching rules. No configuration headaches.
 
 = How It Works =
 
-1. You activate the plugin
-2. Image URLs are automatically rewritten to point to Cloudflare
-3. First visitor triggers caching (images stored in Cloudflare R2)
-4. All future visitors get images from the nearest edge server
+1. You upload images to WordPress as usual
+2. The plugin rewrites image URLs on your frontend pages
+3. When a visitor requests an image, a Cloudflare Worker fetches it from your site and stores it in R2
+4. Future requests serve the cached image from Cloudflare's edge
 
-No changes to your workflow. Upload images to WordPress exactly as before — the plugin handles delivery.
+**Your original images stay on your server.** WordPress keeps full control. The plugin only changes how images are delivered to visitors.
 
-= Works With Everything =
+The first request to each image may be slightly slower while Cloudflare caches it. Future requests are fast and delivered from the nearest Cloudflare edge.
 
-* **Any theme** — Classic, block, or hybrid themes
-* **Any page builder** — Gutenberg, Elementor, Beaver Builder, Divi, Bricks, etc.
-* **Any image plugin** — ShortPixel, Imagify, Smush, EWWW, etc.
-* **Any caching plugin** — WP Rocket, W3 Total Cache, LiteSpeed, WP Super Cache, etc.
-* **Any format** — JPG, PNG, GIF, WebP, AVIF, SVG
+= What This Plugin Does =
 
-If your optimization plugin converts images to WebP, Bandwidth Saver delivers those WebP files. If you use lazy loading, it still works. The plugin handles the delivery layer — everything else stays the same.
+* Rewrites image URLs on your frontend pages (your Media Library URLs stay the same)
+* Delivers cached images from Cloudflare's global edge network
+* Falls back to your original images if Cloudflare is unavailable
+* Works with lazy loading, responsive image sizes, and srcset
+
+The plugin delivers whatever WordPress outputs, including images processed by optimization plugins.
+
+= What This Plugin Does NOT Do =
+
+* Does not move or delete your images
+* Does not optimize or compress images
+* Does not replace your existing image plugins
+* Does not cache HTML, CSS, or JavaScript
+* Does not require DNS changes or Cloudflare proxy
+
+Keep using your favorite image optimization plugin. Bandwidth Saver handles the delivery layer only.
+
+= Who This Is For =
+
+This plugin is ideal if you run:
+
+* Blogs and content sites
+* Recipe sites
+* Photography or portfolio sites
+* WooCommerce stores with many product images
+* Travel and lifestyle sites
+* Image-heavy sites on shared hosting
+
+It is also a good fit if you:
+
+* Cannot or do not want to move your DNS to Cloudflare
+* Want faster image loading without configuring caching rules
+* Want Cloudflare-level speed without the Cloudflare learning curve
+
+= Who This Is NOT For =
+
+This plugin may not be right if you:
+
+* Already use Cloudflare DNS with caching rules (you may not need this)
+* Need to fully offload media files from your server
+* Need caching for HTML, CSS, or JavaScript
+* Want fine-grained control over Cloudflare features
+
+= Why Try It =
+
+* **No DNS changes required.** Works with any hosting setup.
+* **No Cloudflare account needed** for the Managed option.
+* **Nothing to configure.** Install, activate, done.
+* **Safe to disable.** Your site instantly goes back to normal.
+* **No database changes.** Settings are stored cleanly in a single option.
+* **Works with any theme or page builder.** Tested with Elementor, Beaver Builder, Divi, Bricks, Gutenberg, and more.
+* **Works with image optimization plugins.** ShortPixel, Imagify, Smush, EWWW, and others.
+* **Supports all image formats.** JPG, PNG, GIF, WebP, AVIF, SVG.
 
 = Two Ways to Use =
 
-**Managed (Recommended)**
-One button, done. We handle the infrastructure. $2.99/month for unlimited images and bandwidth. Perfect for most WordPress sites.
+**Managed (Recommended for most users)**
+One click setup. We handle the Cloudflare Worker and R2 storage. No Cloudflare account needed.
+
+The Managed plan costs $9.99 per month and includes up to 500 GB of storage and 5 TB of monthly bandwidth. This is more than enough for most small and medium WordPress sites.
 
 **Self-Hosted (Free)**
-Deploy to your own Cloudflare account. Full control, typically $0/month on the free tier. Ideal for developers and agencies.
+For technical users who prefer running Cloudflare on their own account. You control the infrastructure and pay Cloudflare directly (usually $0/month on their free tier).
+
+Requires: Cloudflare account, R2 bucket, Worker deployment, custom domain setup.
 
 = Open Source =
 
@@ -59,93 +101,189 @@ The Cloudflare Worker that powers this plugin is [fully open source](https://git
 
 == Installation ==
 
-= Managed Setup (30 seconds) =
+= Managed Setup (Under 1 Minute) =
 
 1. Install and activate the plugin
-2. Go to **Settings → Image CDN**
+2. Go to **Settings > Bandwidth Saver**
 3. Click the **Managed** tab
 4. Click **Activate Now** and complete checkout
-5. Done — images now load from Cloudflare worldwide
+5. Done. Images now load from Cloudflare.
 
-= Self-Hosted Setup (20 minutes) =
+No Cloudflare account. No DNS changes. No configuration.
 
-For developers who want full control:
+= Self-Hosted Setup (About 20 Minutes) =
 
-1. Create a free [Cloudflare account](https://cloudflare.com) if you don't have one
+For technical users who prefer running Cloudflare on their own account:
+
+1. Create a free [Cloudflare account](https://cloudflare.com) if you do not have one
 2. Deploy the worker from [our GitHub repository](https://github.com/img-pro/bandwidth-saver-worker)
-3. Configure your R2 bucket with a custom domain
-4. Enter your CDN and Worker domains in **Settings → Image CDN → Self-Host**
+3. Create an R2 bucket and configure a custom domain
+4. Enter your CDN and Worker domains in **Settings > Bandwidth Saver > Self-Host**
 
 Detailed guide: [github.com/img-pro/bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker#setup)
 
 == Frequently Asked Questions ==
 
-= Will this work with my theme/plugin? =
+= How long does setup take? =
 
-Yes. Bandwidth Saver works at the URL level, making it compatible with virtually any WordPress setup. We've tested with major themes, page builders, and optimization plugins.
+**Managed:** Under a minute. Install, activate, subscribe, done.
+
+**Self-Hosted:** About 20 minutes if you are familiar with Cloudflare.
+
+= How much does it cost? =
+
+**Managed:** $9.99 per month. Includes up to 500 GB of storage and 5 TB of monthly bandwidth.
+
+**Self-Hosted:** Free. You pay Cloudflare directly, usually $0/month on their free tier.
+
+= Will this break my site? =
+
+No. The plugin only rewrites image URLs on your frontend. Your original images stay on your server. If anything goes wrong, disable the plugin and your site instantly goes back to normal.
 
 = Do I need a Cloudflare account? =
 
 **For Managed:** No. We handle everything.
-**For Self-Hosted:** Yes, but the free tier is sufficient for most sites.
 
-= How much does it cost? =
+**For Self-Hosted:** Yes, but the free tier is enough for most sites.
 
-**Managed:** $2.99/month for unlimited images and bandwidth.
-**Self-Hosted:** Typically $0/month. Even high-traffic sites rarely exceed a few dollars on Cloudflare's generous free tier.
+= Do I need to change my DNS? =
+
+No. This plugin works without DNS changes. That is the main benefit for users who cannot or do not want to proxy their site through Cloudflare.
+
+= Does this change my Media Library URLs? =
+
+No. Image URLs are rewritten on the frontend only. Your Media Library URLs stay the same.
 
 = What about image optimization (compression, WebP)? =
 
-Bandwidth Saver focuses on **delivery**, not optimization. Keep using your favorite optimization plugin (ShortPixel, Imagify, Smush, etc.) to compress and convert images. Bandwidth Saver delivers whatever WordPress generates — optimized or not.
+Bandwidth Saver delivers images. It does not optimize them. Keep using your favorite optimization plugin (ShortPixel, Imagify, Smush, etc.) to compress and convert images. Bandwidth Saver delivers whatever WordPress generates.
 
-= Does it support WebP/AVIF? =
+= Does it support WebP and AVIF? =
 
-Yes. Whatever image format WordPress serves, Bandwidth Saver delivers. Use any format conversion plugin you like.
+Yes. Whatever format WordPress serves, Bandwidth Saver delivers.
+
+= Does it work with lazy loading and srcset? =
+
+Yes. Works with lazy loading, responsive image sizes, and srcset. The plugin delivers whatever WordPress outputs.
+
+= Are the first requests slower? =
+
+The first request to each image may be slightly slower while Cloudflare caches it. Future requests are fast and delivered from the nearest Cloudflare edge.
 
 = What happens if Cloudflare is down? =
 
-Images automatically fall back to your server. Your site keeps working — just without the CDN speed boost until service resumes.
+Images fall back to your server automatically. Your site keeps working.
 
 = Can I use this on multisite? =
 
-Yes. Each site in your network needs its own configuration, but the plugin works on multisite installations.
+Yes. Each site in your network needs its own configuration.
 
-= What happens when I deactivate? =
+= What happens when I deactivate the plugin? =
 
-Images immediately load from your server again. No broken images, no cleanup needed. Your original files are never modified.
+Images load from your server again. No cleanup needed. Your original files are never modified.
 
-= What data does the plugin collect? =
+= Will this work with my theme or page builder? =
 
-None from your visitors. We don't track users, don't use cookies, and don't collect analytics. The plugin simply rewrites URLs.
+Yes. Bandwidth Saver works at the URL level and is compatible with virtually any WordPress setup. Tested with major themes, page builders, and optimization plugins.
 
-For Managed users: We store your site URL and email for account recovery. That's it.
+= Is this an offloading plugin? =
 
-= How do I test or debug the plugin? =
+No. Your images stay on your WordPress server. The plugin only rewrites URLs so visitors receive cached copies from Cloudflare.
 
-Developers can use the `imgpro_cdn_api_base_url` filter to point to a staging environment, and hook into `imgpro_cdn_api_error` for error logging.
+= Is this a full CDN replacement? =
+
+No. This plugin only handles images. It does not cache HTML, CSS, JavaScript, or other assets.
+
+= What if I exceed the Managed plan limits? =
+
+The Managed plan includes 500 GB of storage and 5 TB of monthly bandwidth as soft limits. If your site grows beyond these limits, we recommend switching to the Self-Hosted option, which gives you full control over your own Cloudflare account with no restrictions.
 
 == Screenshots ==
 
-1. **Managed Setup** — One-click activation, no Cloudflare account needed
-2. **Active State** — Plugin enabled, showing CDN status at a glance
-3. **Self-Hosted Configuration** — Enter your own Cloudflare domains
+1. **One-Click Setup** - Turn on Cloudflare image delivery in one click with the Managed option
+2. **Simple Status** - Clean and simple status indicators show your image delivery is working
+3. **Self-Hosted Option** - Full control for technical users who want to run their own Cloudflare Worker
+
+== Privacy ==
+
+= What the plugin collects =
+
+The plugin itself does not add cookies, tracking scripts, or analytics to your site.
+
+= What Cloudflare logs =
+
+When images are delivered through Cloudflare, standard CDN request metadata is logged by Cloudflare (IP addresses, timestamps, request headers, etc.). This is standard for any CDN service.
+
+**For Managed users:** Images are cached on Cloudflare infrastructure managed by ImgPro. Your site URL and admin email are stored for account management. Review Cloudflare's [privacy policy](https://www.cloudflare.com/privacypolicy/).
+
+**For Self-Hosted users:** Images are stored in your own Cloudflare account. You have full control over your data and logs.
+
+= Recommendation =
+
+If you have strict privacy requirements, consider the Self-Hosted option for complete control, or review Cloudflare's data processing terms before using the Managed service.
+
+== External Services ==
+
+This plugin connects to external services to deliver images:
+
+= Cloudflare R2 and Workers =
+
+* **Purpose:** Stores and serves cached images from 300+ global edge locations
+* **Provider:** Cloudflare, Inc.
+* **When used:** Every time a visitor loads an image on your site
+* **Terms:** [cloudflare.com/terms](https://www.cloudflare.com/terms/)
+* **Privacy:** [cloudflare.com/privacypolicy](https://www.cloudflare.com/privacypolicy/)
+
+= ImgPro Cloud API (Managed mode only) =
+
+* **Purpose:** Subscription management and CDN configuration
+* **Provider:** ImgPro
+* **When used:** During checkout, subscription management, and account recovery
+* **Data sent:** Site URL, admin email
+* **Data stored:** Subscription status, API key
+
+== Fair Use Policy ==
+
+The Managed plan costs $9.99 per month and includes up to 500 GB of storage and 5 TB of monthly bandwidth. These are soft limits designed to accommodate most small and medium WordPress sites.
+
+**If your usage grows beyond these limits:**
+
+We will reach out to discuss your options. In most cases, we recommend switching to the Self-Hosted option, which gives you full control over your own Cloudflare account with no restrictions from us.
+
+**What may require self-hosting:**
+
+* Sites with very high image traffic
+* Sites serving very large files repeatedly
+* Patterns that suggest automated or abusive access
+
+We want you to succeed. If your site outgrows the Managed plan, the Self-Hosted option is a natural next step that puts you in full control.
+
+== Content Responsibility ==
+
+You are responsible for the content served through this plugin.
+
+* Do not use this service to distribute illegal, harmful, or abusive content
+* Do not use this service to circumvent copyright protections
+* Accounts serving prohibited content may be suspended without notice
+
+For high-volume or high-risk use cases, the Self-Hosted option gives you full control over your own Cloudflare account.
 
 == Changelog ==
 
 = 0.1.3 =
-*Stability & Developer Experience Release*
+*Stability and Developer Experience Release*
 
-* **Clearer error messages** — When payment or subscription issues occur, you now see specific, actionable messages instead of generic errors
-* **Faster page processing** — Pages without images skip CDN processing entirely, reducing overhead
-* **Better developer tools** — New `imgpro_cdn_api_base_url` filter for testing with staging environments
-* **Improved code architecture** — Cleaner separation of concerns makes the plugin easier to maintain and extend
-* **Enhanced reliability** — Better handling of edge cases in the checkout and subscription flow
+* **Clearer error messages** - Specific, actionable messages for payment and subscription issues
+* **Faster page processing** - Pages without images skip CDN processing entirely
+* **Better developer tools** - New `imgpro_cdn_api_base_url` filter for staging environments
+* **Improved code architecture** - Cleaner separation of concerns
+* **Enhanced reliability** - Better handling of edge cases in checkout and subscription flow
 
 = 0.1.2 =
 * Fixed: Plugin no longer disables itself when saving settings
 * Fixed: Improved reliability for dynamically loaded images (infinite scroll, AJAX)
 * Improved: Better handling of browser-cached images
-* Improved: Cloud mode now auto-configures — no manual URL entry needed
+* Improved: Cloud mode now auto-configures without manual URL entry
 * Security: Enhanced protection and CSP compatibility
 * Developer: Added hooks for error logging and debugging
 
@@ -176,37 +314,6 @@ Fixes settings save bug and improves reliability. Recommended for all users.
 
 = 0.1.0 =
 Major update with one-click Managed setup and redesigned interface.
-
-== Privacy ==
-
-Bandwidth Saver respects your privacy and your visitors' privacy:
-
-* Does not track visitors
-* Does not use cookies
-* Does not collect analytics
-* Does not phone home
-
-**For Managed users:** Images are cached on Cloudflare infrastructure managed by ImgPro. Only publicly accessible images are cached. Your site URL and admin email are stored for account management. See Cloudflare's [privacy policy](https://www.cloudflare.com/privacypolicy/).
-
-**For Self-Hosted users:** Images are stored in your own Cloudflare account. You have complete control over your data.
-
-== External Services ==
-
-This plugin connects to external services to deliver images:
-
-**Cloudflare R2 & Workers**
-
-* Purpose: Stores and serves cached images from 300+ global locations
-* Provider: Cloudflare, Inc.
-* Terms: [cloudflare.com/terms](https://www.cloudflare.com/terms/)
-* Privacy: [cloudflare.com/privacypolicy](https://www.cloudflare.com/privacypolicy/)
-
-**ImgPro Cloud API** (Managed mode only)
-
-* Purpose: Subscription management and CDN configuration
-* Provider: ImgPro
-* Data sent: Site URL, admin email (for account recovery)
-* Data stored: Subscription status only
 
 == Support ==
 

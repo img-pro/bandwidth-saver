@@ -1,205 +1,130 @@
 # Bandwidth Saver: Image CDN
 
-[![WordPress Plugin Version](https://img.shields.io/badge/version-0.0.8-blue.svg)](https://wordpress.org/plugins/imgpro-cdn/)
+[![WordPress Plugin Version](https://img.shields.io/badge/version-0.1.3-blue.svg)](https://wordpress.org/plugins/bandwidth-saver/)
 [![Requires WordPress Version](https://img.shields.io/badge/wordpress-6.2%2B-blue.svg)](https://wordpress.org/download/)
 [![Requires PHP Version](https://img.shields.io/badge/php-7.4%2B-purple.svg)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-red.svg)](LICENSE)
 
-**Deliver images from Cloudflare's global network. Save bandwidth costs with free-tier friendly R2 storage and zero egress fees.**
+**Faster images without touching DNS. Rewrites image URLs to load through Cloudflare. No configuration needed.**
 
 ## Overview
 
-Image CDN is a bandwidth-saving WordPress plugin that delivers your images through Cloudflare's global edge network. Unlike complex image optimization services, Image CDN focuses on one thing: making your existing WordPress images load faster worldwide while cutting bandwidth costs.
+Bandwidth Saver rewrites your WordPress image URLs so they load through Cloudflare's global edge network instead of your server. Your visitors get images from the nearest edge location. Your server handles less traffic.
 
-**No transformations. No complexity. Just fast, affordable delivery.**
-
-## Features
-
-- ✅ **Free Tier Compatible** - Most sites pay $0/month
-- ✅ **Ultra Simple** - Minimal configuration needed
-- ✅ **Works with WordPress** - No fighting against WP image handling
-- ✅ **Works with ANY Plugin** - Use your favorite optimization plugins
-- ✅ **Global Edge Delivery** - Fast worldwide from 300+ locations
-- ✅ **Zero Egress Fees** - Cloudflare R2 advantage
-- ✅ **Automatic Fallback** - Origin fallback if CDN fails
-- ✅ **Translation Ready** - i18n support included
+No DNS changes. No caching rules. No configuration headaches.
 
 ## How It Works
 
-1. **WordPress generates images** (as it normally does)
-2. **Image CDN rewrites URLs** to point to Cloudflare
-3. **First request:** Worker caches image in R2
-4. **Future requests:** Served directly from R2 (zero cost!)
+1. You upload images to WordPress as usual
+2. The plugin rewrites image URLs on your frontend pages
+3. When a visitor requests an image, a Cloudflare Worker fetches it from your site and stores it in R2
+4. Future requests serve the cached image from Cloudflare's edge
+
+**Your original images stay on your server.** WordPress keeps full control. The plugin only changes how images are delivered to visitors.
+
+The first request to each image may be slightly slower while Cloudflare caches it. Future requests are fast and delivered from the nearest Cloudflare edge.
+
+## What This Plugin Does
+
+- Rewrites image URLs on your frontend pages (your Media Library URLs stay the same)
+- Delivers cached images from Cloudflare's global edge network
+- Falls back to your original images if Cloudflare is unavailable
+- Works with lazy loading, responsive image sizes, and srcset
+
+The plugin delivers whatever WordPress outputs, including images processed by optimization plugins.
+
+## What This Plugin Does NOT Do
+
+- Does not move or delete your images
+- Does not optimize or compress images
+- Does not replace your existing image plugins
+- Does not cache HTML, CSS, or JavaScript
+- Does not require DNS changes or Cloudflare proxy
+
+## Two Ways to Use
+
+### Managed (Recommended for most users)
+
+One click setup. We handle the Cloudflare Worker and R2 storage. No Cloudflare account needed.
+
+The Managed plan costs $9.99 per month and includes up to 500 GB of storage and 5 TB of monthly bandwidth. This is more than enough for most small and medium WordPress sites.
+
+### Self-Hosted (Free)
+
+For technical users who prefer running Cloudflare on their own account. You control the infrastructure and pay Cloudflare directly (usually $0/month on their free tier).
+
+Requires: Cloudflare account, R2 bucket, Worker deployment, custom domain setup.
 
 ## Requirements
 
 - WordPress 6.2 or higher
 - PHP 7.4 or higher
-- Cloudflare account (free tier works!)
+
+**For Self-Hosted only:**
+- Cloudflare account (free tier works)
 - R2 bucket enabled
-- Cloudflare Worker deployed ([see worker repo](https://github.com/img-pro/wp-image-cdn-worker))
+- Cloudflare Worker deployed ([see worker repo](https://github.com/img-pro/bandwidth-saver-worker))
 
 ## Installation
 
-### 1. Install Plugin
+### Managed Setup (Under 1 Minute)
 
-**From WordPress.org (Recommended):**
-```
-WordPress Admin → Plugins → Add New → Search "Image CDN"
-```
+1. Install and activate the plugin
+2. Go to **Settings > Bandwidth Saver**
+3. Click the **Managed** tab
+4. Click **Activate Now** and complete checkout
+5. Done. Images now load from Cloudflare.
 
-**Manual Installation:**
-```bash
-# Download latest release
-cd wp-content/plugins
-git clone https://github.com/img-pro/wp-image-cdn.git imgpro-cdn
-```
+### Self-Hosted Setup (About 20 Minutes)
 
-### 2. Deploy Cloudflare Worker
+For technical users who prefer running Cloudflare on their own account:
 
-The Cloudflare Worker must be deployed separately to your Cloudflare account.
-See the [worker repository](https://github.com/img-pro/wp-image-cdn-worker) for detailed deployment instructions.
+1. Create a free [Cloudflare account](https://cloudflare.com) if you do not have one
+2. Deploy the worker from [our GitHub repository](https://github.com/img-pro/bandwidth-saver-worker)
+3. Create an R2 bucket and configure a custom domain
+4. Enter your CDN and Worker domains in **Settings > Bandwidth Saver > Self-Host**
 
-### 3. Configure Plugin
-
-```
-WordPress Admin → Settings → Image CDN
-```
-
-**Settings:**
-- **CDN Domain**: Your R2 public bucket domain (e.g., `cdn.yourdomain.com`)
-- **Worker Domain**: Your Cloudflare Worker domain (e.g., `worker.yourdomain.com`)
-- **Enable CDN**: Toggle to activate
-
-**Optional Settings:**
-- **Allowed Domains**: Restrict CDN to specific domains (leave empty for all)
-- **Excluded Paths**: Skip CDN for specific paths (e.g., `/cart`, `/checkout`)
-- **Debug Mode**: Add data attributes for troubleshooting (requires WP_DEBUG)
-
-## Configuration
-
-### Basic Setup
-
-```php
-// Default settings (automatically applied)
-CDN Domain: (your-bucket).r2.dev or custom domain
-Worker Domain: worker.your-domain.com
-Enabled: false (enable after configuration)
-```
-
-### Advanced Options
-
-**Allowed Domains** - Whitelist specific domains:
-```
-example.com
-blog.example.com
-shop.example.com
-```
-
-**Excluded Paths** - Skip CDN for specific paths:
-```
-/cart
-/checkout
-/my-account
-```
-Note: Admin areas (`/wp-admin`, REST API, AJAX requests) are automatically excluded.
+Detailed guide: [github.com/img-pro/bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker#setup)
 
 ## Compatibility
 
 **Works With:**
-- ✅ WordPress 6.2, 6.3, 6.4, 6.5, 6.6, 6.7
-- ✅ PHP 7.4, 8.0, 8.1, 8.2, 8.3
-- ✅ Multisite installations
-- ✅ All page builders (Gutenberg, Elementor, etc.)
-- ✅ All image optimization plugins
-- ✅ WooCommerce product images
-- ✅ Jetpack (REST API compatible)
-- ✅ Block Editor
+- WordPress 6.2+
+- PHP 7.4, 8.0, 8.1, 8.2, 8.3
+- Multisite installations
+- All page builders (Gutenberg, Elementor, Beaver Builder, Divi, Bricks, etc.)
+- All image optimization plugins (ShortPixel, Imagify, Smush, EWWW, etc.)
+- WooCommerce product images
+- Jetpack (REST API compatible)
+- All image formats (JPG, PNG, GIF, WebP, AVIF, SVG)
+- Lazy loading and srcset
 
-**Image Optimization Plugins:**
-Works seamlessly with:
-- Smush
-- ShortPixel
-- Imagify
-- EWWW Image Optimizer
-- Optimole
-- Any WordPress image optimization plugin
+## Privacy
 
-## Architecture
+**What the plugin collects:**
+The plugin itself does not add cookies, tracking scripts, or analytics to your site.
 
-**Two-Domain Setup:**
-- `cdn.yourdomain.com` → R2 Public Bucket (99% of traffic, zero worker cost)
-- `worker.yourdomain.com` → Cloudflare Worker (1% of traffic, cache misses only)
+**What Cloudflare logs:**
+When images are delivered through Cloudflare, standard CDN request metadata is logged by Cloudflare (IP addresses, timestamps, request headers, etc.). This is standard for any CDN service.
 
-**Request Flow:**
-1. Browser requests image from CDN domain
-2. If cached: Served directly from R2 (20-40ms)
-3. If not cached: Fallback to worker domain
-4. Worker fetches from WordPress, stores in R2, redirects to CDN
-5. Future requests: Served from R2 (zero worker invocations)
+**For Managed users:** Images are cached on Cloudflare infrastructure managed by ImgPro. Your site URL and admin email are stored for account management. Review [Cloudflare's privacy policy](https://www.cloudflare.com/privacypolicy/).
 
-## Performance
-
-- **Cached requests:** 20-40ms (R2 direct)
-- **Cache miss:** 200-400ms (fetch + store + redirect)
-- **Cache hit rate:** 99%+ after warmup
-- **Worker invocations:** ~1% of total requests
-- **Global coverage:** 300+ edge locations
-
-## Cost
-
-Most small/medium WordPress sites pay **$0/month** on Cloudflare's free tier.
-
-**Cost breakdown:**
-- Small site (100k views/mo): **$0/mo**
-- Medium site (500k views/mo): **$0-2/mo**
-- Large site (3M views/mo): **$0.68/mo**
-
-**Free tier limits:**
-- R2 Storage: 10 GB free
-- R2 Operations: 1M reads/mo free
-- Worker Requests: 100k/day free
-- Zero egress fees (Cloudflare's advantage)
+**For Self-Hosted users:** Images are stored in your own Cloudflare account. You have full control over your data and logs.
 
 ## Security
 
-**Plugin Security:**
-- ✅ All input sanitized
-- ✅ All output escaped
-- ✅ Nonce verification on AJAX
-- ✅ Capability checks (`manage_options`)
-- ✅ No SQL injection vulnerabilities
-- ✅ No XSS vulnerabilities
-- ✅ No CSRF vulnerabilities
+- All input sanitized
+- All output escaped
+- Nonce verification on AJAX
+- Capability checks (`manage_options`)
+- No SQL injection vulnerabilities
+- No XSS vulnerabilities
+- No CSRF vulnerabilities
 
-**Privacy:**
-- ✅ No data collection
-- ✅ No tracking
-- ✅ No cookies
-- ✅ No analytics
-- ✅ Images cached in YOUR Cloudflare account
-- ✅ Plugin author has no access to your data
-
-## Development
-
-### Local Development
-
-```bash
-# Clone repository
-git clone https://github.com/img-pro/wp-image-cdn.git imgpro-cdn
-cd imgpro-cdn
-
-# Install in WordPress
-ln -s $(pwd) /path/to/wordpress/wp-content/plugins/imgpro-cdn
-
-# Activate plugin
-wp plugin activate imgpro-cdn
-```
-
-### File Structure
+## File Structure
 
 ```
-wp-image-cdn/
+bandwidth-saver/
 ├── imgpro-cdn.php                      # Main plugin file
 ├── readme.txt                          # WordPress.org readme
 ├── LICENSE                             # GPL v2 license
@@ -208,39 +133,23 @@ wp-image-cdn/
 │   ├── class-imgpro-cdn-core.php      # Core functionality
 │   ├── class-imgpro-cdn-settings.php  # Settings management
 │   ├── class-imgpro-cdn-rewriter.php  # URL rewriting
-│   └── class-imgpro-cdn-admin.php     # Admin interface
+│   ├── class-imgpro-cdn-admin.php     # Admin interface
+│   └── class-imgpro-cdn-admin-ajax.php # AJAX handlers
 ├── admin/
 │   ├── css/
 │   │   └── imgpro-cdn-admin.css       # Admin styles
 │   └── js/
 │       └── imgpro-cdn-admin.js        # Admin JavaScript
-├── assets/
-│   └── css/
-│       └── imgpro-cdn-frontend.css    # Frontend styles
-└── languages/
-    └── imgpro-cdn.pot                  # Translation template
-```
-
-### Translation
-
-```bash
-# Generate .pot file
-wp i18n make-pot . languages/imgpro-cdn.pot
-
-# Translations via WordPress.org
-# Visit: https://translate.wordpress.org/projects/wp-plugins/imgpro-cdn
+└── assets/
+    └── js/
+        └── imgpro-cdn.js              # Frontend JavaScript
 ```
 
 ## Support
 
-**WordPress.org Support Forum:**
-https://wordpress.org/support/plugin/imgpro-cdn/
-
-**GitHub Issues:**
-https://github.com/img-pro/wp-image-cdn/issues
-
-**Documentation:**
-See `readme.txt` for detailed FAQ and troubleshooting
+- **WordPress.org Support Forum:** [wordpress.org/support/plugin/bandwidth-saver](https://wordpress.org/support/plugin/bandwidth-saver/)
+- **GitHub Issues:** [github.com/img-pro/bandwidth-saver/issues](https://github.com/img-pro/bandwidth-saver/issues)
+- **Worker Setup Guide:** [github.com/img-pro/bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker)
 
 ## Contributing
 
@@ -263,23 +172,18 @@ Contributions are welcome! Please:
 This plugin is licensed under GPL v2 or later.
 
 ```
-Image CDN by ImgPro - WordPress Plugin
+Bandwidth Saver: Image CDN by ImgPro
 Copyright (C) 2025 ImgPro
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
 (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 ```
 
 ## Related Projects
 
-- **Cloudflare Worker:** [wp-image-cdn-worker](https://github.com/img-pro/wp-image-cdn-worker)
+- **Cloudflare Worker:** [bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker)
 
 ## Credits
 
@@ -292,4 +196,4 @@ Built for the WordPress community.
 
 ---
 
-**Made with ❤️ by [ImgPro](https://img.pro)**
+**Made by [ImgPro](https://img.pro)**

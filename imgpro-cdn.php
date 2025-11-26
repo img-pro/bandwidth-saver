@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Bandwidth Saver: Image CDN
  * Plugin URI: https://github.com/img-pro/bandwidth-saver
- * Description: Deliver images from Cloudflare's global network. Save bandwidth costs with free-tier friendly R2 storage and zero egress fees.
+ * Description: Faster images without touching DNS. Rewrites image URLs to load through Cloudflare. No configuration needed.
  * Version: 0.1.3
  * Author: ImgPro
  * Author URI: https://img.pro

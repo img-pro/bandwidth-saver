@@ -1,6 +1,6 @@
 # Bandwidth Saver: Image CDN
 
-[![WordPress Plugin Version](https://img.shields.io/badge/version-0.1.3-blue.svg)](https://wordpress.org/plugins/bandwidth-saver/)
+[![WordPress Plugin Version](https://img.shields.io/badge/version-0.1.4-blue.svg)](https://wordpress.org/plugins/bandwidth-saver/)
 [![Requires WordPress Version](https://img.shields.io/badge/wordpress-6.2%2B-blue.svg)](https://wordpress.org/download/)
 [![Requires PHP Version](https://img.shields.io/badge/php-7.4%2B-purple.svg)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-red.svg)](LICENSE)
@@ -9,9 +9,11 @@
 
 ## Overview
 
-Bandwidth Saver rewrites your WordPress image URLs so they load through Cloudflare's global edge network instead of your server. Your visitors get images from the nearest edge location. Your server handles less traffic.
+WordPress images often load slowly, especially on shared hosting. Setting up a real CDN usually means editing DNS records, configuring Cloudflare, or dealing with complex caching rules. Most site owners just want faster images without the technical overhead.
 
-No DNS changes. No caching rules. No configuration headaches.
+**Bandwidth Saver** solves this by delivering your existing WordPress images through Cloudflare's global edge network. No DNS changes. No Cloudflare account needed. No configuration. Just activate and go.
+
+Your images stay on your server. Your Media Library stays the same. If anything goes wrong, WordPress automatically loads the original images. You can disable the plugin anytime and your site instantly goes back to normal.
 
 ## How It Works
 

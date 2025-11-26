@@ -4,7 +4,7 @@ Tags: cdn, images, cloudflare, performance, bandwidth
 Requires at least: 6.2
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.1.3
+Stable tag: 0.1.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,9 +12,11 @@ Faster images without touching DNS. No Cloudflare account needed. Install, activ
 
 == Description ==
 
-**Bandwidth Saver** rewrites your image URLs so they load through Cloudflare's global edge network instead of your server. Your visitors get images from the nearest edge location. Your server handles less traffic.
+WordPress images often load slowly, especially on shared hosting. Setting up a real CDN usually means editing DNS records, configuring Cloudflare, or dealing with complex caching rules. Most site owners just want faster images without the technical overhead.
 
-No DNS changes. No caching rules. No configuration headaches.
+**Bandwidth Saver** solves this by delivering your existing WordPress images through Cloudflare's global edge network. No DNS changes. No Cloudflare account needed. No configuration. Just activate and go.
+
+Your images stay on your server. Your Media Library stays the same. If anything goes wrong, WordPress automatically loads the original images. You can disable the plugin anytime and your site instantly goes back to normal.
 
 = How It Works =
 

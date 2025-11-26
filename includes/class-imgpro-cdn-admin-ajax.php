@@ -114,14 +114,14 @@ class ImgPro_CDN_Admin_Ajax {
                     ], admin_url('options-general.php?page=imgpro-cdn-settings'));
 
                     wp_send_json_success([
-                        'message' => __('Image CDN enabled. Switching to configured mode.', 'bandwidth-saver'),
+                        'message' => __('Image CDN enabled. Images now load from Cloudflare.', 'bandwidth-saver'),
                         'redirect' => $redirect_url
                     ]);
                     return;
                 }
 
                 // No configured mode available
-                wp_send_json_error(['message' => __('Please configure a CDN mode first.', 'bandwidth-saver')]);
+                wp_send_json_error(['message' => __('Please complete setup first. Choose Managed or Self-Host above.', 'bandwidth-saver')]);
                 return;
             }
         }
@@ -129,8 +129,8 @@ class ImgPro_CDN_Admin_Ajax {
         // Check if value is already set to desired state
         if ($current_settings['enabled'] === $enabled) {
             $message = $enabled
-                ? __('Image CDN enabled. Your images now load from Cloudflare\'s global network.', 'bandwidth-saver')
-                : __('Image CDN disabled. Images now load from your server.', 'bandwidth-saver');
+                ? __('Image CDN is active. Images are loading from Cloudflare.', 'bandwidth-saver')
+                : __('Image CDN is disabled. Images are loading from your server.', 'bandwidth-saver');
 
             wp_send_json_success(['message' => $message]);
             return;
@@ -150,12 +150,12 @@ class ImgPro_CDN_Admin_Ajax {
 
         if (false !== $result) {
             $message = $enabled
-                ? __('Image CDN enabled. Your images now load from Cloudflare\'s global network.', 'bandwidth-saver')
+                ? __('Image CDN enabled. Images now load from Cloudflare.', 'bandwidth-saver')
                 : __('Image CDN disabled. Images now load from your server.', 'bandwidth-saver');
 
             wp_send_json_success(['message' => $message]);
         } else {
-            wp_send_json_error(['message' => __('Failed to update settings. Please try again.', 'bandwidth-saver')]);
+            wp_send_json_error(['message' => __('Could not save settings. Please try again.', 'bandwidth-saver')]);
         }
     }
 
@@ -210,7 +210,7 @@ class ImgPro_CDN_Admin_Ajax {
         if (is_wp_error($response)) {
             ImgPro_CDN_Settings::handle_api_error($response, 'checkout');
             wp_send_json_error([
-                'message' => __('Failed to connect to billing service. Please try again.', 'bandwidth-saver'),
+                'message' => __('Could not connect to billing service. Please try again in a moment.', 'bandwidth-saver'),
                 'code' => 'connection_error'
             ]);
             return;
@@ -224,12 +224,12 @@ class ImgPro_CDN_Admin_Ajax {
             // Existing subscription - attempt to recover it automatically
             if (ImgPro_CDN_Settings::recover_account($this->settings)) {
                 wp_send_json_success([
-                    'message' => __('Existing subscription found and activated!', 'bandwidth-saver'),
+                    'message' => __('Found your existing subscription. It has been activated.', 'bandwidth-saver'),
                     'recovered' => true
                 ]);
             } else {
                 wp_send_json_error([
-                    'message' => __('This site has an existing subscription but it could not be activated. Please contact support.', 'bandwidth-saver'),
+                    'message' => __('This site has an existing subscription but we could not activate it. Please contact support.', 'bandwidth-saver'),
                     'existing' => true,
                     'code' => 'recovery_failed'
                 ]);
@@ -242,7 +242,7 @@ class ImgPro_CDN_Admin_Ajax {
             ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $body], 'checkout');
             $error_message = isset($body['error']) && is_string($body['error'])
                 ? $body['error']
-                : __('Invalid request. Please try again or contact support.', 'bandwidth-saver');
+                : __('Something went wrong. Please try again or contact support.', 'bandwidth-saver');
             wp_send_json_error([
                 'message' => $error_message,
                 'code' => 'client_error'
@@ -254,7 +254,7 @@ class ImgPro_CDN_Admin_Ajax {
             // Server error - log and show generic message
             ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $body], 'checkout');
             wp_send_json_error([
-                'message' => __('The billing service is temporarily unavailable. Please try again in a few minutes.', 'bandwidth-saver'),
+                'message' => __('Billing service is temporarily unavailable. Please try again in a few minutes.', 'bandwidth-saver'),
                 'code' => 'server_error'
             ]);
             return;
@@ -268,7 +268,7 @@ class ImgPro_CDN_Admin_Ajax {
         } else {
             ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $body], 'checkout');
             wp_send_json_error([
-                'message' => __('Failed to create checkout session. Please try again.', 'bandwidth-saver'),
+                'message' => __('Could not create checkout. Please try again.', 'bandwidth-saver'),
                 'code' => 'invalid_response'
             ]);
         }
@@ -295,11 +295,11 @@ class ImgPro_CDN_Admin_Ajax {
         // Attempt recovery
         if (ImgPro_CDN_Settings::recover_account($this->settings)) {
             wp_send_json_success([
-                'message' => __('Account recovered successfully!', 'bandwidth-saver')
+                'message' => __('Account recovered. Your subscription is now active.', 'bandwidth-saver')
             ]);
         } else {
             wp_send_json_error([
-                'message' => __('No subscription found for this site. Please subscribe first.', 'bandwidth-saver')
+                'message' => __('No subscription found for this site. If you subscribed recently, please wait a moment and try again.', 'bandwidth-saver')
             ]);
         }
     }
@@ -328,7 +328,7 @@ class ImgPro_CDN_Admin_Ajax {
 
         if (empty($api_key)) {
             wp_send_json_error([
-                'message' => __('No API key found. Please subscribe first.', 'bandwidth-saver')
+                'message' => __('No subscription found. Please subscribe first or recover your account.', 'bandwidth-saver')
             ]);
             return;
         }
@@ -347,7 +347,7 @@ class ImgPro_CDN_Admin_Ajax {
         if (is_wp_error($response)) {
             ImgPro_CDN_Settings::handle_api_error($response, 'portal');
             wp_send_json_error([
-                'message' => __('Failed to connect to billing service. Please try again.', 'bandwidth-saver'),
+                'message' => __('Could not connect to billing service. Please try again in a moment.', 'bandwidth-saver'),
                 'code' => 'connection_error'
             ]);
             return;
@@ -360,7 +360,7 @@ class ImgPro_CDN_Admin_Ajax {
         if (401 === $status_code || 403 === $status_code) {
             ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $data], 'portal');
             wp_send_json_error([
-                'message' => __('Your subscription could not be verified. Please try recovering your account.', 'bandwidth-saver'),
+                'message' => __('Could not verify your subscription. Try recovering your account.', 'bandwidth-saver'),
                 'code' => 'auth_error'
             ]);
             return;
@@ -371,7 +371,7 @@ class ImgPro_CDN_Admin_Ajax {
             ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $data], 'portal');
             $error_message = isset($data['error']) && is_string($data['error'])
                 ? $data['error']
-                : __('Unable to access subscription portal. Please try again or contact support.', 'bandwidth-saver');
+                : __('Could not open subscription portal. Please try again or contact support.', 'bandwidth-saver');
             wp_send_json_error([
                 'message' => $error_message,
                 'code' => 'client_error'
@@ -383,7 +383,7 @@ class ImgPro_CDN_Admin_Ajax {
         if ($status_code >= 500) {
             ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $data], 'portal');
             wp_send_json_error([
-                'message' => __('The billing service is temporarily unavailable. Please try again in a few minutes.', 'bandwidth-saver'),
+                'message' => __('Billing service is temporarily unavailable. Please try again in a few minutes.', 'bandwidth-saver'),
                 'code' => 'server_error'
             ]);
             return;
@@ -398,7 +398,7 @@ class ImgPro_CDN_Admin_Ajax {
             // Unexpected response format (success status but no portal_url)
             ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $data], 'portal');
             wp_send_json_error([
-                'message' => __('Failed to create portal session. Please try again.', 'bandwidth-saver'),
+                'message' => __('Could not open subscription portal. Please try again.', 'bandwidth-saver'),
                 'code' => 'invalid_response'
             ]);
         }

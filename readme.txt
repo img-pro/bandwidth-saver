@@ -8,7 +8,7 @@ Stable tag: 0.1.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Faster images without touching DNS. No Cloudflare account needed in Managed mode. Install, activate, done.
+Cloudflare speed for your WordPress images without DNS changes or account setup. Install, activate, done.
 
 == Description ==
 

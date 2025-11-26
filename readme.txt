@@ -29,7 +29,7 @@ Safe to try on any site. Does not touch your database or existing files. You can
 
 Image URLs are rewritten on the frontend only. Your Media Library URLs stay exactly the same.
 
-The first request to each image comes from your server while Cloudflare caches it. After that, all requests are served from the nearest Cloudflare edge location.
+The first request to each image comes from your server while Cloudflare caches it. Future requests are delivered from Cloudflare's edge.
 
 = What This Plugin Does =
 
@@ -37,7 +37,7 @@ The first request to each image comes from your server while Cloudflare caches i
 * Delivers cached images from Cloudflare's global edge network
 * Falls back to your original images automatically if Cloudflare is unavailable
 * Works with lazy loading, responsive image sizes, and srcset
-* Works with any theme or page builder without modifying templates or file structures
+* Works with virtually all themes and page builders without modifying templates or file structures
 * Designed to handle large, image-heavy websites with ease
 
 The plugin simply delivers whatever WordPress outputs, including images processed by optimization plugins.
@@ -50,6 +50,8 @@ The plugin simply delivers whatever WordPress outputs, including images processe
 * Does not cache HTML, CSS, or JavaScript
 * Does not require DNS changes or Cloudflare proxy
 * Does not touch your database
+
+Only images are delivered through Cloudflare. Videos, PDFs, and other non-image files are not cached or rewritten.
 
 Keep using your favorite image optimization plugin. Bandwidth Saver handles the delivery layer only.
 
@@ -87,10 +89,10 @@ This plugin may not be right if you:
 
 * **Safe to try on any site.** Does not touch your database or existing files.
 * **No DNS changes required.** Works with any hosting setup.
-* **No Cloudflare account needed** for the Managed option.
+* **No Cloudflare account needed for Managed mode.**
 * **Nothing to configure.** Install, activate, done.
 * **Safe to disable.** Your site instantly returns to normal.
-* **Works with any theme or page builder.** Does not modify templates or file structures.
+* **Works with virtually all themes and page builders.** Does not modify templates or file structures.
 * **Works with image optimization plugins.** ShortPixel, Imagify, Smush, EWWW, and others.
 * **Supports all image formats.** JPG, PNG, GIF, WebP, AVIF, SVG.
 * **Handles large sites with ease.** Designed for everything from small blogs to high-traffic, image-rich websites.
@@ -98,9 +100,9 @@ This plugin may not be right if you:
 = Two Ways to Use =
 
 **Managed (Recommended for most users)**
-One click setup. We handle the Cloudflare Worker and R2 storage. No Cloudflare account needed.
+One click setup. We handle the Cloudflare Worker and R2 storage. No Cloudflare account needed for Managed mode. In Managed mode, images are cached and delivered through Cloudflare infrastructure operated by ImgPro.
 
-The Managed plan costs $9.99 per month and includes up to 500 GB of cached image storage and up to 5 TB of monthly bandwidth as soft limits. This comfortably supports everything from small blogs to large, image-heavy WordPress installations.
+The Managed plan costs $9.99 per month and includes up to 500 GB of cached image storage and up to 5 TB of monthly bandwidth as soft limits. Storage refers to the total weight of images cached in R2. It does not include HTML, CSS, JavaScript, PDFs, videos, or other asset types. Storage is cumulative, not monthly traffic. This comfortably supports everything from small blogs to large, image-heavy WordPress installations.
 
 **Self-Hosted (Free)**
 For technical users who prefer running Cloudflare on their own account. You control the infrastructure and pay Cloudflare directly (usually $0/month on their free tier).
@@ -144,13 +146,13 @@ Detailed guide: [github.com/img-pro/bandwidth-saver-worker](https://github.com/i
 
 = How much does it cost? =
 
-**Managed:** $9.99 per month. Includes up to 500 GB of storage and 5 TB of monthly bandwidth.
+**Managed:** $9.99 per month. Includes up to 500 GB of storage (images cached in R2, cumulative) and 5 TB of monthly bandwidth.
 
 **Self-Hosted:** Free. You pay Cloudflare directly, usually $0/month on their free tier.
 
 = How much faster will my images load? =
 
-It depends on your hosting setup, but most sites see significantly faster image delivery after the first cached request. Cloudflare serves images from the nearest edge location, often reducing image load times to just a few milliseconds.
+Most sites see significantly faster image delivery after the first request is cached. Cloudflare serves images from the nearest edge location, often reducing image load times to just a few milliseconds. Actual performance varies depending on hosting environment and visitor location.
 
 = Will this break my site? =
 
@@ -184,7 +186,7 @@ Yes. Works with lazy loading, responsive image sizes, and srcset. The plugin sim
 
 = Are the first requests slower? =
 
-Yes. The first request for each image comes from your server while Cloudflare caches it. After that, delivery is extremely fast from the edge.
+Yes. The first request for each image comes from your server while Cloudflare caches it. After that, all requests are served from the nearest Cloudflare edge and are much faster.
 
 = What happens if Cloudflare is down? =
 
@@ -196,7 +198,7 @@ Yes. Each site in your network needs its own configuration.
 
 = What happens when I deactivate the plugin? =
 
-Images load from your server again. No cleanup needed. Your original files are never modified.
+Images load from your server again. No cleanup needed. Your original files are never modified. Cached copies stored on Cloudflare are automatically cleaned up over time.
 
 = Will this work with my theme or page builder? =
 
@@ -212,13 +214,13 @@ No. This plugin only handles images. It does not cache HTML, CSS, JavaScript, or
 
 = Can this handle large sites? =
 
-Yes. The Managed plan includes 500 GB of storage and 5 TB of monthly bandwidth, which comfortably supports large WooCommerce stores, photography sites, and content-heavy properties. If your site grows beyond these limits, we recommend switching to the Self-Hosted option for full control.
+Yes. The Managed plan includes 500 GB of storage (images cached in R2, cumulative) and 5 TB of monthly bandwidth, which comfortably supports large WooCommerce stores, photography sites, and content-heavy properties. If your site grows beyond these limits, we recommend switching to the Self-Hosted option for full control.
 
 == Screenshots ==
 
 1. **One-Click Setup** - Enable Cloudflare image delivery in one click
 2. **Clear Status** - Clear status indicators for Managed or Self-Hosted mode
-3. **Works Everywhere** - Works with any theme or page builder, no configuration required
+3. **Works Everywhere** - Works with virtually all themes and page builders, no configuration required
 
 == Privacy ==
 
@@ -250,6 +252,8 @@ This plugin connects to external services to deliver images:
 * **Terms:** [cloudflare.com/terms](https://www.cloudflare.com/terms/)
 * **Privacy:** [cloudflare.com/privacypolicy](https://www.cloudflare.com/privacypolicy/)
 
+In Managed mode, images are cached and delivered through Cloudflare infrastructure operated by ImgPro.
+
 = ImgPro Cloud API (Managed mode only) =
 
 * **Purpose:** Subscription management and CDN configuration
@@ -260,7 +264,7 @@ This plugin connects to external services to deliver images:
 
 == Fair Use Policy ==
 
-The Managed plan costs $9.99 per month and includes up to 500 GB of storage and up to 5 TB of monthly bandwidth as soft limits. This comfortably supports everything from small blogs to large, image-heavy WordPress installations.
+The Managed plan costs $9.99 per month and includes up to 500 GB of storage and up to 5 TB of monthly bandwidth as soft limits. Storage refers to the total weight of images cached in R2. It does not include HTML, CSS, JavaScript, PDFs, videos, or other asset types. Storage is cumulative, not monthly traffic. This comfortably supports everything from small blogs to large, image-heavy WordPress installations.
 
 **If your usage grows beyond these limits:**
 

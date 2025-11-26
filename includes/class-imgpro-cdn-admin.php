@@ -344,10 +344,10 @@ class ImgPro_CDN_Admin {
         // Determine current tab from URL or settings
         $current_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : '';
 
-        // If no tab specified, use setup_mode from settings or default to cloudflare (Self-Host)
-        // Self-Host is the default to show the free option first, building trust before showing paid option
+        // If no tab specified, use setup_mode from settings or default to cloud (Managed)
+        // Managed is the default to show the easiest setup option first
         if (empty($current_tab)) {
-            $current_tab = !empty($settings['setup_mode']) ? $settings['setup_mode'] : ImgPro_CDN_Settings::MODE_CLOUDFLARE;
+            $current_tab = !empty($settings['setup_mode']) ? $settings['setup_mode'] : ImgPro_CDN_Settings::MODE_CLOUD;
         }
 
         ?>
@@ -647,14 +647,14 @@ class ImgPro_CDN_Admin {
                                 <span class="dashicons dashicons-no-alt imgpro-cdn-feature-removed"></span>
                                 <div>
                                     <strong><?php esc_html_e('No Cloudflare Account', 'bandwidth-saver'); ?></strong>
-                                    <p><?php esc_html_e('We handle the infrastructure', 'bandwidth-saver'); ?></p>
+                                    <p><?php esc_html_e('ImgPro manages the infrastructure', 'bandwidth-saver'); ?></p>
                                 </div>
                             </div>
                             <div class="imgpro-cdn-feature">
                                 <span class="dashicons dashicons-no-alt imgpro-cdn-feature-removed"></span>
                                 <div>
                                     <strong><?php esc_html_e('No DNS Changes', 'bandwidth-saver'); ?></strong>
-                                    <p><?php esc_html_e('Works with any hosting setup', 'bandwidth-saver'); ?></p>
+                                    <p><?php esc_html_e('Works with any hosting provider', 'bandwidth-saver'); ?></p>
                                 </div>
                             </div>
                             <div class="imgpro-cdn-feature">
@@ -780,7 +780,7 @@ class ImgPro_CDN_Admin {
                     <div class="imgpro-cdn-setup-alternative">
                         <p>
                             <strong><?php esc_html_e('Prefer a simpler setup?', 'bandwidth-saver'); ?></strong>
-                            <?php esc_html_e('The Managed option works in under a minute with no Cloudflare account needed.', 'bandwidth-saver'); ?>
+                            <?php esc_html_e('The Managed option works in under a minute, with managed infrastructure by ImgPro.', 'bandwidth-saver'); ?>
                             <a href="<?php echo esc_url(add_query_arg(['tab' => ImgPro_CDN_Settings::MODE_CLOUD, 'switch_mode' => ImgPro_CDN_Settings::MODE_CLOUD, '_wpnonce' => wp_create_nonce('imgpro_switch_mode')], admin_url('options-general.php?page=imgpro-cdn-settings'))); ?>">
                                 <?php esc_html_e('Try Managed instead', 'bandwidth-saver'); ?>
                             </a>

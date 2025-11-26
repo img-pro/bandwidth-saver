@@ -550,17 +550,17 @@ class ImgPro_CDN_Admin {
 
         ?>
         <nav class="nav-tab-wrapper imgpro-cdn-nav-tabs">
-            <a href="<?php echo esc_url($cloudflare_url); ?>"
-               class="nav-tab <?php echo ImgPro_CDN_Settings::MODE_CLOUDFLARE === $current_tab ? 'nav-tab-active' : ''; ?> <?php echo ImgPro_CDN_Settings::MODE_CLOUDFLARE === $current_tab ? ($is_enabled ? 'is-enabled' : 'is-disabled') : ''; ?>"
-               data-tab="<?php echo esc_attr(ImgPro_CDN_Settings::MODE_CLOUDFLARE); ?>">
-                <span class="dashicons dashicons-cloud"></span>
-                <?php esc_html_e('Self-Host', 'bandwidth-saver'); ?>
-            </a>
             <a href="<?php echo esc_url($cloud_url); ?>"
                class="nav-tab <?php echo ImgPro_CDN_Settings::MODE_CLOUD === $current_tab ? 'nav-tab-active' : ''; ?> <?php echo ImgPro_CDN_Settings::MODE_CLOUD === $current_tab ? ($is_enabled ? 'is-enabled' : 'is-disabled') : ''; ?>"
                data-tab="<?php echo esc_attr(ImgPro_CDN_Settings::MODE_CLOUD); ?>">
                 <span class="dashicons dashicons-superhero"></span>
                 <?php esc_html_e('Managed', 'bandwidth-saver'); ?>
+            </a>
+            <a href="<?php echo esc_url($cloudflare_url); ?>"
+               class="nav-tab <?php echo ImgPro_CDN_Settings::MODE_CLOUDFLARE === $current_tab ? 'nav-tab-active' : ''; ?> <?php echo ImgPro_CDN_Settings::MODE_CLOUDFLARE === $current_tab ? ($is_enabled ? 'is-enabled' : 'is-disabled') : ''; ?>"
+               data-tab="<?php echo esc_attr(ImgPro_CDN_Settings::MODE_CLOUDFLARE); ?>">
+                <span class="dashicons dashicons-cloud"></span>
+                <?php esc_html_e('Self-Host', 'bandwidth-saver'); ?>
             </a>
         </nav>
         <?php
@@ -676,12 +676,12 @@ class ImgPro_CDN_Admin {
                                 );
                                 ?>
                             </button>
-                            <p class="imgpro-cdn-subscribe-includes">
-                                <?php esc_html_e('Includes 500 GB storage and 5 TB monthly bandwidth', 'bandwidth-saver'); ?>
-                            </p>
                             <p class="imgpro-cdn-subscribe-trust">
                                 <span class="dashicons dashicons-lock"></span>
                                 <?php esc_html_e('Secure checkout via Stripe. Cancel anytime.', 'bandwidth-saver'); ?>
+                            </p>
+                            <p class="imgpro-cdn-subscribe-includes">
+                                <?php esc_html_e('Fair use policy. Up to 500GB of storage and 5TB of monthly transfer.', 'bandwidth-saver'); ?><br/>
                             </p>
                         </div>
 
@@ -735,7 +735,6 @@ class ImgPro_CDN_Admin {
                 <div class="imgpro-cdn-setup-intro">
                     <h2>
                         <?php esc_html_e('Use Your Own Cloudflare Account', 'bandwidth-saver'); ?>
-                        <span class="imgpro-cdn-badge-free"><?php esc_html_e('Free', 'bandwidth-saver'); ?></span>
                     </h2>
                     <p class="imgpro-cdn-setup-subtitle">
                         <?php esc_html_e('For technical users who prefer running Cloudflare on their own account. You pay Cloudflare directly (usually $0/month on the free tier).', 'bandwidth-saver'); ?>

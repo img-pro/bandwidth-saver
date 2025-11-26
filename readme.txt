@@ -8,15 +8,15 @@ Stable tag: 0.1.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Faster images without touching DNS. No Cloudflare account needed. Install, activate, done.
+Faster images without touching DNS. No Cloudflare account needed in managed mode. Install, activate, done.
 
 == Description ==
 
-WordPress images often load slowly, especially on shared hosting. Setting up a real CDN usually means editing DNS records, configuring Cloudflare, or dealing with complex caching rules. Most site owners just want faster images without the technical overhead.
+WordPress images often load slowly, especially on shared hosting. Large sites with thousands of images can grind to a halt without a CDN. But setting up Cloudflare usually means editing DNS records, configuring caching rules, and navigating technical steps that many site owners prefer to avoid.
 
-**Bandwidth Saver** solves this by delivering your existing WordPress images through Cloudflare's global edge network. No DNS changes. No Cloudflare account needed. No configuration. Just activate and go.
+**Bandwidth Saver** solves this by delivering your existing WordPress images through Cloudflare's global edge network. No DNS changes. No Cloudflare account needed in managed mode. No configuration. Just activate and go.
 
-Your images stay on your server. Your Media Library stays the same. If anything goes wrong, WordPress automatically loads the original images. You can disable the plugin anytime and your site instantly goes back to normal.
+Safe to try on any site. Does not touch your database or existing files. You can disable it at any time and your site instantly returns to normal. If Cloudflare ever has an issue, WordPress automatically loads your original images.
 
 = How It Works =
 
@@ -27,16 +27,20 @@ Your images stay on your server. Your Media Library stays the same. If anything 
 
 **Your original images stay on your server.** WordPress keeps full control. The plugin only changes how images are delivered to visitors.
 
-The first request to each image may be slightly slower while Cloudflare caches it. Future requests are fast and delivered from the nearest Cloudflare edge.
+Image URLs are rewritten on the frontend only. Your Media Library URLs stay exactly the same.
+
+The first request to each image comes from your server while Cloudflare caches it. After that, all requests are served from the nearest Cloudflare edge location.
 
 = What This Plugin Does =
 
-* Rewrites image URLs on your frontend pages (your Media Library URLs stay the same)
+* Rewrites image URLs on your frontend pages (your Media Library URLs stay exactly the same)
 * Delivers cached images from Cloudflare's global edge network
-* Falls back to your original images if Cloudflare is unavailable
+* Falls back to your original images automatically if Cloudflare is unavailable
 * Works with lazy loading, responsive image sizes, and srcset
+* Works with any theme or page builder without modifying templates or file structures
+* Designed to handle large, image-heavy websites with ease
 
-The plugin delivers whatever WordPress outputs, including images processed by optimization plugins.
+The plugin simply delivers whatever WordPress outputs, including images processed by optimization plugins.
 
 = What This Plugin Does NOT Do =
 
@@ -45,19 +49,24 @@ The plugin delivers whatever WordPress outputs, including images processed by op
 * Does not replace your existing image plugins
 * Does not cache HTML, CSS, or JavaScript
 * Does not require DNS changes or Cloudflare proxy
+* Does not touch your database
 
 Keep using your favorite image optimization plugin. Bandwidth Saver handles the delivery layer only.
 
 = Who This Is For =
 
-This plugin is ideal if you run:
+This plugin is for WordPress users who want faster image delivery without DNS changes, regardless of site size.
+
+It works great for:
 
 * Blogs and content sites
 * Recipe sites
-* Photography or portfolio sites
-* WooCommerce stores with many product images
+* Photography and portfolio sites
+* WooCommerce stores with thousands of product images
+* Online magazines
 * Travel and lifestyle sites
-* Image-heavy sites on shared hosting
+* Large content libraries
+* Sites with heavy visitor traffic
 
 It is also a good fit if you:
 
@@ -76,21 +85,22 @@ This plugin may not be right if you:
 
 = Why Try It =
 
+* **Safe to try on any site.** Does not touch your database or existing files.
 * **No DNS changes required.** Works with any hosting setup.
 * **No Cloudflare account needed** for the Managed option.
 * **Nothing to configure.** Install, activate, done.
-* **Safe to disable.** Your site instantly goes back to normal.
-* **No database changes.** Settings are stored cleanly in a single option.
-* **Works with any theme or page builder.** Tested with Elementor, Beaver Builder, Divi, Bricks, Gutenberg, and more.
+* **Safe to disable.** Your site instantly returns to normal.
+* **Works with any theme or page builder.** Does not modify templates or file structures.
 * **Works with image optimization plugins.** ShortPixel, Imagify, Smush, EWWW, and others.
 * **Supports all image formats.** JPG, PNG, GIF, WebP, AVIF, SVG.
+* **Handles large sites with ease.** Designed for everything from small blogs to high-traffic, image-rich websites.
 
 = Two Ways to Use =
 
 **Managed (Recommended for most users)**
 One click setup. We handle the Cloudflare Worker and R2 storage. No Cloudflare account needed.
 
-The Managed plan costs $9.99 per month and includes up to 500 GB of storage and 5 TB of monthly bandwidth. This is more than enough for most small and medium WordPress sites.
+The Managed plan costs $9.99 per month and includes up to 500 GB of cached image storage and up to 5 TB of monthly bandwidth as soft limits. This comfortably supports everything from small blogs to large, image-heavy WordPress installations.
 
 **Self-Hosted (Free)**
 For technical users who prefer running Cloudflare on their own account. You control the infrastructure and pay Cloudflare directly (usually $0/month on their free tier).
@@ -138,9 +148,13 @@ Detailed guide: [github.com/img-pro/bandwidth-saver-worker](https://github.com/i
 
 **Self-Hosted:** Free. You pay Cloudflare directly, usually $0/month on their free tier.
 
+= How much faster will my images load? =
+
+It depends on your hosting setup, but most sites see significantly faster image delivery after the first cached request. Cloudflare serves images from the nearest edge location, often reducing image load times to just a few milliseconds.
+
 = Will this break my site? =
 
-No. The plugin only rewrites image URLs on your frontend. Your original images stay on your server. If anything goes wrong, disable the plugin and your site instantly goes back to normal.
+No. The plugin only rewrites image URLs on your frontend. Your original images stay on your server. If anything goes wrong, disable the plugin and your site instantly returns to normal.
 
 = Do I need a Cloudflare account? =
 
@@ -154,7 +168,7 @@ No. This plugin works without DNS changes. That is the main benefit for users wh
 
 = Does this change my Media Library URLs? =
 
-No. Image URLs are rewritten on the frontend only. Your Media Library URLs stay the same.
+No. Image URLs are rewritten on the frontend only. Your Media Library URLs stay exactly the same.
 
 = What about image optimization (compression, WebP)? =
 
@@ -166,11 +180,11 @@ Yes. Whatever format WordPress serves, Bandwidth Saver delivers.
 
 = Does it work with lazy loading and srcset? =
 
-Yes. Works with lazy loading, responsive image sizes, and srcset. The plugin delivers whatever WordPress outputs.
+Yes. Works with lazy loading, responsive image sizes, and srcset. The plugin simply delivers whatever WordPress outputs.
 
 = Are the first requests slower? =
 
-The first request to each image may be slightly slower while Cloudflare caches it. Future requests are fast and delivered from the nearest Cloudflare edge.
+Yes. The first request for each image comes from your server while Cloudflare caches it. After that, delivery is extremely fast from the edge.
 
 = What happens if Cloudflare is down? =
 
@@ -186,7 +200,7 @@ Images load from your server again. No cleanup needed. Your original files are n
 
 = Will this work with my theme or page builder? =
 
-Yes. Bandwidth Saver works at the URL level and is compatible with virtually any WordPress setup. Tested with major themes, page builders, and optimization plugins.
+Yes. Bandwidth Saver works at the URL level and is compatible with virtually any WordPress setup. It does not modify templates or file structures. Tested with Elementor, Beaver Builder, Divi, Bricks, Gutenberg, and more.
 
 = Is this an offloading plugin? =
 
@@ -196,15 +210,15 @@ No. Your images stay on your WordPress server. The plugin only rewrites URLs so 
 
 No. This plugin only handles images. It does not cache HTML, CSS, JavaScript, or other assets.
 
-= What if I exceed the Managed plan limits? =
+= Can this handle large sites? =
 
-The Managed plan includes 500 GB of storage and 5 TB of monthly bandwidth as soft limits. If your site grows beyond these limits, we recommend switching to the Self-Hosted option, which gives you full control over your own Cloudflare account with no restrictions.
+Yes. The Managed plan includes 500 GB of storage and 5 TB of monthly bandwidth, which comfortably supports large WooCommerce stores, photography sites, and content-heavy properties. If your site grows beyond these limits, we recommend switching to the Self-Hosted option for full control.
 
 == Screenshots ==
 
-1. **One-Click Setup** - Turn on Cloudflare image delivery in one click with the Managed option
-2. **Simple Status** - Clean and simple status indicators show your image delivery is working
-3. **Self-Hosted Option** - Full control for technical users who want to run their own Cloudflare Worker
+1. **One-Click Setup** - Enable Cloudflare image delivery in one click
+2. **Clear Status** - Clear status indicators for Managed or Self-Hosted mode
+3. **Works Everywhere** - Works with any theme or page builder, no configuration required
 
 == Privacy ==
 
@@ -246,7 +260,7 @@ This plugin connects to external services to deliver images:
 
 == Fair Use Policy ==
 
-The Managed plan costs $9.99 per month and includes up to 500 GB of storage and 5 TB of monthly bandwidth. These are soft limits designed to accommodate most small and medium WordPress sites.
+The Managed plan costs $9.99 per month and includes up to 500 GB of storage and up to 5 TB of monthly bandwidth as soft limits. This comfortably supports everything from small blogs to large, image-heavy WordPress installations.
 
 **If your usage grows beyond these limits:**
 
@@ -254,7 +268,7 @@ We will reach out to discuss your options. In most cases, we recommend switching
 
 **What may require self-hosting:**
 
-* Sites with very high image traffic
+* Sites that exceed the soft limits consistently
 * Sites serving very large files repeatedly
 * Patterns that suggest automated or abusive access
 
@@ -262,15 +276,17 @@ We want you to succeed. If your site outgrows the Managed plan, the Self-Hosted 
 
 == Content Responsibility ==
 
-You are responsible for the content served through this plugin.
+You are responsible for the images you upload. Illegal or abusive content may lead to account review. High-volume or high-risk sites should use the Self-Hosted option for full control.
 
 * Do not use this service to distribute illegal, harmful, or abusive content
 * Do not use this service to circumvent copyright protections
 * Accounts serving prohibited content may be suspended without notice
 
-For high-volume or high-risk use cases, the Self-Hosted option gives you full control over your own Cloudflare account.
-
 == Changelog ==
+
+= 0.1.4 =
+* Improved: Updated copy and documentation for clarity
+* Improved: Better audience targeting and positioning
 
 = 0.1.3 =
 *Stability and Developer Experience Release*
@@ -307,6 +323,9 @@ For high-volume or high-risk use cases, the Self-Hosted option gives you full co
 * Initial release
 
 == Upgrade Notice ==
+
+= 0.1.4 =
+Documentation and copy improvements. Recommended for all users.
 
 = 0.1.3 =
 Stability improvements with clearer error messages and faster page processing. Recommended for all users.

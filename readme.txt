@@ -4,7 +4,7 @@ Tags: cdn, images, cloudflare, performance, bandwidth
 Requires at least: 6.2
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.1.5
+Stable tag: 0.1.6
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -245,6 +245,11 @@ You are responsible for the images you upload. Illegal or abusive content may le
 
 == Changelog ==
 
+= 0.1.6 =
+* Fixed: Fallback now uses the actual failed URL (currentSrc) instead of src attribute
+* Fixed: Proper fallback for srcset images when CDN fails
+* New: Custom domain support for Managed mode
+
 = 0.1.5 =
 * Improved: Simplified self-hosted setup to single CDN domain
 * Improved: Faster image fallback with inline error handling
@@ -290,6 +295,9 @@ You are responsible for the images you upload. Illegal or abusive content may le
 * Initial release
 
 == Upgrade Notice ==
+
+= 0.1.6 =
+Fixes srcset fallback issue and adds custom domain support. Recommended for all users.
 
 = 0.1.5 =
 Simplified architecture and fixed image flashing. Self-hosted users now only need one CDN domain.

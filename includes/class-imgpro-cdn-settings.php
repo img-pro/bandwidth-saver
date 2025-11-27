@@ -101,6 +101,10 @@ class ImgPro_CDN_Settings {
         'cloud_email'     => '',
         'cloud_tier'      => self::TIER_NONE,
 
+        // Custom domain settings (Cloud mode only)
+        'custom_domain'        => '',
+        'custom_domain_status' => '', // pending_dns, pending_ssl, active, error
+
         // Cloudflare mode settings (single domain - worker serves images directly)
         'cdn_url'         => '',
 
@@ -148,6 +152,10 @@ class ImgPro_CDN_Settings {
         // Auto-configure Cloud mode CDN URL (single domain architecture)
         if (self::MODE_CLOUD === $settings['setup_mode']) {
             if ('cdn_url' === $key) {
+                // Use custom domain if active, otherwise default cloud domain
+                if (!empty($settings['custom_domain']) && 'active' === $settings['custom_domain_status']) {
+                    return $settings['custom_domain'];
+                }
                 return self::CLOUD_CDN_DOMAIN;
             }
         }
@@ -225,6 +233,17 @@ class ImgPro_CDN_Settings {
             $tier = sanitize_text_field($settings['cloud_tier']);
             if (in_array($tier, [self::TIER_NONE, self::TIER_ACTIVE, self::TIER_CANCELLED], true)) {
                 $validated['cloud_tier'] = $tier;
+            }
+        }
+
+        // Custom domain (Cloud mode only)
+        if (isset($settings['custom_domain'])) {
+            $validated['custom_domain'] = $this->sanitize_domain($settings['custom_domain']);
+        }
+        if (isset($settings['custom_domain_status'])) {
+            $status = sanitize_text_field($settings['custom_domain_status']);
+            if (in_array($status, ['', 'pending_dns', 'pending_ssl', 'active', 'error'], true)) {
+                $validated['custom_domain_status'] = $status;
             }
         }
 

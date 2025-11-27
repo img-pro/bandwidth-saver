@@ -739,6 +739,220 @@
     opacity: 0.5;
 }
 
+/* ===== Custom Domain - Pending Notice (shown prominently) ===== */
+.imgpro-cdn-pending-notice {
+    margin: 0 0 24px;
+    padding: 16px 20px;
+    background: var(--imgpro-warning-bg);
+    border: 1px solid #fbbf24;
+    border-left: 4px solid #f59e0b;
+    border-radius: var(--imgpro-radius);
+}
+
+.imgpro-cdn-pending-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.imgpro-cdn-pending-header > .dashicons {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    color: #d97706;
+    flex-shrink: 0;
+}
+
+.imgpro-cdn-pending-header > .dashicons-update {
+    color: var(--imgpro-primary);
+    animation: imgpro-spin 2s linear infinite;
+}
+
+@keyframes imgpro-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.imgpro-cdn-pending-header > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.imgpro-cdn-pending-header strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--imgpro-gray-900);
+}
+
+.imgpro-cdn-pending-status {
+    font-size: 13px;
+    color: var(--imgpro-gray-600);
+}
+
+.imgpro-cdn-pending-header > .button {
+    flex-shrink: 0;
+}
+
+/* DNS record display */
+.imgpro-cdn-dns-record {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #fcd34d;
+}
+
+.imgpro-cdn-dns-label {
+    font-size: 13px;
+    color: var(--imgpro-gray-600);
+    white-space: nowrap;
+}
+
+.imgpro-cdn-dns-value {
+    display: inline-block;
+    padding: 8px 14px;
+    background: white;
+    border: 1px solid #fcd34d;
+    border-radius: var(--imgpro-radius);
+    font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    color: var(--imgpro-gray-700);
+}
+
+.imgpro-cdn-dns-value strong {
+    color: var(--imgpro-gray-900);
+}
+
+/* Root domain warning */
+.imgpro-cdn-dns-warning {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 12px 0 0;
+    padding: 0;
+    font-size: 12px;
+    color: #92400e;
+}
+
+.imgpro-cdn-dns-warning .dashicons {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* ===== Custom Domain Section (inside Advanced Settings) ===== */
+.imgpro-cdn-custom-domain-section {
+    margin-bottom: 20px;
+}
+
+.imgpro-cdn-custom-domain-section h4 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--imgpro-gray-900);
+}
+
+.imgpro-cdn-custom-domain-section > .description {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--imgpro-gray-600);
+}
+
+/* Inline form for adding domain */
+.imgpro-cdn-inline-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.imgpro-cdn-inline-form input {
+    flex: 1;
+    max-width: 300px;
+    padding: 6px 10px;
+    border: 1px solid var(--imgpro-gray-300);
+    border-radius: var(--imgpro-radius);
+    font-size: 14px;
+}
+
+.imgpro-cdn-inline-form input:focus {
+    border-color: var(--imgpro-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 51, 255, 0.1);
+}
+
+/* Domain row (when configured) */
+.imgpro-cdn-domain-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.imgpro-cdn-domain-value {
+    display: inline-block;
+    padding: 6px 12px;
+    background: var(--imgpro-gray-50);
+    border: 1px solid var(--imgpro-gray-200);
+    border-radius: var(--imgpro-radius);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--imgpro-gray-900);
+}
+
+/* Status badges */
+.imgpro-cdn-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.imgpro-cdn-status-badge .dashicons {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+}
+
+.imgpro-cdn-status-active {
+    background: var(--imgpro-success-bg);
+    color: #059669;
+}
+
+.imgpro-cdn-status-pending {
+    background: var(--imgpro-warning-bg);
+    color: #d97706;
+}
+
+/* Advanced toggle badge (shows active custom domain) */
+.imgpro-cdn-advanced-badge {
+    margin-left: auto;
+    padding: 2px 10px;
+    background: var(--imgpro-success-bg);
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #059669;
+}
+
+/* Divider inside advanced settings */
+.imgpro-cdn-divider {
+    margin: 20px 0;
+    border: none;
+    border-top: 1px solid var(--imgpro-gray-200);
+}
+
+/* Loading state */
+.imgpro-cdn-custom-domain-section.imgpro-cdn-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
 /* ===== Responsive Design ===== */
 @media (max-width: 782px) {
     .imgpro-cdn-admin {
@@ -809,6 +1023,33 @@
     .imgpro-cdn-setup-actions .button {
         width: 100%;
         justify-content: center;
+    }
+
+    /* Custom domain responsive */
+    .imgpro-cdn-custom-domain-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .imgpro-cdn-custom-domain-input-group {
+        flex-direction: column;
+    }
+
+    .imgpro-cdn-custom-domain-input-group input {
+        max-width: none;
+    }
+
+    .imgpro-cdn-custom-domain-actions {
+        flex-direction: column;
+    }
+
+    .imgpro-cdn-dns-table {
+        font-size: 12px;
+    }
+
+    .imgpro-cdn-dns-table th,
+    .imgpro-cdn-dns-table td {
+        padding: 6px 8px;
     }
 }
 

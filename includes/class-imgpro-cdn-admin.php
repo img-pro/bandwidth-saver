@@ -47,7 +47,6 @@ class ImgPro_CDN_Admin {
     public function register_hooks() {
         add_action('admin_menu', [$this, 'add_menu_page']);
         add_action('admin_init', [$this, 'register_settings']);
-        add_action('admin_notices', [$this, 'show_notices']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
     }
 
@@ -215,20 +214,6 @@ class ImgPro_CDN_Admin {
         }
 
         return $merged;
-    }
-
-    /**
-     * Show admin notices
-     *
-     * On our settings page, we suppress all default WordPress notices
-     * and render our own notices inline via render_inline_notices().
-     *
-     * @since 0.1.0
-     * @return void
-     */
-    public function show_notices() {
-        // Don't output anything on our settings page
-        // All notices are rendered inline via render_inline_notices()
     }
 
     /**
@@ -875,7 +860,16 @@ class ImgPro_CDN_Admin {
 
         if (in_array($last_two, $two_part_tlds, true)) {
             // TLD is two parts (e.g., co.uk)
-            if ($num_parts <= 3) {
+            // Need at least 3 parts for a valid domain (example.co.uk)
+            if ($num_parts < 3) {
+                // Invalid: just a TLD like "co.uk" - treat as root domain for display
+                return [
+                    'subdomain' => '',
+                    'root' => $domain,
+                    'is_root_domain' => true,
+                ];
+            }
+            if ($num_parts === 3) {
                 // Root domain like example.co.uk
                 return [
                     'subdomain' => '',
@@ -892,7 +886,16 @@ class ImgPro_CDN_Admin {
         }
 
         // Standard single-part TLD (e.g., .com, .org)
-        if ($num_parts <= 2) {
+        // Need at least 2 parts for a valid domain (example.com)
+        if ($num_parts < 2) {
+            // Invalid: just a TLD like "com" - treat as root domain for display
+            return [
+                'subdomain' => '',
+                'root' => $domain,
+                'is_root_domain' => true,
+            ];
+        }
+        if ($num_parts === 2) {
             // Root domain like example.com
             return [
                 'subdomain' => '',
@@ -960,7 +963,7 @@ class ImgPro_CDN_Admin {
                         <?php else: ?>
                             <strong><?php echo esc_html($parsed['subdomain']); ?></strong>.<?php echo esc_html($parsed['root']); ?>
                         <?php endif; ?>
-                        &nbsp;&rarr;&nbsp;CNAME&nbsp;&rarr;&nbsp;<strong>domains.img.pro</strong>
+                        &nbsp;&rarr;&nbsp;CNAME&nbsp;&rarr;&nbsp;<strong><?php echo esc_html(ImgPro_CDN_Settings::CUSTOM_DOMAIN_TARGET); ?></strong>
                     </code>
                 </div>
             <?php endif; ?>
@@ -982,7 +985,10 @@ class ImgPro_CDN_Admin {
         ?>
         <div class="imgpro-cdn-custom-domain-section" id="imgpro-cdn-custom-domain-section">
             <h4><?php esc_html_e('Custom Domain', 'bandwidth-saver'); ?></h4>
-            <p class="description"><?php esc_html_e('Use your own domain for the CDN instead of px.img.pro', 'bandwidth-saver'); ?></p>
+            <p class="description"><?php
+                /* translators: %s: default CDN domain */
+                printf(esc_html__('Use your own domain for the CDN instead of %s', 'bandwidth-saver'), esc_html(ImgPro_CDN_Settings::CLOUD_CDN_DOMAIN));
+            ?></p>
 
             <?php if (!$has_custom_domain): ?>
                 <div class="imgpro-cdn-custom-domain-form" id="imgpro-cdn-custom-domain-form">

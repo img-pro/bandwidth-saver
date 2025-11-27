@@ -86,6 +86,16 @@ class ImgPro_CDN_Settings {
     const CLOUD_CDN_DOMAIN = 'px.img.pro';
 
     /**
+     * Custom domain CNAME target for Cloud (Managed) mode
+     *
+     * Users point their custom domain CNAME to this target.
+     *
+     * @since 0.1.6
+     * @var string
+     */
+    const CUSTOM_DOMAIN_TARGET = 'domains.img.pro';
+
+    /**
      * Default settings
      *
      * @since 0.1.0

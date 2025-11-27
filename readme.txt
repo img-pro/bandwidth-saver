@@ -20,9 +20,9 @@ Safe to try on any site. The plugin does not modify your Media Library, files, o
 
 = How It Works =
 
-1. You upload images to WordPress normally  
-2. The plugin rewrites image URLs on your frontend pages  
-3. When an image is requested for the first time, a Cloudflare Worker fetches it from your server and stores it in R2  
+1. You upload images to WordPress normally
+2. The plugin rewrites image URLs on your frontend pages
+3. When an image is requested for the first time, a Cloudflare Worker fetches it from your server and stores it in R2
 4. Future requests serve the cached copy from Cloudflare's edge
 
 Your original images stay on your server. WordPress remains the system of record. The plugin only changes how images are delivered to visitors.
@@ -59,70 +59,72 @@ Bandwidth Saver is for WordPress users who want faster image delivery without DN
 
 Great for:
 
-* Blogs and content sites  
-* Recipe sites  
-* Photography and portfolio sites  
-* WooCommerce stores with many product images  
-* Online magazines  
-* Travel and lifestyle sites  
-* Large content libraries  
+* Blogs and content sites
+* Recipe sites
+* Photography and portfolio sites
+* WooCommerce stores with many product images
+* Online magazines
+* Travel and lifestyle sites
+* Large content libraries
 * High traffic environments
 
 It is a good fit if you:
 
-* Cannot or do not want to move your DNS to Cloudflare  
-* Want Cloudflare-level speed without configuration  
-* Want faster image delivery without touching hosting settings  
+* Cannot or do not want to move your DNS to Cloudflare
+* Want Cloudflare-level speed without configuration
+* Want faster image delivery without touching hosting settings
 
 = Who This Is NOT For =
 
 This plugin may not be the right fit if you:
 
-* Already use Cloudflare DNS with proper caching rules  
-* Need to fully offload media files to external storage  
-* Need caching for HTML, CSS, or JavaScript  
-* Want advanced or custom Cloudflare configurations  
+* Already use Cloudflare DNS with proper caching rules
+* Need to fully offload media files to external storage
+* Need caching for HTML, CSS, or JavaScript
+* Want advanced or custom Cloudflare configurations
 
 = Why Try It =
 
-* Safe to try on any site  
-* No DNS changes required  
-* No Cloudflare account needed in Managed mode  
-* Nothing to configure  
-* Disable and your site returns to normal instantly  
-* Works with virtually all themes and page builders  
-* Compatible with image optimization plugins  
-* Supports JPG, PNG, GIF, WebP, AVIF, and SVG  
-* Handles large websites and high traffic effortlessly  
+* Safe to try on any site
+* No DNS changes required
+* No Cloudflare account needed in Managed mode
+* Nothing to configure
+* Disable and your site returns to normal instantly
+* Works with virtually all themes and page builders
+* Compatible with image optimization plugins
+* Supports JPG, PNG, GIF, WebP, AVIF, and SVG
+* Handles large websites and high traffic effortlessly
 
 = Two Ways to Use =
 
-**Managed (Recommended for most users)**  
+**Managed (Recommended for most users)**
 One click setup. We operate the Cloudflare Worker and R2 storage. No Cloudflare account required for Managed mode. Images are cached and delivered through Cloudflare infrastructure operated by ImgPro.
 
-The Managed plan costs $9.99 per month and includes up to 500 GB of cached image storage and 5 TB of monthly bandwidth as soft limits. Storage refers only to the total weight of cached images in R2. It does not include HTML, CSS, JavaScript, PDFs, videos, or other file types. Storage is cumulative, not monthly traffic.
+The Managed plan costs $9.99 per month and includes up to 100 GB of cached image storage and unlimited bandwidth. Storage refers only to the total weight of cached images in R2. It does not include HTML, CSS, JavaScript, PDFs, videos, or other file types. Storage is cumulative, not monthly traffic.
 
 This comfortably supports everything from small blogs to large, image-heavy WordPress installations.
 
-**Self-Hosted (Free)**  
+Want to use your own domain for image URLs? Managed mode supports custom domains (e.g., cdn.yoursite.com) with automatic SSL certificate provisioning.
+
+**Self-Hosted (Free)**
 For technical users who prefer running Cloudflare on their own account. You control all infrastructure and pay Cloudflare directly (often $0 per month on the free tier).
 
 Requires: Cloudflare account, Worker deployment, custom domain setup.
 
 = Open Source =
 
-The Cloudflare Worker is fully open source:  
+The Cloudflare Worker is fully open source:
 https://github.com/img-pro/bandwidth-saver-worker
 
 == Installation ==
 
 = Managed Setup (Under 1 Minute) =
 
-1. Install and activate the plugin  
-2. Go to **Settings > Bandwidth Saver**  
-3. Select **Managed**  
-4. Click **Activate Now** and complete checkout  
-5. Done. Images now load from Cloudflare  
+1. Install and activate the plugin
+2. Go to **Settings > Bandwidth Saver**
+3. Select **Managed**
+4. Click **Activate Now** and complete checkout
+5. Done. Images now load from Cloudflare
 
 No DNS changes. No Cloudflare account. No configuration.
 
@@ -133,7 +135,7 @@ No DNS changes. No Cloudflare account. No configuration.
 3. Add a custom domain to your Worker (e.g., cdn.yoursite.com)
 4. Enter your CDN domain in **Settings > Bandwidth Saver > Self-Host**
 
-Full guide:  
+Full guide:
 https://github.com/img-pro/bandwidth-saver-worker#setup
 
 == Frequently Asked Questions ==
@@ -145,7 +147,7 @@ Self-Hosted: About 15 minutes if familiar with Cloudflare.
 
 = How much does it cost? =
 
-Managed: $9.99 per month for up to 500 GB storage and 5 TB monthly bandwidth.  
+Managed: $9.99 per month for up to 100 GB storage and unlimited bandwidth.
 Self-Hosted: Free. You pay Cloudflare directly.
 
 = How much faster will my images load? =
@@ -158,12 +160,16 @@ No. Your original images stay on your server. The plugin only rewrites URLs on y
 
 = Do I need a Cloudflare account? =
 
-Managed: No.  
+Managed: No.
 Self-Hosted: Yes.
 
 = Do I need to change DNS? =
 
 No. This plugin works without DNS changes. That is one of its main benefits.
+
+= Can I use my own domain for image URLs? =
+
+Yes. Managed mode supports custom domains (e.g., cdn.yoursite.com). Add a CNAME record pointing to our service and SSL is provisioned automatically. Self-Hosted mode requires your own custom domain by design.
 
 = Does this change my Media Library URLs? =
 
@@ -199,13 +205,13 @@ No. It only handles images.
 
 = Can this handle large sites? =
 
-Yes. Managed mode supports up to 500 GB cached image storage and 5 TB monthly bandwidth. Larger installations can use Self-Hosted mode for full control.
+Yes. Managed mode supports up to 100 GB cached image storage with unlimited bandwidth. Larger installations can use Self-Hosted mode for full control.
 
 == Screenshots ==
 
-1. One click enablement  
-2. Clear status indicators  
-3. Works with virtually all themes and builders  
+1. One click enablement
+2. Clear status indicators
+3. Works with virtually all themes and builders
 
 == Privacy ==
 
@@ -217,38 +223,46 @@ The plugin does not add cookies, tracking, or analytics.
 
 Cloudflare logs standard CDN metadata (IP, timestamps, headers). This is normal for any CDN.
 
-For Managed mode, images are cached on Cloudflare infrastructure operated by ImgPro. Review Cloudflare’s privacy policy for details.
+For Managed mode, images are cached on Cloudflare infrastructure operated by ImgPro. Review Cloudflare's privacy policy for details.
 
 Self-Hosted users store data in their own Cloudflare account.
 
 == External Services ==
 
-Cloudflare R2 and Workers:  
-Purpose: Image storage and edge delivery  
-Terms: https://www.cloudflare.com/terms/  
+Cloudflare R2 and Workers:
+Purpose: Image storage and edge delivery
+Terms: https://www.cloudflare.com/terms/
 Privacy: https://www.cloudflare.com/privacypolicy/
 
-ImgPro Cloud API (Managed mode):  
-Purpose: Subscription and configuration  
-Data: Site URL, admin email  
-Stored: Subscription status, API key  
+ImgPro Cloud API (Managed mode):
+Purpose: Subscription, configuration, and custom domain provisioning
+Data: Site URL, admin email, custom domain (if configured)
+Stored: Subscription status, API key, custom domain settings
 
 == Fair Use Policy ==
 
-Managed mode includes up to 500 GB of cached image storage and 5 TB monthly bandwidth as soft limits. Storage refers to total cached image weight in R2 and does not include non-image assets. Storage is cumulative, not monthly traffic.
+Managed mode includes up to 100 GB of cached image storage with unlimited bandwidth. Storage refers to total cached image weight in R2 and does not include non-image assets. Storage is cumulative, not monthly traffic.
 
-If your usage regularly exceeds the limits, we will contact you. In many cases, the Self-Hosted option is recommended for full control and unlimited growth.
+If your usage exceeds the storage limit, we will contact you to discuss options. In many cases, the Self-Hosted option is recommended for full control and unlimited growth.
 
-== Content Responsibility ==
+== Terms of Service ==
 
-You are responsible for the images you upload. Illegal or abusive content may lead to account review. High risk or high volume sites should use the Self-Hosted option.
+We reserve the right to refuse, suspend, or terminate service at our discretion. Circumstances that may result in service action include:
+
+* Illegal content (including but not limited to copyright infringement)
+* Abusive usage patterns (attacks on infrastructure, proxy abuse)
+* Violation of Cloudflare's terms of service
+* Non-payment or payment fraud
+* Activity that degrades service for other users
+
+You are responsible for the images served through your account. High-risk or high-volume sites should consider the Self-Hosted option for full control.
 
 == Changelog ==
 
 = 0.1.6 =
+* New: Custom domain support for Managed mode (e.g., cdn.yoursite.com)
 * Fixed: Fallback now uses the actual failed URL (currentSrc) instead of src attribute
 * Fixed: Proper fallback for srcset images when CDN fails
-* New: Custom domain support for Managed mode
 
 = 0.1.5 =
 * Improved: Simplified self-hosted setup to single CDN domain
@@ -297,7 +311,7 @@ You are responsible for the images you upload. Illegal or abusive content may le
 == Upgrade Notice ==
 
 = 0.1.6 =
-Fixes srcset fallback issue and adds custom domain support. Recommended for all users.
+Adds custom domain support for Managed mode and fixes srcset fallback. Recommended for all users.
 
 = 0.1.5 =
 Simplified architecture and fixed image flashing. Self-hosted users now only need one CDN domain.

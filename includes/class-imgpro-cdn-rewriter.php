@@ -336,19 +336,24 @@ class ImgPro_CDN_Rewriter {
         // Fallback logic using string manipulation (no URL constructor):
         // 1. Check if not already in fallback state
         // 2. Mark as fallback='1' (trying origin)
-        // 3. Split URL: ['https:', '', 'cdn-domain', 'origin-domain', 'path', ...]
-        // 4. Extract parts after CDN domain (index 3+)
-        // 5. Set new onerror to handle origin failure (sets fallback='2')
-        // 6. Remove srcset to prevent browser choosing CDN URLs
-        // 7. Reconstruct and set origin URL
+        // 3. Use currentSrc (the actual URL that failed, could be from srcset)
+        // 4. Split URL: ['https:', '', 'cdn-domain', 'origin-domain', 'path', ...]
+        // 5. Extract parts after CDN domain (index 3+)
+        // 6. Set new onerror to handle origin failure (sets fallback='2')
+        // 7. Remove srcset to prevent browser choosing other CDN URLs
+        // 8. Reconstruct and set origin URL
         //
         // Example: https://px.img.pro/example.com/wp-content/image.jpg
-        //   this.src.split('/') = ['https:', '', 'px.img.pro', 'example.com', 'wp-content', 'image.jpg']
+        //   currentSrc.split('/') = ['https:', '', 'px.img.pro', 'example.com', 'wp-content', 'image.jpg']
         //   p = slice(3) = ['example.com', 'wp-content', 'image.jpg']
         //   result = 'https://' + p[0] + '/' + p.slice(1).join('/') = 'https://example.com/wp-content/image.jpg'
+        //
+        // Note: currentSrc gives the actual URL the browser tried to load,
+        // which may be from srcset rather than src attribute.
         $handler = "if (!this.dataset.fallback) { "
                  . "this.dataset.fallback = '1'; "
-                 . "var p = this.src.split('/').slice(3); "
+                 . "var u = this.currentSrc || this.src; "
+                 . "var p = u.split('/').slice(3); "
                  . "this.onerror = function() { this.dataset.fallback = '2'; this.onerror = null; }; "
                  . "this.removeAttribute('srcset'); "
                  . "this.src = 'https://' + p[0] + '/' + p.slice(1).join('/'); "

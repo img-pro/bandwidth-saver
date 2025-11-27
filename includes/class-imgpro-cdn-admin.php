@@ -47,7 +47,6 @@ class ImgPro_CDN_Admin {
     public function register_hooks() {
         add_action('admin_menu', [$this, 'add_menu_page']);
         add_action('admin_init', [$this, 'register_settings']);
-        add_action('admin_notices', [$this, 'show_notices']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
     }
 
@@ -90,6 +89,7 @@ class ImgPro_CDN_Admin {
             wp_localize_script('imgpro-cdn-admin', 'imgproCdnAdmin', [
                 'nonce' => wp_create_nonce('imgpro_cdn_toggle_enabled'),
                 'checkoutNonce' => wp_create_nonce('imgpro_cdn_checkout'),
+                'customDomainNonce' => wp_create_nonce('imgpro_cdn_custom_domain'),
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'i18n' => [
                     'activeLabel' => __('Active', 'bandwidth-saver'),
@@ -123,6 +123,14 @@ class ImgPro_CDN_Admin {
                     'cdnInactiveHeading' => __('Image CDN is Inactive', 'bandwidth-saver'),
                     'cdnActiveDesc' => __('Images are being delivered from Cloudflare edge locations worldwide.', 'bandwidth-saver'),
                     'cdnInactiveDesc' => __('Enable to serve images from Cloudflare instead of your server.', 'bandwidth-saver'),
+                    // Custom domain
+                    'addingDomain' => __('Adding domain...', 'bandwidth-saver'),
+                    'checkingStatus' => __('Checking...', 'bandwidth-saver'),
+                    'removingDomain' => __('Removing...', 'bandwidth-saver'),
+                    'domainAdded' => __('Domain added. Configure your DNS to complete setup.', 'bandwidth-saver'),
+                    'domainRemoved' => __('Custom domain removed.', 'bandwidth-saver'),
+                    'domainActive' => __('Custom domain is active.', 'bandwidth-saver'),
+                    'confirmRemoveDomain' => __('Remove this custom domain? Images will be served from the default domain.', 'bandwidth-saver'),
                 ]
             ]);
         }
@@ -209,20 +217,6 @@ class ImgPro_CDN_Admin {
     }
 
     /**
-     * Show admin notices
-     *
-     * On our settings page, we suppress all default WordPress notices
-     * and render our own notices inline via render_inline_notices().
-     *
-     * @since 0.1.0
-     * @return void
-     */
-    public function show_notices() {
-        // Don't output anything on our settings page
-        // All notices are rendered inline via render_inline_notices()
-    }
-
-    /**
      * Render inline notices within the settings page
      *
      * Called from render_settings_page() to show notices in the correct position.
@@ -304,14 +298,17 @@ class ImgPro_CDN_Admin {
         $settings = $this->settings->get_all();
 
         // Handle mode switching (when user clicks tabs)
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce verified below
         if (isset($_GET['switch_mode'])) {
             // Verify nonce for CSRF protection
-            $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce doesn't need sanitization
+            $nonce = isset($_GET['_wpnonce']) ? wp_unslash($_GET['_wpnonce']) : '';
             if (!wp_verify_nonce($nonce, 'imgpro_switch_mode')) {
                 wp_die(esc_html__('Security check failed', 'bandwidth-saver'));
             }
 
-            $new_mode = sanitize_text_field(wp_unslash($_GET['switch_mode']));
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce verified above
+            $new_mode = isset($_GET['switch_mode']) ? sanitize_text_field(wp_unslash($_GET['switch_mode'])) : '';
             if (in_array($new_mode, [ImgPro_CDN_Settings::MODE_CLOUD, ImgPro_CDN_Settings::MODE_CLOUDFLARE], true)) {
                 $old_mode = $settings['setup_mode'] ?? '';
                 $was_enabled = $settings['enabled'] ?? false;
@@ -342,6 +339,7 @@ class ImgPro_CDN_Admin {
         }
 
         // Determine current tab from URL or settings
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Tab selection doesn't require nonce (read-only display state)
         $current_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : '';
 
         // If no tab specified, use setup_mode from settings or default to cloud (Managed)
@@ -695,15 +693,32 @@ class ImgPro_CDN_Admin {
                 </div>
 
             <?php else: ?>
-                <?php // Active Subscription - Show Advanced Settings ?>
-                <?php // Advanced Settings (Collapsible) ?>
+                <?php // Active Subscription ?>
+                <?php
+                $custom_domain = $settings['custom_domain'] ?? '';
+                $domain_status = $settings['custom_domain_status'] ?? '';
+                $has_custom_domain = !empty($custom_domain);
+                $needs_attention = $has_custom_domain && 'active' !== $domain_status;
+                ?>
+
+                <?php // Show pending custom domain prominently when DNS action needed ?>
+                <?php if ($needs_attention): ?>
+                    <?php $this->render_custom_domain_pending($settings); ?>
+                <?php endif; ?>
+
+                <?php // Advanced Settings (Collapsible) - contains custom domain setup ?>
                 <div class="imgpro-cdn-advanced-section">
                     <button type="button" class="imgpro-cdn-advanced-toggle" aria-expanded="false" aria-controls="imgpro-cdn-advanced-content">
                         <span class="dashicons dashicons-arrow-right-alt2"></span>
                         <span><?php esc_html_e('Advanced Settings', 'bandwidth-saver'); ?></span>
+                        <?php if ($has_custom_domain && 'active' === $domain_status): ?>
+                            <span class="imgpro-cdn-advanced-badge"><?php echo esc_html($custom_domain); ?></span>
+                        <?php endif; ?>
                     </button>
 
                     <div class="imgpro-cdn-advanced-content" id="imgpro-cdn-advanced-content" hidden>
+                        <?php $this->render_custom_domain_section($settings); ?>
+                        <hr class="imgpro-cdn-divider">
                         <?php $this->render_advanced_options($settings); ?>
                     </div>
                 </div>
@@ -825,6 +840,192 @@ class ImgPro_CDN_Admin {
                 <?php submit_button(__('Save Settings', 'bandwidth-saver'), 'primary large', 'submit', false); ?>
             </div>
         </form>
+        <?php
+    }
+
+    /**
+     * Parse custom domain to get subdomain and root parts
+     *
+     * @since 0.1.6
+     * @param string $domain Full domain name.
+     * @return array Array with 'subdomain', 'root', 'is_root_domain' keys.
+     */
+    private function parse_custom_domain($domain) {
+        $parts = explode('.', $domain);
+        $num_parts = count($parts);
+
+        // Common two-part TLDs (simplified list)
+        $two_part_tlds = ['co.uk', 'com.au', 'co.nz', 'com.br', 'co.jp', 'com.mx', 'org.uk', 'net.au'];
+        $last_two = $num_parts >= 2 ? $parts[$num_parts - 2] . '.' . $parts[$num_parts - 1] : '';
+
+        if (in_array($last_two, $two_part_tlds, true)) {
+            // TLD is two parts (e.g., co.uk)
+            // Need at least 3 parts for a valid domain (example.co.uk)
+            if ($num_parts < 3) {
+                // Invalid: just a TLD like "co.uk" - treat as root domain for display
+                return [
+                    'subdomain' => '',
+                    'root' => $domain,
+                    'is_root_domain' => true,
+                ];
+            }
+            if ($num_parts === 3) {
+                // Root domain like example.co.uk
+                return [
+                    'subdomain' => '',
+                    'root' => $domain,
+                    'is_root_domain' => true,
+                ];
+            }
+            // Subdomain like cdn.example.co.uk
+            return [
+                'subdomain' => implode('.', array_slice($parts, 0, -3)),
+                'root' => implode('.', array_slice($parts, -3)),
+                'is_root_domain' => false,
+            ];
+        }
+
+        // Standard single-part TLD (e.g., .com, .org)
+        // Need at least 2 parts for a valid domain (example.com)
+        if ($num_parts < 2) {
+            // Invalid: just a TLD like "com" - treat as root domain for display
+            return [
+                'subdomain' => '',
+                'root' => $domain,
+                'is_root_domain' => true,
+            ];
+        }
+        if ($num_parts === 2) {
+            // Root domain like example.com
+            return [
+                'subdomain' => '',
+                'root' => $domain,
+                'is_root_domain' => true,
+            ];
+        }
+
+        // Subdomain like cdn.example.com or deep.sub.example.com
+        return [
+            'subdomain' => implode('.', array_slice($parts, 0, -2)),
+            'root' => implode('.', array_slice($parts, -2)),
+            'is_root_domain' => false,
+        ];
+    }
+
+    /**
+     * Render pending custom domain notice (shown prominently when DNS action needed)
+     *
+     * @since 0.1.6
+     * @param array $settings Plugin settings.
+     * @return void
+     */
+    private function render_custom_domain_pending($settings) {
+        $custom_domain = $settings['custom_domain'] ?? '';
+        $domain_status = $settings['custom_domain_status'] ?? '';
+        $parsed = $this->parse_custom_domain($custom_domain);
+
+        // Determine status message
+        if ('pending_ssl' === $domain_status) {
+            $status_message = __('DNS verified. SSL certificate is being issued...', 'bandwidth-saver');
+            $show_dns = false;
+        } elseif ('error' === $domain_status) {
+            $status_message = __('Verification failed. Please check your DNS settings.', 'bandwidth-saver');
+            $show_dns = true;
+        } else {
+            $status_message = __('Configure your DNS to activate this domain.', 'bandwidth-saver');
+            $show_dns = true;
+        }
+        ?>
+        <div class="imgpro-cdn-pending-notice" id="imgpro-cdn-pending-notice">
+            <div class="imgpro-cdn-pending-header">
+                <span class="dashicons <?php echo 'pending_ssl' === $domain_status ? 'dashicons-update' : 'dashicons-warning'; ?>"></span>
+                <div>
+                    <strong><?php echo esc_html($custom_domain); ?></strong>
+                    <span class="imgpro-cdn-pending-status"><?php echo esc_html($status_message); ?></span>
+                </div>
+                <button type="button" class="button" id="imgpro-cdn-check-domain-pending">
+                    <?php esc_html_e('Check Status', 'bandwidth-saver'); ?>
+                </button>
+            </div>
+
+            <?php if ($show_dns): ?>
+                <?php if ($parsed['is_root_domain']): ?>
+                    <p class="imgpro-cdn-dns-warning">
+                        <span class="dashicons dashicons-info-outline"></span>
+                        <?php esc_html_e('Root domains require ALIAS/ANAME records instead of CNAME. Consider using a subdomain.', 'bandwidth-saver'); ?>
+                    </p>
+                <?php endif; ?>
+                <div class="imgpro-cdn-dns-record">
+                    <span class="imgpro-cdn-dns-label"><?php esc_html_e('Add this DNS record:', 'bandwidth-saver'); ?></span>
+                    <code class="imgpro-cdn-dns-value">
+                        <?php if ($parsed['is_root_domain']): ?>
+                            <?php echo esc_html($custom_domain); ?>
+                        <?php else: ?>
+                            <strong><?php echo esc_html($parsed['subdomain']); ?></strong>.<?php echo esc_html($parsed['root']); ?>
+                        <?php endif; ?>
+                        &nbsp;&rarr;&nbsp;CNAME&nbsp;&rarr;&nbsp;<strong><?php echo esc_html(ImgPro_CDN_Settings::CUSTOM_DOMAIN_TARGET); ?></strong>
+                    </code>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render custom domain section (inside Advanced Settings)
+     *
+     * @since 0.1.6
+     * @param array $settings Plugin settings.
+     * @return void
+     */
+    private function render_custom_domain_section($settings) {
+        $custom_domain = $settings['custom_domain'] ?? '';
+        $domain_status = $settings['custom_domain_status'] ?? '';
+        $has_custom_domain = !empty($custom_domain);
+        ?>
+        <div class="imgpro-cdn-custom-domain-section" id="imgpro-cdn-custom-domain-section">
+            <h4><?php esc_html_e('Custom Domain', 'bandwidth-saver'); ?></h4>
+            <p class="description"><?php
+                /* translators: %s: default CDN domain */
+                printf(esc_html__('Use your own domain for the CDN instead of %s', 'bandwidth-saver'), esc_html(ImgPro_CDN_Settings::CLOUD_CDN_DOMAIN));
+            ?></p>
+
+            <?php if (!$has_custom_domain): ?>
+                <div class="imgpro-cdn-custom-domain-form" id="imgpro-cdn-custom-domain-form">
+                    <div class="imgpro-cdn-inline-form">
+                        <input
+                            type="text"
+                            id="imgpro-cdn-custom-domain-input"
+                            placeholder="cdn.yourdomain.com"
+                            class="regular-text"
+                        >
+                        <button type="button" class="button" id="imgpro-cdn-add-domain">
+                            <?php esc_html_e('Add Domain', 'bandwidth-saver'); ?>
+                        </button>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="imgpro-cdn-custom-domain-status" id="imgpro-cdn-custom-domain-status" data-status="<?php echo esc_attr($domain_status); ?>">
+                    <div class="imgpro-cdn-domain-row">
+                        <code class="imgpro-cdn-domain-value"><?php echo esc_html($custom_domain); ?></code>
+                        <?php if ('active' === $domain_status): ?>
+                            <span class="imgpro-cdn-status-badge imgpro-cdn-status-active">
+                                <span class="dashicons dashicons-yes-alt"></span>
+                                <?php esc_html_e('Active', 'bandwidth-saver'); ?>
+                            </span>
+                        <?php else: ?>
+                            <span class="imgpro-cdn-status-badge imgpro-cdn-status-pending">
+                                <span class="dashicons dashicons-clock"></span>
+                                <?php esc_html_e('Pending', 'bandwidth-saver'); ?>
+                            </span>
+                        <?php endif; ?>
+                        <button type="button" class="button-link button-link-delete" id="imgpro-cdn-remove-domain">
+                            <?php esc_html_e('Remove', 'bandwidth-saver'); ?>
+                        </button>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
         <?php
     }
 

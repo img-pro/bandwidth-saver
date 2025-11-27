@@ -280,6 +280,157 @@
             }
         });
 
+        // ===== Custom Domain Management =====
+
+        // Handle Add Custom Domain button
+        $('#imgpro-cdn-add-domain').on('click', function() {
+            const $button = $(this);
+            const $input = $('#imgpro-cdn-custom-domain-input');
+            const $section = $('#imgpro-cdn-custom-domain-section');
+            const domain = $input.val().trim();
+
+            if (!domain) {
+                $input.focus();
+                return;
+            }
+
+            const originalText = $button.text();
+
+            // Disable UI and show loading state
+            $button.prop('disabled', true).text(imgproCdnAdmin.i18n.addingDomain);
+            $input.prop('disabled', true);
+            $section.addClass('imgpro-cdn-loading');
+
+            // AJAX request to add domain
+            $.ajax({
+                url: imgproCdnAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'imgpro_cdn_add_custom_domain',
+                    domain: domain,
+                    nonce: imgproCdnAdmin.customDomainNonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showNotice('success', imgproCdnAdmin.i18n.domainAdded);
+                        // Reload page to show DNS instructions
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        $button.prop('disabled', false).text(originalText);
+                        $input.prop('disabled', false);
+                        $section.removeClass('imgpro-cdn-loading');
+                        alert(response.data.message || imgproCdnAdmin.i18n.genericError);
+                    }
+                },
+                error: function() {
+                    $button.prop('disabled', false).text(originalText);
+                    $input.prop('disabled', false);
+                    $section.removeClass('imgpro-cdn-loading');
+                    alert(imgproCdnAdmin.i18n.genericError);
+                }
+            });
+        });
+
+        // Handle Check Domain Status button (both in pending notice and in advanced settings)
+        $('#imgpro-cdn-check-domain-pending, #imgpro-cdn-check-domain').on('click', function() {
+            const $button = $(this);
+            const $notice = $('#imgpro-cdn-pending-notice');
+            const originalText = $button.text();
+
+            // Disable UI and show loading state
+            $button.prop('disabled', true).text(imgproCdnAdmin.i18n.checkingStatus);
+
+            // AJAX request to check status
+            $.ajax({
+                url: imgproCdnAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'imgpro_cdn_check_custom_domain',
+                    nonce: imgproCdnAdmin.customDomainNonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        if (response.data.status === 'active') {
+                            showNotice('success', imgproCdnAdmin.i18n.domainActive);
+                            // Reload to update UI
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            // Status hasn't changed
+                            $button.prop('disabled', false).text(originalText);
+                            // Update status display if changed
+                            const $statusDiv = $('#imgpro-cdn-custom-domain-status');
+                            if ($statusDiv.length && $statusDiv.data('status') !== response.data.status) {
+                                window.location.reload();
+                            }
+                        }
+                    } else {
+                        $button.prop('disabled', false).text(originalText);
+                        alert(response.data.message || imgproCdnAdmin.i18n.genericError);
+                    }
+                },
+                error: function() {
+                    $button.prop('disabled', false).text(originalText);
+                    alert(imgproCdnAdmin.i18n.genericError);
+                }
+            });
+        });
+
+        // Handle Remove Domain button
+        $('#imgpro-cdn-remove-domain').on('click', function() {
+            const $button = $(this);
+            const $section = $('#imgpro-cdn-custom-domain-section');
+
+            if (!confirm(imgproCdnAdmin.i18n.confirmRemoveDomain)) {
+                return;
+            }
+
+            const originalText = $button.text();
+
+            // Disable UI and show loading state
+            $button.prop('disabled', true).text(imgproCdnAdmin.i18n.removingDomain);
+            $section.addClass('imgpro-cdn-loading');
+
+            // AJAX request to remove domain
+            $.ajax({
+                url: imgproCdnAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'imgpro_cdn_remove_custom_domain',
+                    nonce: imgproCdnAdmin.customDomainNonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showNotice('success', imgproCdnAdmin.i18n.domainRemoved);
+                        // Reload page to show add form
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        $button.prop('disabled', false).text(originalText);
+                        $section.removeClass('imgpro-cdn-loading');
+                        alert(response.data.message || imgproCdnAdmin.i18n.genericError);
+                    }
+                },
+                error: function() {
+                    $button.prop('disabled', false).text(originalText);
+                    $section.removeClass('imgpro-cdn-loading');
+                    alert(imgproCdnAdmin.i18n.genericError);
+                }
+            });
+        });
+
+        // Allow Enter key to submit custom domain
+        $('#imgpro-cdn-custom-domain-input').on('keypress', function(e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                $('#imgpro-cdn-add-domain').click();
+            }
+        });
+
     });
 
 })(jQuery);

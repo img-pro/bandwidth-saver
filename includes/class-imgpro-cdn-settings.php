@@ -86,6 +86,16 @@ class ImgPro_CDN_Settings {
     const CLOUD_CDN_DOMAIN = 'px.img.pro';
 
     /**
+     * Custom domain CNAME target for Cloud (Managed) mode
+     *
+     * Users point their custom domain CNAME to this target.
+     *
+     * @since 0.1.6
+     * @var string
+     */
+    const CUSTOM_DOMAIN_TARGET = 'domains.img.pro';
+
+    /**
      * Default settings
      *
      * @since 0.1.0
@@ -100,6 +110,10 @@ class ImgPro_CDN_Settings {
         'cloud_api_key'   => '',
         'cloud_email'     => '',
         'cloud_tier'      => self::TIER_NONE,
+
+        // Custom domain settings (Cloud mode only)
+        'custom_domain'        => '',
+        'custom_domain_status' => '', // pending_dns, pending_ssl, active, error
 
         // Cloudflare mode settings (single domain - worker serves images directly)
         'cdn_url'         => '',
@@ -148,6 +162,10 @@ class ImgPro_CDN_Settings {
         // Auto-configure Cloud mode CDN URL (single domain architecture)
         if (self::MODE_CLOUD === $settings['setup_mode']) {
             if ('cdn_url' === $key) {
+                // Use custom domain if active, otherwise default cloud domain
+                if (!empty($settings['custom_domain']) && 'active' === $settings['custom_domain_status']) {
+                    return $settings['custom_domain'];
+                }
                 return self::CLOUD_CDN_DOMAIN;
             }
         }
@@ -228,9 +246,20 @@ class ImgPro_CDN_Settings {
             }
         }
 
+        // Custom domain (Cloud mode only)
+        if (isset($settings['custom_domain'])) {
+            $validated['custom_domain'] = self::sanitize_domain($settings['custom_domain']);
+        }
+        if (isset($settings['custom_domain_status'])) {
+            $status = sanitize_text_field($settings['custom_domain_status']);
+            if (in_array($status, ['', 'pending_dns', 'pending_ssl', 'active', 'error'], true)) {
+                $validated['custom_domain_status'] = $status;
+            }
+        }
+
         // CDN URL (domain only - single domain architecture)
         if (isset($settings['cdn_url'])) {
-            $validated['cdn_url'] = $this->sanitize_domain($settings['cdn_url']);
+            $validated['cdn_url'] = self::sanitize_domain($settings['cdn_url']);
         }
 
         // Allowed domains (array)
@@ -242,7 +271,7 @@ class ImgPro_CDN_Settings {
             }
 
             $validated['allowed_domains'] = array_map(
-                [$this, 'sanitize_domain'],
+                [self::class, 'sanitize_domain'],
                 array_filter($domains)
             );
         }
@@ -271,7 +300,7 @@ class ImgPro_CDN_Settings {
      * @param string $domain Domain to sanitize.
      * @return string Sanitized domain or empty string if invalid.
      */
-    private function sanitize_domain($domain) {
+    public static function sanitize_domain($domain) {
         // Remove protocol
         $domain = preg_replace('#^https?://#i', '', $domain);
 

@@ -54,7 +54,7 @@ The plugin simply delivers whatever WordPress outputs, including images processe
 
 One click setup. We handle the Cloudflare Worker and R2 storage. No Cloudflare account needed.
 
-The Managed plan costs $9.99 per month and includes up to 500 GB of storage and up to 5 TB of monthly bandwidth as soft limits. This comfortably supports everything from small blogs to large, image-heavy WordPress installations.
+The Managed plan costs $9.99 per month and includes up to 100 GB of storage with unlimited bandwidth. This comfortably supports everything from small blogs to large, image-heavy WordPress installations.
 
 ### Self-Hosted (Free)
 

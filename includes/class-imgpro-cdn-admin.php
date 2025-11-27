@@ -679,7 +679,7 @@ class ImgPro_CDN_Admin {
                                 <?php esc_html_e('Secure checkout via Stripe. Cancel anytime.', 'bandwidth-saver'); ?>
                             </p>
                             <p class="imgpro-cdn-subscribe-includes">
-                                <?php esc_html_e('Fair use policy. Up to 500GB of storage and 5TB of monthly transfer.', 'bandwidth-saver'); ?><br/>
+                                <?php esc_html_e('Fair use policy. Up to 100GB of storage with unlimited bandwidth.', 'bandwidth-saver'); ?><br/>
                             </p>
                         </div>
 

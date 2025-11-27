@@ -55,26 +55,6 @@ class ImgPro_CDN_Admin_Ajax {
     }
 
     /**
-     * Verify AJAX request security
-     *
-     * Checks nonce and user permissions. Sends JSON error and exits if invalid.
-     *
-     * @since 0.1.6
-     * @param string $nonce_action The nonce action to verify against.
-     * @return void Exits with JSON error if verification fails.
-     */
-    private function verify_ajax_request($nonce_action) {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, $nonce_action)) {
-            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
-        }
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
-    }
-
-    /**
      * Generate cryptographically secure API key
      *
      * @since 0.1.2
@@ -93,7 +73,13 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_toggle_enabled() {
-        $this->verify_ajax_request('imgpro_cdn_toggle_enabled');
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'imgpro_cdn_toggle_enabled')) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
+        }
 
         // Get enabled value and current tab
         $enabled = isset($_POST['enabled']) && '1' === $_POST['enabled'];
@@ -180,7 +166,13 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_checkout() {
-        $this->verify_ajax_request('imgpro_cdn_checkout');
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout')) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
+        }
 
         // Get admin email and site URL
         $email = get_option('admin_email');
@@ -286,7 +278,13 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_recover_account() {
-        $this->verify_ajax_request('imgpro_cdn_checkout');
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout')) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
+        }
 
         // Attempt recovery
         if (ImgPro_CDN_Settings::recover_account($this->settings)) {
@@ -307,7 +305,13 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_manage_subscription() {
-        $this->verify_ajax_request('imgpro_cdn_checkout');
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout')) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
+        }
 
         // Get API key from settings
         $settings = $this->settings->get_all();
@@ -398,7 +402,13 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_add_custom_domain() {
-        $this->verify_ajax_request('imgpro_cdn_custom_domain');
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'imgpro_cdn_custom_domain')) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
+        }
 
         // Get and sanitize domain from request
         $raw_domain = isset($_POST['domain']) ? sanitize_text_field(wp_unslash($_POST['domain'])) : '';
@@ -475,7 +485,13 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_check_custom_domain() {
-        $this->verify_ajax_request('imgpro_cdn_custom_domain');
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'imgpro_cdn_custom_domain')) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
+        }
 
         // Get API key from settings
         $settings = $this->settings->get_all();
@@ -530,7 +546,13 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_remove_custom_domain() {
-        $this->verify_ajax_request('imgpro_cdn_custom_domain');
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'imgpro_cdn_custom_domain')) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
+        }
 
         // Get API key from settings
         $settings = $this->settings->get_all();

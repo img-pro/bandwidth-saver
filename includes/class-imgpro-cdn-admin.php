@@ -304,14 +304,17 @@ class ImgPro_CDN_Admin {
         $settings = $this->settings->get_all();
 
         // Handle mode switching (when user clicks tabs)
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce verified below
         if (isset($_GET['switch_mode'])) {
             // Verify nonce for CSRF protection
-            $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce doesn't need sanitization
+            $nonce = isset($_GET['_wpnonce']) ? wp_unslash($_GET['_wpnonce']) : '';
             if (!wp_verify_nonce($nonce, 'imgpro_switch_mode')) {
                 wp_die(esc_html__('Security check failed', 'bandwidth-saver'));
             }
 
-            $new_mode = sanitize_text_field(wp_unslash($_GET['switch_mode']));
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce verified above
+            $new_mode = isset($_GET['switch_mode']) ? sanitize_text_field(wp_unslash($_GET['switch_mode'])) : '';
             if (in_array($new_mode, [ImgPro_CDN_Settings::MODE_CLOUD, ImgPro_CDN_Settings::MODE_CLOUDFLARE], true)) {
                 $old_mode = $settings['setup_mode'] ?? '';
                 $was_enabled = $settings['enabled'] ?? false;
@@ -342,6 +345,7 @@ class ImgPro_CDN_Admin {
         }
 
         // Determine current tab from URL or settings
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Tab selection doesn't require nonce (read-only display state)
         $current_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : '';
 
         // If no tab specified, use setup_mode from settings or default to cloud (Managed)

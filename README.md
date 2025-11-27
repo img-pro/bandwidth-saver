@@ -1,6 +1,6 @@
 # Bandwidth Saver: Image CDN
 
-[![WordPress Plugin Version](https://img.shields.io/badge/version-0.1.4-blue.svg)](https://wordpress.org/plugins/bandwidth-saver/)
+[![WordPress Plugin Version](https://img.shields.io/badge/version-0.1.5-blue.svg)](https://wordpress.org/plugins/bandwidth-saver/)
 [![Requires WordPress Version](https://img.shields.io/badge/wordpress-6.2%2B-blue.svg)](https://wordpress.org/download/)
 [![Requires PHP Version](https://img.shields.io/badge/php-7.4%2B-purple.svg)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-red.svg)](LICENSE)
@@ -60,7 +60,7 @@ The Managed plan costs $9.99 per month and includes up to 500 GB of storage and 
 
 For technical users who prefer running Cloudflare on their own account. You control the infrastructure and pay Cloudflare directly (usually $0/month on their free tier).
 
-Requires: Cloudflare account, R2 bucket, Worker deployment, custom domain setup.
+Requires: Cloudflare account, Worker deployment, custom domain setup.
 
 ## Requirements
 
@@ -69,8 +69,8 @@ Requires: Cloudflare account, R2 bucket, Worker deployment, custom domain setup.
 
 **For Self-Hosted only:**
 - Cloudflare account (free tier works)
-- R2 bucket enabled
 - Cloudflare Worker deployed ([see worker repo](https://github.com/img-pro/bandwidth-saver-worker))
+- Custom domain pointing to your Worker
 
 ## Installation
 
@@ -82,14 +82,14 @@ Requires: Cloudflare account, R2 bucket, Worker deployment, custom domain setup.
 4. Click **Activate Now** and complete checkout
 5. Done. Images now load from Cloudflare.
 
-### Self-Hosted Setup (About 20 Minutes)
+### Self-Hosted Setup (About 15 Minutes)
 
 For technical users who prefer running Cloudflare on their own account:
 
 1. Create a free [Cloudflare account](https://cloudflare.com) if you do not have one
 2. Deploy the worker from [our GitHub repository](https://github.com/img-pro/bandwidth-saver-worker)
-3. Create an R2 bucket and configure a custom domain
-4. Enter your CDN and Worker domains in **Settings > Bandwidth Saver > Self-Host**
+3. Add a custom domain to your Worker (e.g., cdn.yoursite.com)
+4. Enter your CDN domain in **Settings > Bandwidth Saver > Self-Host**
 
 Detailed guide: [github.com/img-pro/bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker#setup)
 
@@ -152,6 +152,8 @@ bandwidth-saver/
 │   └── js/
 │       └── imgpro-cdn-admin.js        # Admin JavaScript
 └── assets/
+    ├── css/
+    │   └── imgpro-cdn-frontend.css    # Frontend styles
     └── js/
         └── imgpro-cdn.js              # Frontend JavaScript
 ```

@@ -9,26 +9,18 @@
  */
 
 /*
- * Hide CDN images until they load successfully
+ * Hide images during fallback (CDN failed, loading from origin)
  * Uses visibility: hidden to prevent broken image icon
  * while maintaining layout space (no shift)
  */
-img[data-worker-domain]:not(.imgpro-loaded) {
+img[data-imgpro-cdn][data-fallback='1']:not(.imgpro-loaded) {
     visibility: hidden;
-}
-
-/*
- * Show image instantly when loaded
- * The imgpro-loaded class is added by onload handler
- */
-img[data-worker-domain].imgpro-loaded {
-    visibility: visible;
 }
 
 /*
  * Hide permanently failed images
  * data-fallback='2' means both CDN and origin failed
  */
-img[data-worker-domain][data-fallback='2'] {
+img[data-imgpro-cdn][data-fallback='2'] {
     visibility: hidden !important;
 }

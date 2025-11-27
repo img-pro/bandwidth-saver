@@ -129,6 +129,9 @@ class ImgPro_CDN_Core {
     /**
      * Enqueue frontend assets
      *
+     * Loads CSS to prevent broken image flash and JavaScript for
+     * lazy loading handling, error fallback, and dynamic content support.
+     *
      * @since 0.1.0
      * @return void
      */
@@ -138,7 +141,7 @@ class ImgPro_CDN_Core {
             return;
         }
 
-        // Enqueue frontend CSS (only if file exists)
+        // Enqueue frontend CSS (prevents broken image flash)
         $css_file = IMGPRO_CDN_PLUGIN_DIR . 'assets/css/imgpro-cdn-frontend.css';
         if (file_exists($css_file)) {
             wp_enqueue_style(
@@ -150,7 +153,7 @@ class ImgPro_CDN_Core {
             );
         }
 
-        // Enqueue frontend JavaScript (error handler + lazy loader)
+        // Enqueue frontend JavaScript (lazy loading, error handling, dynamic content)
         $js_file = IMGPRO_CDN_PLUGIN_DIR . 'assets/js/imgpro-cdn.js';
         if (file_exists($js_file)) {
             wp_enqueue_script(
@@ -161,31 +164,10 @@ class ImgPro_CDN_Core {
                 false // Load in header
             );
 
-            // Output inline stub BEFORE main script to provide immediate fallback
-            // This ensures images can recover even if main script is slow/blocked
-            $debug_enabled = $this->settings->get('debug_mode') && defined('WP_DEBUG') && WP_DEBUG;
-            wp_add_inline_script(
-                'imgpro-cdn',
-                'window.imgproCdnConfig={debug:' . ($debug_enabled ? '1' : '0') . '};' .
-                'window.ImgProCDN=window.ImgProCDN||{' .
-                    'handleError:function(img){' .
-                        'if(!img.dataset.fallback){' .
-                            'try{' .
-                                'var u=new URL(img.currentSrc||img.src);' .
-                                'var p=u.pathname.substring(1).split("/");' .
-                                'if(p.length>=2){' .
-                                    'img.dataset.fallback="1";' .
-                                    'img.classList.remove("imgpro-loaded");' .
-                                    'img.removeAttribute("srcset");' .
-                                    'img.removeAttribute("sizes");' .
-                                    'img.src=u.protocol+"//"+p[0]+"/"+p.slice(1).join("/")+(u.search||"")+(u.hash||"");' .
-                                '}' .
-                            '}catch(e){}' .
-                        '}' .
-                    '}' .
-                '};',
-                'before'
-            );
+            // Pass config to JavaScript
+            wp_localize_script('imgpro-cdn', 'imgproCdnConfig', [
+                'debug' => $this->settings->get('debug_mode', false),
+            ]);
         }
     }
 

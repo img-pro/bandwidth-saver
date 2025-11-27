@@ -4,7 +4,7 @@ Tags: cdn, images, cloudflare, performance, bandwidth
 Requires at least: 6.2
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.1.4
+Stable tag: 0.1.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -107,7 +107,7 @@ This comfortably supports everything from small blogs to large, image-heavy Word
 **Self-Hosted (Free)**  
 For technical users who prefer running Cloudflare on their own account. You control all infrastructure and pay Cloudflare directly (often $0 per month on the free tier).
 
-Requires: Cloudflare account, R2 bucket, Worker deployment, custom domain setup.
+Requires: Cloudflare account, Worker deployment, custom domain setup.
 
 = Open Source =
 
@@ -126,12 +126,12 @@ https://github.com/img-pro/bandwidth-saver-worker
 
 No DNS changes. No Cloudflare account. No configuration.
 
-= Self-Hosted Setup (About 20 Minutes) =
+= Self-Hosted Setup (About 15 Minutes) =
 
-1. Create a free Cloudflare account  
-2. Deploy the worker from GitHub  
-3. Create an R2 bucket and configure a custom domain  
-4. Enter your CDN and Worker domains in **Settings > Bandwidth Saver > Self-Host**
+1. Create a free Cloudflare account
+2. Deploy the worker from GitHub
+3. Add a custom domain to your Worker (e.g., cdn.yoursite.com)
+4. Enter your CDN domain in **Settings > Bandwidth Saver > Self-Host**
 
 Full guide:  
 https://github.com/img-pro/bandwidth-saver-worker#setup
@@ -140,8 +140,8 @@ https://github.com/img-pro/bandwidth-saver-worker#setup
 
 = How long does setup take? =
 
-Managed: Under a minute.  
-Self-Hosted: About 20 minutes if familiar with Cloudflare.
+Managed: Under a minute.
+Self-Hosted: About 15 minutes if familiar with Cloudflare.
 
 = How much does it cost? =
 
@@ -245,6 +245,12 @@ You are responsible for the images you upload. Illegal or abusive content may le
 
 == Changelog ==
 
+= 0.1.5 =
+* Improved: Simplified self-hosted setup to single CDN domain
+* Improved: Faster image fallback with inline error handling
+* Improved: Images no longer flash on load
+* Fixed: Better compatibility with strict CSP policies
+
 = 0.1.4 =
 * Improved: Updated copy and documentation for clarity
 * Improved: Better audience targeting and positioning
@@ -284,6 +290,9 @@ You are responsible for the images you upload. Illegal or abusive content may le
 * Initial release
 
 == Upgrade Notice ==
+
+= 0.1.5 =
+Simplified architecture and fixed image flashing. Self-hosted users now only need one CDN domain.
 
 = 0.1.4 =
 Documentation and copy improvements. Recommended for all users.

@@ -23,6 +23,10 @@ do_action('imgpro_cdn_before_uninstall');
 delete_option('imgpro_cdn_settings');
 delete_option('imgpro_cdn_version');
 
+// Delete transients
+delete_transient('imgpro_cdn_pricing');
+delete_transient('imgpro_cdn_pending_payment');
+
 // For multisite installations
 if (is_multisite()) {
     // Get all sites with pagination for better performance on large networks
@@ -45,6 +49,10 @@ if (is_multisite()) {
             // Delete options for this site
             delete_option('imgpro_cdn_settings');
             delete_option('imgpro_cdn_version');
+
+            // Delete transients for this site
+            delete_transient('imgpro_cdn_pricing');
+            delete_transient('imgpro_cdn_pending_payment');
 
             restore_current_blog();
         }

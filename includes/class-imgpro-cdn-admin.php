@@ -421,7 +421,7 @@ class ImgPro_CDN_Admin {
     private function render_main_toggle($settings) {
         // Check if EITHER backend is configured (not just active mode)
         $has_cloud = (ImgPro_CDN_Settings::TIER_ACTIVE === $settings['cloud_tier']);
-        $has_cloudflare = !empty($settings['cdn_url']) && !empty($settings['worker_url']);
+        $has_cloudflare = !empty($settings['cdn_url']);
 
         if (!$has_cloud && !$has_cloudflare) {
             return; // Don't show toggle if nothing is configured
@@ -531,7 +531,7 @@ class ImgPro_CDN_Admin {
 
         // Check if both modes are configured
         $has_cloud = (ImgPro_CDN_Settings::TIER_ACTIVE === $settings['cloud_tier']);
-        $has_cloudflare = !empty($settings['cdn_url']) && !empty($settings['worker_url']);
+        $has_cloudflare = !empty($settings['cdn_url']);
 
         // Always add switch_mode parameter with nonce when clicking tabs
         $cloud_url = add_query_arg([
@@ -724,7 +724,7 @@ class ImgPro_CDN_Admin {
      * @return void
      */
     private function render_cloudflare_tab($settings) {
-        $is_configured = !empty($settings['cdn_url']) && !empty($settings['worker_url']);
+        $is_configured = !empty($settings['cdn_url']);
         ?>
         <form method="post" action="options.php">
             <?php settings_fields('imgpro_cdn_settings_group'); ?>
@@ -748,20 +748,16 @@ class ImgPro_CDN_Admin {
                                 <span><?php esc_html_e('Free account at cloudflare.com', 'bandwidth-saver'); ?></span>
                             </li>
                             <li>
-                                <strong><?php esc_html_e('R2 Storage Bucket', 'bandwidth-saver'); ?></strong>
-                                <span><?php esc_html_e('Enable R2 in your Cloudflare dashboard', 'bandwidth-saver'); ?></span>
-                            </li>
-                            <li>
                                 <strong><?php esc_html_e('Deploy the Worker', 'bandwidth-saver'); ?></strong>
-                                <span><?php esc_html_e('Our open-source Worker code on GitHub', 'bandwidth-saver'); ?></span>
+                                <span><?php esc_html_e('One-click deploy from our GitHub repository', 'bandwidth-saver'); ?></span>
                             </li>
                             <li>
-                                <strong><?php esc_html_e('Custom Domains', 'bandwidth-saver'); ?></strong>
-                                <span><?php esc_html_e('Point subdomains to your R2 bucket and Worker', 'bandwidth-saver'); ?></span>
+                                <strong><?php esc_html_e('Add Custom Domain', 'bandwidth-saver'); ?></strong>
+                                <span><?php esc_html_e('Point a subdomain to your Worker (e.g., cdn.yoursite.com)', 'bandwidth-saver'); ?></span>
                             </li>
                             <li>
-                                <strong><?php esc_html_e('Enter Domains Below', 'bandwidth-saver'); ?></strong>
-                                <span><?php esc_html_e('Add your domains here to activate', 'bandwidth-saver'); ?></span>
+                                <strong><?php esc_html_e('Enter Domain Below', 'bandwidth-saver'); ?></strong>
+                                <span><?php esc_html_e('Add your CDN domain here to activate', 'bandwidth-saver'); ?></span>
                             </li>
                         </ol>
 
@@ -772,7 +768,7 @@ class ImgPro_CDN_Admin {
                             </a>
                             <span class="imgpro-cdn-setup-time">
                                 <span class="dashicons dashicons-clock"></span>
-                                <?php esc_html_e('About 20 minutes if familiar with Cloudflare', 'bandwidth-saver'); ?>
+                                <?php esc_html_e('About 15 minutes if familiar with Cloudflare', 'bandwidth-saver'); ?>
                             </span>
                         </div>
                     </div>
@@ -791,7 +787,7 @@ class ImgPro_CDN_Admin {
 
             <?php // Configuration Card ?>
             <div class="imgpro-cdn-config-card">
-                <h2><?php echo $is_configured ? esc_html__('Your Cloudflare Domains', 'bandwidth-saver') : esc_html__('Enter Your Domains', 'bandwidth-saver'); ?></h2>
+                <h2><?php echo $is_configured ? esc_html__('Your Cloudflare CDN', 'bandwidth-saver') : esc_html__('Enter Your CDN Domain', 'bandwidth-saver'); ?></h2>
 
                 <div class="imgpro-cdn-config-fields">
                     <div class="imgpro-cdn-field">
@@ -805,21 +801,6 @@ class ImgPro_CDN_Admin {
                             aria-describedby="cdn-url-description"
                         >
                         <p class="imgpro-cdn-field-description" id="cdn-url-description">
-                            <?php esc_html_e('The custom domain pointing to your R2 bucket', 'bandwidth-saver'); ?>
-                        </p>
-                    </div>
-
-                    <div class="imgpro-cdn-field">
-                        <label for="worker_url"><?php esc_html_e('Worker Domain', 'bandwidth-saver'); ?></label>
-                        <input
-                            type="text"
-                            id="worker_url"
-                            name="imgpro_cdn_settings[worker_url]"
-                            value="<?php echo esc_attr($settings['worker_url']); ?>"
-                            placeholder="worker.yourdomain.com"
-                            aria-describedby="worker-url-description"
-                        >
-                        <p class="imgpro-cdn-field-description" id="worker-url-description">
                             <?php esc_html_e('The custom domain pointing to your Cloudflare Worker', 'bandwidth-saver'); ?>
                         </p>
                     </div>

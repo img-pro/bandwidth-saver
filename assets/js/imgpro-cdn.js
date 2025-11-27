@@ -2,7 +2,11 @@
  * ImgPro CDN Frontend JavaScript
  *
  * Handles image error fallback, lazy loading cache miss detection,
- * and worker warming for future requests.
+ * and graceful degradation when CDN fails.
+ *
+ * Single-domain architecture (v1.1.0+):
+ * - CDN URL format: https://px.img.pro/origin.com/path/image.jpg
+ * - On failure, falls back to origin: https://origin.com/path/image.jpg
  *
  * @package ImgPro_CDN
  * @since   0.1.0
@@ -16,95 +20,79 @@ var ImgProCDN = (function() {
     /**
      * Extract origin URL from CDN URL
      *
-     * @param {string} cdnUrl - CDN URL (e.g., https://cdn.domain.com/origin.com/path/image.jpg?v=123#section)
+     * Uses string manipulation for maximum compatibility.
+     *
+     * @param {string} cdnUrl - CDN URL (e.g., https://px.img.pro/origin.com/path/image.jpg?v=123#section)
      * @return {string} Origin URL (e.g., https://origin.com/path/image.jpg?v=123#section)
      */
     function extractOriginFromCdnUrl(cdnUrl) {
         try {
-            // Parse the CDN URL
-            var url = new URL(cdnUrl);
+            // Split URL by '/'
+            // https://px.img.pro/origin.com/path/image.jpg?v=123#section
+            // ['https:', '', 'px.img.pro', 'origin.com', 'path', 'image.jpg?v=123#section']
+            var parts = cdnUrl.split('/');
 
-            // Path format: /origin.domain.com/path/to/image.jpg
-            // Remove leading slash and split
-            var pathParts = url.pathname.substring(1).split('/');
-
-            // First part is the origin domain, rest is the path
-            if (pathParts.length < 2) {
-                // Malformed URL - return as-is
+            // Need at least: ['https:', '', 'cdn-domain', 'origin-domain', 'path']
+            if (parts.length < 5) {
                 return cdnUrl;
             }
 
-            var originDomain = pathParts[0];
-            var originPath = pathParts.slice(1).join('/');
+            // Extract origin parts (everything after index 2 which is the CDN domain)
+            var originParts = parts.slice(3);
 
-            // Reconstruct origin URL preserving protocol, query string, and fragment
-            var originUrl = url.protocol + '//' + originDomain + '/' + originPath;
+            // First part is origin domain, rest is path
+            var originDomain = originParts[0];
+            var originPath = originParts.slice(1).join('/');
 
-            // Preserve query string (e.g., ?v=123 for cache busting)
-            if (url.search) {
-                originUrl += url.search;
-            }
-
-            // Preserve fragment (e.g., #section for image maps or SVG references)
-            if (url.hash) {
-                originUrl += url.hash;
-            }
-
-            return originUrl;
+            // Reconstruct origin URL (query string and fragment are preserved in the path)
+            return 'https://' + originDomain + '/' + originPath;
         } catch (e) {
-            // URL parsing failed - return as-is
+            // Parsing failed - return as-is
             return cdnUrl;
         }
     }
 
     /**
      * Handle image load error
-     * Called from inline onerror handlers or stub fallback
+     * Called from JavaScript event listeners (NOT inline handlers)
      *
      * RACE CONDITION HANDLING:
-     * If main script loads after image errors, the stub will have already
-     * set fallback='1' and switched to origin. This function adds enhanced
-     * features (warming, debug logging) for stub-processed images.
+     * The inline onerror handler fires FIRST and sets fallback='1'.
+     * Then this JS event listener fires. By checking fallback='1',
+     * we know the inline handler already handled this error.
+     *
+     * This function only handles errors for images that:
+     * 1. Don't have inline onerror (CSP restrictions)
+     * 2. Were added dynamically without handlers
+     *
+     * State machine:
+     * - no fallback = initial state, CDN URL
+     * - fallback='1' = CDN failed, now trying origin
+     * - fallback='2' = both CDN and origin failed
      *
      * @param {HTMLImageElement} img - The image element that failed
      */
     function handleError(img) {
-        // Already fell back to origin - check if origin also failed
-        if (img.dataset.fallback === '1') {
-            var elapsed = img.dataset.fallbackStart
-                ? (Date.now() - img.dataset.fallbackStart) + 'ms'
-                : 'unknown';
-
-            if (debugMode) {
-                console.error('ImgPro: Origin ALSO failed after', elapsed);
-            }
-
-            img.dataset.fallback = '2';
-            img.classList.remove('imgpro-loaded');
-            img.onerror = null;
-            return;
-        }
-
-        // Already in unexpected fallback state
+        // If fallback is already set, inline handler already processed this
+        // or we're in a later state - don't interfere
         if (img.dataset.fallback) {
-            if (debugMode) {
-                console.warn('ImgPro: Unexpected fallback state:', img.dataset.fallback);
+            // Only mark as failed if we're at fallback='1' AND this is a NEW error
+            // (not the same error event bubbling after inline handler ran)
+            // We can't reliably distinguish, so just log and skip
+            if (debugMode && img.dataset.fallback === '1') {
+                console.log('ImgPro: Fallback already in progress, inline handler processed');
             }
-            img.onerror = null;
             return;
         }
 
         // First failure - fallback from CDN to origin
         var t0 = debugMode ? Date.now() : 0;
-        if (debugMode) {
-            img.dataset.fallbackStart = t0;
-        }
 
         // Capture the failed CDN URL BEFORE changing src
         var failedCdnUrl = img.currentSrc || img.src;
 
         // Extract origin URL directly from failed CDN URL
-        // CDN format: https://cdn.domain.com/origin.domain.com/path/to/image.jpg
+        // CDN format: https://px.img.pro/origin.domain.com/path/to/image.jpg
         // Extract: https://origin.domain.com/path/to/image.jpg
         var originUrl = extractOriginFromCdnUrl(failedCdnUrl);
 
@@ -117,6 +105,7 @@ var ImgProCDN = (function() {
         img.classList.remove('imgpro-loaded');
         img.removeAttribute('srcset');
         img.removeAttribute('sizes');
+        img.onerror = null; // Clear to prevent loop
         img.src = originUrl;
 
         // Add success handler for origin load
@@ -128,20 +117,27 @@ var ImgProCDN = (function() {
             img.onload = null;
         };
 
-        // Warm CDN in background so next request is cached
-        if (img.dataset.workerDomain) {
-            var warmUrl = 'https://' + img.dataset.workerDomain + '/' + originUrl.replace(/^https?:\/\//, '');
-            (new Image()).src = warmUrl;
-
+        // Add error handler for origin failure
+        img.onerror = function() {
             if (debugMode) {
-                console.log('ImgPro: Warming origin', originUrl, 'via', warmUrl);
+                console.error('ImgPro: Origin ALSO failed:', originUrl);
             }
-        }
+            img.dataset.fallback = '2';
+            img.classList.remove('imgpro-loaded');
+            img.onerror = null;
+        };
     }
 
     /**
      * Lazy loading handler
      * Fixes browser caching issue with lazy-loaded images
+     *
+     * Problem: When an image fails (404), browsers cache the failure.
+     * With loading="lazy", the error event may fire before our JS loads,
+     * causing the cached failure to persist.
+     *
+     * Solution: Periodically check lazy images for cached failures
+     * (complete=true but naturalWidth=0) and trigger fallback.
      */
     var LazyHandler = (function() {
         var intervalId = null;
@@ -152,7 +148,7 @@ var ImgProCDN = (function() {
          * Check and fix failed lazy-loaded images
          */
         function checkLazyImages() {
-            var lazyImages = document.querySelectorAll('img[loading="lazy"][data-worker-domain]');
+            var lazyImages = document.querySelectorAll('img[loading="lazy"][data-imgpro-cdn]');
             var needsChecking = false;
 
             if (debugMode) {
@@ -220,12 +216,12 @@ var ImgProCDN = (function() {
                             mutation.addedNodes.forEach(function(node) {
                                 if (node.nodeType === 1) {
                                     // Check if node itself is a lazy image
-                                    if (node.tagName === 'IMG' && node.loading === 'lazy' && node.dataset.workerDomain) {
+                                    if (node.tagName === 'IMG' && node.loading === 'lazy' && node.dataset.imgproCdn) {
                                         hasNewLazyImages = true;
                                     }
                                     // Check children
                                     if (node.querySelectorAll) {
-                                        var lazyImgs = node.querySelectorAll('img[loading="lazy"][data-worker-domain]');
+                                        var lazyImgs = node.querySelectorAll('img[loading="lazy"][data-imgpro-cdn]');
                                         if (lazyImgs.length > 0) {
                                             hasNewLazyImages = true;
                                         }
@@ -264,40 +260,20 @@ var ImgProCDN = (function() {
     })();
 
     /**
-     * Initialize and enhance stub-processed images
+     * Initialize and attach handlers to images
      *
-     * If the main script loads after images have already failed,
-     * the stub will have handled fallback but missed advanced features.
-     * This function adds warming for those images.
+     * Handles images that:
+     * 1. Were processed before JS loaded (inline onerror already handled)
+     * 2. Don't have inline onerror (CSP restrictions or dynamic content)
+     * 3. Are added dynamically after page load
      */
     function init() {
-        // Find images that were processed by stub (have fallback='1' but no warming)
-        var stubProcessed = document.querySelectorAll('img[data-fallback="1"][data-worker-domain]:not([data-warmed])');
-
-        if (stubProcessed.length > 0 && debugMode) {
-            console.log('ImgPro: Found ' + stubProcessed.length + ' stub-processed images, adding warming');
+        if (debugMode) {
+            console.log('ImgPro: Initializing frontend handler');
         }
 
-        stubProcessed.forEach(function(img) {
-            // Mark as warmed to prevent duplicate warming
-            img.dataset.warmed = '1';
-
-            // Extract origin URL from current src (stub already set it to origin)
-            var originUrl = img.src;
-
-            // Warm CDN in background so next request is cached
-            if (img.dataset.workerDomain && originUrl) {
-                var warmUrl = 'https://' + img.dataset.workerDomain + '/' + originUrl.replace(/^https?:\/\//, '');
-                (new Image()).src = warmUrl;
-
-                if (debugMode) {
-                    console.log('ImgPro: Warming stub-processed image', originUrl, 'via', warmUrl);
-                }
-            }
-        });
-
         // Attach load/error handlers to existing images with data-imgpro-cdn attribute
-        // (CSP-compliant, replaces inline onload/onerror handlers)
+        // This handles CSP-compliant setups where inline handlers aren't used
         function attachImageHandlers(img) {
             if (img.dataset.imgproCdn === '1' && !img.dataset.handlersAttached) {
                 img.dataset.handlersAttached = '1';

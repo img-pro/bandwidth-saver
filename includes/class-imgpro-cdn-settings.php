@@ -76,6 +76,16 @@ class ImgPro_CDN_Settings {
     const API_BASE_URL = 'https://cloud.wp.img.pro';
 
     /**
+     * Default CDN domain for Cloud (Managed) mode
+     *
+     * Single-domain architecture: Worker serves images directly from R2.
+     *
+     * @since 0.1.5
+     * @var string
+     */
+    const CLOUD_CDN_DOMAIN = 'px.img.pro';
+
+    /**
      * Default settings
      *
      * @since 0.1.0
@@ -91,9 +101,8 @@ class ImgPro_CDN_Settings {
         'cloud_email'     => '',
         'cloud_tier'      => self::TIER_NONE,
 
-        // Cloudflare mode settings
+        // Cloudflare mode settings (single domain - worker serves images directly)
         'cdn_url'         => '',
-        'worker_url'      => '',
 
         // Common settings
         'allowed_domains' => [],
@@ -136,13 +145,10 @@ class ImgPro_CDN_Settings {
     public function get($key, $default = null) {
         $settings = $this->get_all();
 
-        // Auto-configure Cloud mode URLs
+        // Auto-configure Cloud mode CDN URL (single domain architecture)
         if (self::MODE_CLOUD === $settings['setup_mode']) {
             if ('cdn_url' === $key) {
-                return 'wp.img.pro';
-            }
-            if ('worker_url' === $key) {
-                return 'fetch.wp.img.pro';
+                return self::CLOUD_CDN_DOMAIN;
             }
         }
 
@@ -222,14 +228,9 @@ class ImgPro_CDN_Settings {
             }
         }
 
-        // CDN URL (domain only)
+        // CDN URL (domain only - single domain architecture)
         if (isset($settings['cdn_url'])) {
             $validated['cdn_url'] = $this->sanitize_domain($settings['cdn_url']);
-        }
-
-        // Worker URL (domain only)
-        if (isset($settings['worker_url'])) {
-            $validated['worker_url'] = $this->sanitize_domain($settings['worker_url']);
         }
 
         // Allowed domains (array)
@@ -377,7 +378,7 @@ class ImgPro_CDN_Settings {
      * Check if a given mode has valid configuration
      *
      * Cloud mode requires an active subscription.
-     * Cloudflare mode requires both CDN and Worker URLs to be configured.
+     * Cloudflare mode requires CDN URL to be configured (single domain architecture).
      *
      * @since 0.1.3
      * @param string $mode     The mode to check ('cloud' or 'cloudflare').
@@ -388,7 +389,7 @@ class ImgPro_CDN_Settings {
         if (self::MODE_CLOUD === $mode) {
             return self::TIER_ACTIVE === ($settings['cloud_tier'] ?? '');
         } elseif (self::MODE_CLOUDFLARE === $mode) {
-            return !empty($settings['cdn_url']) && !empty($settings['worker_url']);
+            return !empty($settings['cdn_url']);
         }
         return false;
     }

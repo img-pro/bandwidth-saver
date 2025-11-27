@@ -335,11 +335,12 @@ class ImgPro_CDN_Rewriter {
     private function get_onerror_handler() {
         // Fallback logic using string manipulation (no URL constructor):
         // 1. Check if not already in fallback state
-        // 2. Mark as fallback state to prevent loops
+        // 2. Mark as fallback='1' (trying origin)
         // 3. Split URL: ['https:', '', 'cdn-domain', 'origin-domain', 'path', ...]
         // 4. Extract parts after CDN domain (index 3+)
-        // 5. Clear onerror and srcset to prevent loops
-        // 6. Reconstruct origin URL: https://origin-domain/path
+        // 5. Set new onerror to handle origin failure (sets fallback='2')
+        // 6. Remove srcset to prevent browser choosing CDN URLs
+        // 7. Reconstruct and set origin URL
         //
         // Example: https://px.img.pro/example.com/wp-content/image.jpg
         //   this.src.split('/') = ['https:', '', 'px.img.pro', 'example.com', 'wp-content', 'image.jpg']
@@ -348,7 +349,7 @@ class ImgPro_CDN_Rewriter {
         $handler = "if (!this.dataset.fallback) { "
                  . "this.dataset.fallback = '1'; "
                  . "var p = this.src.split('/').slice(3); "
-                 . "this.onerror = null; "
+                 . "this.onerror = function() { this.dataset.fallback = '2'; this.onerror = null; }; "
                  . "this.removeAttribute('srcset'); "
                  . "this.src = 'https://' + p[0] + '/' + p.slice(1).join('/'); "
                  . "}";

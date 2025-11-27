@@ -56,14 +56,13 @@ var ImgProCDN = (function() {
      * Handle image load error
      * Called from JavaScript event listeners (NOT inline handlers)
      *
-     * RACE CONDITION HANDLING:
-     * The inline onerror handler fires FIRST and sets fallback='1'.
-     * Then this JS event listener fires. By checking fallback='1',
-     * we know the inline handler already handled this error.
-     *
-     * This function only handles errors for images that:
+     * This function handles errors for images that:
      * 1. Don't have inline onerror (CSP restrictions)
      * 2. Were added dynamically without handlers
+     *
+     * Note: For images with inline handlers, the inline onerror handles
+     * both CDN failure (sets fallback='1') and origin failure (sets fallback='2').
+     * This function is only needed when inline handlers are blocked.
      *
      * State machine:
      * - no fallback = initial state, CDN URL
@@ -73,14 +72,17 @@ var ImgProCDN = (function() {
      * @param {HTMLImageElement} img - The image element that failed
      */
     function handleError(img) {
-        // If fallback is already set, inline handler already processed this
-        // or we're in a later state - don't interfere
-        if (img.dataset.fallback) {
-            // Only mark as failed if we're at fallback='1' AND this is a NEW error
-            // (not the same error event bubbling after inline handler ran)
-            // We can't reliably distinguish, so just log and skip
-            if (debugMode && img.dataset.fallback === '1') {
-                console.log('ImgPro: Fallback already in progress, inline handler processed');
+        // Already fully failed or being handled - skip
+        if (img.dataset.fallback === '2') {
+            return;
+        }
+
+        // If fallback='1', inline handler already switched to origin.
+        // The inline handler sets its own onerror for origin failure,
+        // so we don't need to do anything here.
+        if (img.dataset.fallback === '1') {
+            if (debugMode) {
+                console.log('ImgPro: Inline handler already processing fallback');
             }
             return;
         }

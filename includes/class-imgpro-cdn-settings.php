@@ -248,7 +248,7 @@ class ImgPro_CDN_Settings {
 
         // Custom domain (Cloud mode only)
         if (isset($settings['custom_domain'])) {
-            $validated['custom_domain'] = $this->sanitize_domain($settings['custom_domain']);
+            $validated['custom_domain'] = self::sanitize_domain($settings['custom_domain']);
         }
         if (isset($settings['custom_domain_status'])) {
             $status = sanitize_text_field($settings['custom_domain_status']);
@@ -259,7 +259,7 @@ class ImgPro_CDN_Settings {
 
         // CDN URL (domain only - single domain architecture)
         if (isset($settings['cdn_url'])) {
-            $validated['cdn_url'] = $this->sanitize_domain($settings['cdn_url']);
+            $validated['cdn_url'] = self::sanitize_domain($settings['cdn_url']);
         }
 
         // Allowed domains (array)
@@ -271,7 +271,7 @@ class ImgPro_CDN_Settings {
             }
 
             $validated['allowed_domains'] = array_map(
-                [$this, 'sanitize_domain'],
+                [self::class, 'sanitize_domain'],
                 array_filter($domains)
             );
         }
@@ -300,7 +300,7 @@ class ImgPro_CDN_Settings {
      * @param string $domain Domain to sanitize.
      * @return string Sanitized domain or empty string if invalid.
      */
-    private function sanitize_domain($domain) {
+    public static function sanitize_domain($domain) {
         // Remove protocol
         $domain = preg_replace('#^https?://#i', '', $domain);
 

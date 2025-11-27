@@ -400,10 +400,11 @@ class ImgPro_CDN_Admin_Ajax {
     public function ajax_add_custom_domain() {
         $this->verify_ajax_request('imgpro_cdn_custom_domain');
 
-        // Get domain from request
-        $domain = isset($_POST['domain']) ? sanitize_text_field(wp_unslash($_POST['domain'])) : '';
+        // Get and sanitize domain from request
+        $raw_domain = isset($_POST['domain']) ? sanitize_text_field(wp_unslash($_POST['domain'])) : '';
+        $domain = ImgPro_CDN_Settings::sanitize_domain($raw_domain);
         if (empty($domain)) {
-            wp_send_json_error(['message' => __('Domain is required', 'bandwidth-saver')]);
+            wp_send_json_error(['message' => __('Please enter a valid domain (e.g., cdn.example.com)', 'bandwidth-saver')]);
             return;
         }
 

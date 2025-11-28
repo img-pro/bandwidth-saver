@@ -95,6 +95,9 @@ class ImgPro_CDN_Onboarding {
         $step = $this->get_current_step();
         ?>
         <div class="imgpro-onboarding-wrapper">
+            <div class="imgpro-onboarding-brand">
+                <span class="imgpro-brand-name"><?php esc_html_e('Bandwidth Saver', 'bandwidth-saver'); ?></span>
+            </div>
             <div class="imgpro-onboarding" data-step="<?php echo esc_attr($step); ?>">
                 <?php
                 switch ($step) {
@@ -130,18 +133,6 @@ class ImgPro_CDN_Onboarding {
     private function render_step_welcome() {
         ?>
         <div class="imgpro-onboarding-content imgpro-onboarding-step-1">
-            <div class="imgpro-onboarding-icon">
-                <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2" fill="none" opacity="0.2"/>
-                    <circle cx="32" cy="32" r="20" stroke="currentColor" stroke-width="2" fill="none" opacity="0.4"/>
-                    <circle cx="32" cy="32" r="12" fill="currentColor"/>
-                    <path d="M32 8 L32 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M32 62 L32 56" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M8 32 L2 32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M62 32 L56 32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </div>
-
             <h1><?php esc_html_e('Your images are about to get faster', 'bandwidth-saver'); ?></h1>
 
             <p class="imgpro-onboarding-description">
@@ -193,14 +184,11 @@ class ImgPro_CDN_Onboarding {
         $site_url = get_site_url();
         ?>
         <div class="imgpro-onboarding-content imgpro-onboarding-step-2">
-            <div class="imgpro-onboarding-step-header">
-                <span class="imgpro-step-badge"><?php esc_html_e('Step 2 of 4', 'bandwidth-saver'); ?></span>
-            </div>
-
             <h1><?php esc_html_e('Create your free account', 'bandwidth-saver'); ?></h1>
 
             <p class="imgpro-onboarding-description">
-                <?php esc_html_e('We just need your email to set up your CDN. No credit card required.', 'bandwidth-saver'); ?>
+                <?php esc_html_e('We just need your email to set up your CDN.', 'bandwidth-saver'); ?><br>
+                <?php esc_html_e('No credit card required.', 'bandwidth-saver'); ?>
             </p>
 
             <form id="imgpro-onboarding-connect-form" class="imgpro-onboarding-form">
@@ -280,20 +268,16 @@ class ImgPro_CDN_Onboarding {
     private function render_step_activate() {
         ?>
         <div class="imgpro-onboarding-content imgpro-onboarding-step-3">
-            <div class="imgpro-onboarding-step-header">
-                <span class="imgpro-step-badge"><?php esc_html_e('Step 3 of 4', 'bandwidth-saver'); ?></span>
-            </div>
-
             <h1><?php esc_html_e('Ready to activate', 'bandwidth-saver'); ?></h1>
 
             <p class="imgpro-onboarding-description">
-                <?php esc_html_e('Your account is set up. Flip the switch to start serving images from Cloudflare.', 'bandwidth-saver'); ?>
+                <?php esc_html_e('Flip the switch to start serving images from Cloudflare.', 'bandwidth-saver'); ?>
             </p>
 
             <div class="imgpro-activate-card" id="imgpro-activate-card">
                 <div class="imgpro-activate-info">
                     <div class="imgpro-activate-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"/></svg>
                     </div>
                     <div class="imgpro-activate-text">
                         <strong><?php esc_html_e('Image CDN', 'bandwidth-saver'); ?></strong>
@@ -333,7 +317,7 @@ class ImgPro_CDN_Onboarding {
     }
 
     /**
-     * Step 4: Success - Show confirmation and stats
+     * Step 4: Success - Show confirmation
      *
      * @since 0.2.0
      * @return void
@@ -342,31 +326,18 @@ class ImgPro_CDN_Onboarding {
         $site_url = get_site_url();
         ?>
         <div class="imgpro-onboarding-content imgpro-onboarding-step-4">
-            <div class="imgpro-onboarding-icon imgpro-onboarding-icon-success">
-                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                    <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="2" fill="none"/>
-                    <path d="M20 32l8 8 16-16" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <div class="imgpro-success-icon">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                    <circle cx="24" cy="24" r="24" fill="currentColor" fill-opacity="0.1"/>
+                    <path d="M32 18L21 29l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
 
             <h1><?php esc_html_e('You\'re all set!', 'bandwidth-saver'); ?></h1>
 
             <p class="imgpro-onboarding-description">
-                <?php esc_html_e('Your images are now being delivered from Cloudflare\'s edge network.', 'bandwidth-saver'); ?>
+                <?php esc_html_e('Your images are now being delivered from Cloudflare\'s edge network. Visit your site to start caching.', 'bandwidth-saver'); ?>
             </p>
-
-            <div class="imgpro-success-status">
-                <span class="imgpro-stat-value imgpro-stat-active">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg>
-                    <?php esc_html_e('Active', 'bandwidth-saver'); ?>
-                </span>
-                <span class="imgpro-stat-label"><?php esc_html_e('CDN Status', 'bandwidth-saver'); ?></span>
-            </div>
-
-            <div class="imgpro-success-tip">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12zm-1-9h2v5H9V7zm0 6h2v2H9v-2z" fill="currentColor"/></svg>
-                <span><?php esc_html_e('Visit your site to start caching images', 'bandwidth-saver'); ?></span>
-            </div>
 
             <div class="imgpro-onboarding-actions imgpro-onboarding-actions-split">
                 <a href="<?php echo esc_url($site_url); ?>" target="_blank" class="imgpro-btn imgpro-btn-secondary imgpro-btn-lg">

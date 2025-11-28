@@ -2,7 +2,7 @@
  * Bandwidth Saver Admin Design System
  *
  * A modern, conversion-focused design system for the plugin admin.
- * Inspired by Linear, Vercel, and Stripe's design language.
+ * ImgPro brand - electric blue accent.
  *
  * @package ImgPro_CDN
  * @since   0.2.0
@@ -13,17 +13,17 @@
    ========================================================================== */
 
 :root {
-    /* Colors - Primary */
-    --imgpro-primary-50: #eef2ff;
-    --imgpro-primary-100: #e0e7ff;
-    --imgpro-primary-200: #c7d2fe;
-    --imgpro-primary-300: #a5b4fc;
-    --imgpro-primary-400: #818cf8;
-    --imgpro-primary-500: #6366f1;
-    --imgpro-primary-600: #4f46e5;
-    --imgpro-primary-700: #4338ca;
-    --imgpro-primary-800: #3730a3;
-    --imgpro-primary-900: #312e81;
+    /* Colors - Primary (ImgPro Blue #0033ff) */
+    --imgpro-primary-50: #eff3ff;
+    --imgpro-primary-100: #dbe4ff;
+    --imgpro-primary-200: #bfcfff;
+    --imgpro-primary-300: #93aeff;
+    --imgpro-primary-400: #6082ff;
+    --imgpro-primary-500: #3b5bff;
+    --imgpro-primary-600: #0033ff;
+    --imgpro-primary-700: #0029e6;
+    --imgpro-primary-800: #0024ba;
+    --imgpro-primary-900: #002293;
 
     /* Colors - Success */
     --imgpro-success-50: #ecfdf5;
@@ -32,29 +32,31 @@
     --imgpro-success-600: #059669;
     --imgpro-success-700: #047857;
 
-    /* Colors - Warning */
+    /* Colors - Warning (Amber - WordPress standard) */
     --imgpro-warning-50: #fffbeb;
     --imgpro-warning-100: #fef3c7;
+    --imgpro-warning-200: #fde68a;
     --imgpro-warning-500: #f59e0b;
     --imgpro-warning-600: #d97706;
+    --imgpro-warning-700: #b45309;
 
     /* Colors - Error */
     --imgpro-error-50: #fef2f2;
     --imgpro-error-500: #ef4444;
     --imgpro-error-600: #dc2626;
 
-    /* Colors - Neutral */
-    --imgpro-gray-50: #f9fafb;
-    --imgpro-gray-100: #f3f4f6;
-    --imgpro-gray-200: #e5e7eb;
-    --imgpro-gray-300: #d1d5db;
-    --imgpro-gray-400: #9ca3af;
-    --imgpro-gray-500: #6b7280;
-    --imgpro-gray-600: #4b5563;
-    --imgpro-gray-700: #374151;
-    --imgpro-gray-800: #1f2937;
-    --imgpro-gray-900: #111827;
-    --imgpro-gray-950: #030712;
+    /* Colors - Neutral (Zinc - cool carbon tones) */
+    --imgpro-gray-50: #fafafa;
+    --imgpro-gray-100: #f4f4f5;
+    --imgpro-gray-200: #e4e4e7;
+    --imgpro-gray-300: #d4d4d8;
+    --imgpro-gray-400: #a1a1aa;
+    --imgpro-gray-500: #71717a;
+    --imgpro-gray-600: #52525b;
+    --imgpro-gray-700: #3f3f46;
+    --imgpro-gray-800: #27272a;
+    --imgpro-gray-900: #18181b;
+    --imgpro-gray-950: #09090b;
 
     /* Semantic Colors */
     --imgpro-bg: #ffffff;
@@ -79,7 +81,7 @@
     --imgpro-space-12: 48px;
     --imgpro-space-16: 64px;
 
-    /* Typography */
+    /* Typography - Readable, comfortable, professional */
     --imgpro-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --imgpro-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
@@ -90,13 +92,12 @@
     --imgpro-text-xl: 1.25rem;
     --imgpro-text-2xl: 1.5rem;
     --imgpro-text-3xl: 1.875rem;
-    --imgpro-text-4xl: 2.25rem;
 
     --imgpro-leading-tight: 1.25;
     --imgpro-leading-normal: 1.5;
     --imgpro-leading-relaxed: 1.625;
 
-    /* Borders */
+    /* Borders - Friendly, approachable */
     --imgpro-radius-sm: 6px;
     --imgpro-radius: 8px;
     --imgpro-radius-md: 10px;
@@ -111,7 +112,7 @@
     --imgpro-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --imgpro-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     --imgpro-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    --imgpro-shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+    --imgpro-shadow-glow: 0 0 20px rgba(0, 51, 255, 0.15);
 
     /* Transitions */
     --imgpro-transition-fast: 150ms;
@@ -189,9 +190,9 @@
 .imgpro-cdn-header h1 {
     margin: 0;
     font-size: var(--imgpro-text-2xl);
-    font-weight: 700;
+    font-weight: 600;
     color: var(--imgpro-text);
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
 }
 
 .imgpro-cdn-tagline {
@@ -220,11 +221,11 @@
     align-items: center;
     justify-content: center;
     gap: var(--imgpro-space-2);
-    padding: var(--imgpro-space-2) var(--imgpro-space-4);
+    padding: 10px 18px;
     font-family: var(--imgpro-font-sans);
     font-size: var(--imgpro-text-sm);
     font-weight: 500;
-    line-height: 1.5;
+    line-height: 1.25;
     text-decoration: none;
     border: 1px solid transparent;
     border-radius: var(--imgpro-radius);
@@ -252,14 +253,14 @@
 
 /* Button Sizes */
 .imgpro-btn-sm {
-    padding: var(--imgpro-space-1) var(--imgpro-space-3);
+    padding: 6px 12px;
     font-size: var(--imgpro-text-xs);
 }
 
 .imgpro-btn-lg {
-    padding: var(--imgpro-space-3) var(--imgpro-space-6);
+    padding: 14px 28px;
     font-size: var(--imgpro-text-base);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .imgpro-btn-full {
@@ -268,22 +269,21 @@
 
 /* Primary Button */
 .imgpro-btn-primary {
-    background: linear-gradient(180deg, var(--imgpro-primary-500) 0%, var(--imgpro-primary-600) 100%);
+    background: var(--imgpro-primary-600);
     border-color: var(--imgpro-primary-600);
     color: white;
-    box-shadow: var(--imgpro-shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 1px 2px rgba(0, 51, 255, 0.2);
 }
 
 .imgpro-btn-primary:hover {
-    background: linear-gradient(180deg, var(--imgpro-primary-600) 0%, var(--imgpro-primary-700) 100%);
+    background: var(--imgpro-primary-700);
     border-color: var(--imgpro-primary-700);
-    transform: translateY(-1px);
-    box-shadow: var(--imgpro-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 51, 255, 0.25);
 }
 
 .imgpro-btn-primary:active {
-    transform: translateY(0);
-    box-shadow: var(--imgpro-shadow-xs);
+    background: var(--imgpro-primary-800);
+    box-shadow: 0 1px 2px rgba(0, 51, 255, 0.15);
 }
 
 /* Secondary Button */
@@ -347,13 +347,14 @@
 
 /* Success Button */
 .imgpro-btn-success {
-    background: linear-gradient(180deg, var(--imgpro-success-500) 0%, var(--imgpro-success-600) 100%);
+    background: var(--imgpro-success-600);
     border-color: var(--imgpro-success-600);
     color: white;
 }
 
 .imgpro-btn-success:hover {
-    background: linear-gradient(180deg, var(--imgpro-success-600) 0%, var(--imgpro-success-700) 100%);
+    background: var(--imgpro-success-700);
+    border-color: var(--imgpro-success-700);
 }
 
 /* ==========================================================================
@@ -380,8 +381,8 @@
 .imgpro-toggle {
     position: relative;
     display: inline-flex;
-    width: 52px;
-    height: 28px;
+    width: 48px;
+    height: 26px;
     flex-shrink: 0;
     cursor: pointer;
 }
@@ -404,26 +405,26 @@
 .imgpro-toggle-slider::before {
     content: '';
     position: absolute;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     left: 3px;
     bottom: 3px;
     background: white;
     border-radius: 50%;
-    box-shadow: var(--imgpro-shadow-sm);
-    transition: transform var(--imgpro-transition-fast) var(--imgpro-ease-bounce);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform var(--imgpro-transition-fast) var(--imgpro-ease-out);
 }
 
 .imgpro-toggle input:checked + .imgpro-toggle-slider {
-    background: var(--imgpro-success-500);
+    background: var(--imgpro-primary-600);
 }
 
 .imgpro-toggle input:checked + .imgpro-toggle-slider::before {
-    transform: translateX(24px);
+    transform: translateX(22px);
 }
 
 .imgpro-toggle input:focus-visible + .imgpro-toggle-slider {
-    outline: 2px solid var(--imgpro-primary-500);
+    outline: 2px solid var(--imgpro-primary-400);
     outline-offset: 2px;
 }
 
@@ -487,22 +488,24 @@
 
 .imgpro-checkbox-label {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--imgpro-space-3);
     cursor: pointer;
 }
 
 .imgpro-checkbox-label input[type="checkbox"] {
     flex-shrink: 0;
-    width: 18px;
-    height: 18px;
-    margin: 2px 0 0;
+    width: 16px;
+    height: 16px;
+    margin: 0;
     accent-color: var(--imgpro-primary-600);
 }
 
 .imgpro-checkbox-text {
     font-size: var(--imgpro-text-sm);
     color: var(--imgpro-text-secondary);
+    position: relative;
+    top: 1px;
 }
 
 /* ==========================================================================
@@ -540,15 +543,28 @@
     flex-direction: column;
     align-items: center;
     min-height: calc(100vh - 200px);
-    padding: var(--imgpro-space-8) var(--imgpro-space-4);
+    padding: var(--imgpro-space-10) var(--imgpro-space-4);
+}
+
+/* Brand Mark - Outside the card */
+.imgpro-onboarding-brand {
+    margin-bottom: var(--imgpro-space-6);
+    text-align: center;
+}
+
+.imgpro-brand-name {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--imgpro-gray-700);
+    letter-spacing: -0.03em;
 }
 
 .imgpro-onboarding {
     width: 100%;
-    max-width: 540px;
+    max-width: 520px;
     background: var(--imgpro-bg);
     border-radius: var(--imgpro-radius-xl);
-    box-shadow: var(--imgpro-shadow-lg), var(--imgpro-shadow-glow);
+    box-shadow: var(--imgpro-shadow-lg), 0 0 40px rgba(0, 51, 255, 0.08);
     overflow: hidden;
     animation: imgpro-fade-in var(--imgpro-transition-slow) var(--imgpro-ease-out);
 }
@@ -570,54 +586,7 @@
 
 @media (max-width: 600px) {
     .imgpro-onboarding-content {
-        padding: var(--imgpro-space-6) var(--imgpro-space-5);
-    }
-}
-
-/* Step Header */
-.imgpro-onboarding-step-header {
-    margin-bottom: var(--imgpro-space-6);
-    text-align: center;
-}
-
-.imgpro-step-badge {
-    display: inline-block;
-    padding: var(--imgpro-space-1) var(--imgpro-space-4);
-    background: var(--imgpro-bg-muted);
-    border-radius: var(--imgpro-radius-full);
-    font-size: var(--imgpro-text-xs);
-    font-weight: 600;
-    color: var(--imgpro-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-/* Icon */
-.imgpro-onboarding-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 88px;
-    height: 88px;
-    margin: 0 auto var(--imgpro-space-6);
-    background: linear-gradient(135deg, var(--imgpro-primary-50) 0%, var(--imgpro-primary-100) 100%);
-    border-radius: 50%;
-    color: var(--imgpro-primary-600);
-    animation: imgpro-pulse 2s ease-in-out infinite;
-}
-
-.imgpro-onboarding-icon-success {
-    background: linear-gradient(135deg, var(--imgpro-success-50) 0%, var(--imgpro-success-100) 100%);
-    color: var(--imgpro-success-600);
-    animation: none;
-}
-
-@keyframes imgpro-pulse {
-    0%, 100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.05);
+        padding: var(--imgpro-space-8) var(--imgpro-space-5);
     }
 }
 
@@ -625,10 +594,10 @@
 .imgpro-onboarding h1 {
     margin: 0 0 var(--imgpro-space-4);
     font-size: var(--imgpro-text-2xl);
-    font-weight: 700;
+    font-weight: 600;
     color: var(--imgpro-text);
     text-align: center;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
     line-height: var(--imgpro-leading-tight);
 }
 
@@ -662,6 +631,7 @@
     padding: var(--imgpro-space-3) 0;
     font-size: var(--imgpro-text-sm);
     color: var(--imgpro-text);
+    line-height: var(--imgpro-leading-normal);
 }
 
 .imgpro-onboarding-benefits li:not(:last-child) {
@@ -670,7 +640,9 @@
 
 .imgpro-onboarding-benefits li svg {
     flex-shrink: 0;
-    margin-top: 2px;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
     color: var(--imgpro-success-600);
 }
 
@@ -878,60 +850,37 @@
 }
 
 /* ==========================================================================
-   Success Status (Step 4)
+   Success Icon (Step 4)
    ========================================================================== */
 
-.imgpro-success-status {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--imgpro-space-1);
-    margin-bottom: var(--imgpro-space-6);
-    padding: var(--imgpro-space-5);
-    background: var(--imgpro-bg-subtle);
-    border-radius: var(--imgpro-radius-lg);
-}
-
-.imgpro-stat-value {
+.imgpro-success-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--imgpro-space-2);
-    font-size: var(--imgpro-text-xl);
-    font-weight: 700;
-    color: var(--imgpro-text);
-}
-
-.imgpro-stat-value.imgpro-stat-active {
+    margin: 0 auto var(--imgpro-space-6);
     color: var(--imgpro-success-600);
+    animation: imgpro-success-pop 0.4s var(--imgpro-ease-bounce);
 }
 
-.imgpro-stat-value.imgpro-stat-active svg {
-    animation: imgpro-pulse 2s ease-in-out infinite;
+.imgpro-success-icon svg {
+    width: 64px;
+    height: 64px;
 }
 
-.imgpro-stat-label {
-    display: block;
-    margin-top: var(--imgpro-space-1);
-    font-size: var(--imgpro-text-xs);
-    font-weight: 500;
-    color: var(--imgpro-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+@keyframes imgpro-success-pop {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
-/* Success Tip */
-.imgpro-success-tip {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--imgpro-space-2);
-    padding: var(--imgpro-space-4);
-    background: var(--imgpro-warning-50);
-    border-radius: var(--imgpro-radius);
-    margin-bottom: var(--imgpro-space-6);
-    font-size: var(--imgpro-text-sm);
-    color: var(--imgpro-warning-600);
+/* Step 4 specific - more space before buttons */
+.imgpro-onboarding-step-4 .imgpro-onboarding-description {
+    margin-bottom: var(--imgpro-space-10);
 }
 
 /* ==========================================================================
@@ -1697,17 +1646,6 @@
     gap: var(--imgpro-space-4);
 }
 
-.imgpro-logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, var(--imgpro-primary-50) 0%, var(--imgpro-primary-100) 100%);
-    border-radius: var(--imgpro-radius-lg);
-    color: var(--imgpro-primary-600);
-}
-
 .imgpro-header h1 {
     margin: 0;
     font-size: var(--imgpro-text-2xl);
@@ -1747,14 +1685,13 @@
     padding: var(--imgpro-space-1) var(--imgpro-space-3);
     border-radius: var(--imgpro-radius-full);
     font-size: var(--imgpro-text-xs);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .imgpro-status-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    animation: imgpro-pulse 2s ease-in-out infinite;
 }
 
 .imgpro-status-active {
@@ -1767,13 +1704,12 @@
 }
 
 .imgpro-status-inactive {
-    background: var(--imgpro-warning-50);
-    color: var(--imgpro-warning-600);
+    background: var(--imgpro-gray-100);
+    color: var(--imgpro-gray-600);
 }
 
 .imgpro-status-inactive .imgpro-status-dot {
-    background: var(--imgpro-warning-500);
-    animation: none;
+    background: var(--imgpro-gray-400);
 }
 
 /* ==========================================================================

@@ -150,7 +150,7 @@
             data: {
                 action: 'imgpro_cdn_toggle_enabled',
                 enabled: 1,
-                current_tab: 'cloud',
+                mode: 'cloud',
                 nonce: imgproCdnAdmin.nonce
             },
             success: function(response) {

@@ -136,8 +136,8 @@ class ImgPro_CDN_Core {
      * @return void
      */
     public function enqueue_frontend_assets() {
-        // Only enqueue if CDN is enabled
-        if (!$this->settings->get('enabled')) {
+        // Only enqueue if CDN is active (mode-specific enabled state)
+        if (!$this->settings->is_cdn_active()) {
             return;
         }
 

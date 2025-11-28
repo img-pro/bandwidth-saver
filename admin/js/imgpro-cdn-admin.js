@@ -72,6 +72,12 @@
         $('#imgpro-onboarding-complete').on('click', function() {
             completeOnboarding();
         });
+
+        // Upgrade to Pro link (from onboarding)
+        $('#imgpro-onboarding-upgrade').on('click', function(e) {
+            e.preventDefault();
+            handleCheckout($(this));
+        });
     }
 
     /**
@@ -315,19 +321,21 @@
         const $card = $('#imgpro-toggle-card');
         const $heading = $('#imgpro-toggle-heading');
         const $description = $('#imgpro-toggle-description');
-        const $statusBadge = $('.imgpro-status-badge');
+        const $statusBadge = $('#imgpro-status-badge');
+        const $statusText = $statusBadge.find('.imgpro-status-text');
 
         if (isEnabled) {
             $card.removeClass('is-inactive').addClass('is-active');
             $heading.text(imgproCdnAdmin.i18n.cdnActiveHeading);
             $description.text(imgproCdnAdmin.i18n.cdnActiveDesc);
             $statusBadge.removeClass('imgpro-status-inactive').addClass('imgpro-status-active');
-            $statusBadge.find('.imgpro-status-dot').next().addBack().last().text(imgproCdnAdmin.i18n.activeLabel);
+            $statusText.text(imgproCdnAdmin.i18n.activeLabel);
         } else {
             $card.removeClass('is-active').addClass('is-inactive');
             $heading.text(imgproCdnAdmin.i18n.cdnInactiveHeading);
             $description.text(imgproCdnAdmin.i18n.cdnInactiveDesc);
             $statusBadge.removeClass('imgpro-status-active').addClass('imgpro-status-inactive');
+            $statusText.text(imgproCdnAdmin.i18n.inactiveLabel);
         }
     }
 

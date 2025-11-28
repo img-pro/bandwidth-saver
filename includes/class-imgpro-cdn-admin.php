@@ -177,8 +177,8 @@ class ImgPro_CDN_Admin {
                 'storageLimit' => ImgPro_CDN_Settings::get_storage_limit($all_settings),
                 'pricing' => $pricing,
                 'i18n' => [
-                    'activeLabel' => __('Active', 'bandwidth-saver'),
-                    'disabledLabel' => __('Disabled', 'bandwidth-saver'),
+                    'activeLabel' => __('CDN Active', 'bandwidth-saver'),
+                    'inactiveLabel' => __('CDN Inactive', 'bandwidth-saver'),
                     'activeMessage' => sprintf(
                         /* translators: 1: opening span tag, 2: closing span tag, 3: opening span tag, 4: closing span tag */
                         __('%1$sImages are loading from Cloudflare.%2$s %3$sYour server handles less traffic.%4$s', 'bandwidth-saver'),
@@ -470,9 +470,9 @@ class ImgPro_CDN_Admin {
             </div>
             <div class="imgpro-header-meta">
                 <?php if ($is_configured): ?>
-                    <span class="imgpro-status-badge <?php echo $is_enabled ? 'imgpro-status-active' : 'imgpro-status-inactive'; ?>">
+                    <span class="imgpro-status-badge <?php echo $is_enabled ? 'imgpro-status-active' : 'imgpro-status-inactive'; ?>" id="imgpro-status-badge">
                         <span class="imgpro-status-dot"></span>
-                        <?php echo $is_enabled ? esc_html__('CDN Active', 'bandwidth-saver') : esc_html__('CDN Inactive', 'bandwidth-saver'); ?>
+                        <span class="imgpro-status-text"><?php echo $is_enabled ? esc_html__('CDN Active', 'bandwidth-saver') : esc_html__('CDN Inactive', 'bandwidth-saver'); ?></span>
                     </span>
                 <?php endif; ?>
                 <span class="imgpro-version">v<?php echo esc_html(IMGPRO_CDN_VERSION); ?></span>
@@ -777,7 +777,7 @@ class ImgPro_CDN_Admin {
                 <ul class="imgpro-feature-list">
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span><strong>1 GB free</strong> — enough for ~1,500 images</span>
+                        <span><strong><?php esc_html_e('1 GB free', 'bandwidth-saver'); ?></strong>, <?php esc_html_e('no credit card required', 'bandwidth-saver'); ?></span>
                     </li>
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>

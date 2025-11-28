@@ -42,8 +42,7 @@ class ImgPro_CDN_Onboarding {
      *
      * Show onboarding if:
      * - Not completed AND
-     * - No existing subscription (free or paid) AND
-     * - Not using self-hosted mode
+     * - Either in onboarding flow (step > 1) OR no existing subscription
      *
      * @since 0.2.0
      * @return bool
@@ -56,14 +55,20 @@ class ImgPro_CDN_Onboarding {
             return false;
         }
 
-        // Has a subscription (free or paid)
-        $tier = $all_settings['cloud_tier'] ?? '';
-        if (in_array($tier, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
+        // Using self-hosted mode with valid configuration - skip onboarding
+        if (ImgPro_CDN_Settings::MODE_CLOUDFLARE === ($all_settings['setup_mode'] ?? '') && !empty($all_settings['cdn_url'])) {
             return false;
         }
 
-        // Using self-hosted mode with valid configuration
-        if (ImgPro_CDN_Settings::MODE_CLOUDFLARE === ($all_settings['setup_mode'] ?? '') && !empty($all_settings['cdn_url'])) {
+        // If we're mid-onboarding (step > 1), continue showing it
+        $current_step = (int) ($all_settings['onboarding_step'] ?? 1);
+        if ($current_step > 1) {
+            return true;
+        }
+
+        // For step 1: only show if no existing subscription
+        $tier = $all_settings['cloud_tier'] ?? '';
+        if (in_array($tier, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
             return false;
         }
 
@@ -146,7 +151,7 @@ class ImgPro_CDN_Onboarding {
             <ul class="imgpro-onboarding-benefits">
                 <li>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span><strong><?php esc_html_e('1 GB free', 'bandwidth-saver'); ?></strong> <?php esc_html_e('storage (enough for ~1,500 images)', 'bandwidth-saver'); ?></span>
+                    <span><strong><?php esc_html_e('1 GB free', 'bandwidth-saver'); ?></strong>, <?php esc_html_e('no credit card required', 'bandwidth-saver'); ?></span>
                 </li>
                 <li>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -170,7 +175,8 @@ class ImgPro_CDN_Onboarding {
             </div>
 
             <p class="imgpro-onboarding-hint">
-                <?php esc_html_e('Need more storage? Pro includes 100 GB for $9.99/mo', 'bandwidth-saver'); ?>
+                <?php esc_html_e('Need more storage?', 'bandwidth-saver'); ?>
+                <a href="#" id="imgpro-onboarding-upgrade" class="imgpro-link-upgrade"><?php esc_html_e('Upgrade to Pro', 'bandwidth-saver'); ?></a>
             </p>
         </div>
         <?php
@@ -334,8 +340,6 @@ class ImgPro_CDN_Onboarding {
      */
     private function render_step_success() {
         $site_url = get_site_url();
-        $all_settings = $this->settings->get_all();
-        $storage_limit = ImgPro_CDN_Settings::get_storage_limit($all_settings);
         ?>
         <div class="imgpro-onboarding-content imgpro-onboarding-step-4">
             <div class="imgpro-onboarding-icon imgpro-onboarding-icon-success">
@@ -351,22 +355,12 @@ class ImgPro_CDN_Onboarding {
                 <?php esc_html_e('Your images are now being delivered from Cloudflare\'s edge network.', 'bandwidth-saver'); ?>
             </p>
 
-            <div class="imgpro-success-stats" id="imgpro-success-stats">
-                <div class="imgpro-stat">
-                    <span class="imgpro-stat-value imgpro-stat-active">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg>
-                        <?php esc_html_e('Active', 'bandwidth-saver'); ?>
-                    </span>
-                    <span class="imgpro-stat-label"><?php esc_html_e('CDN Status', 'bandwidth-saver'); ?></span>
-                </div>
-                <div class="imgpro-stat">
-                    <span class="imgpro-stat-value" id="imgpro-stat-images">0</span>
-                    <span class="imgpro-stat-label"><?php esc_html_e('Images Cached', 'bandwidth-saver'); ?></span>
-                </div>
-                <div class="imgpro-stat">
-                    <span class="imgpro-stat-value" id="imgpro-stat-storage">0 / <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($storage_limit, 0)); ?></span>
-                    <span class="imgpro-stat-label"><?php esc_html_e('Storage Used', 'bandwidth-saver'); ?></span>
-                </div>
+            <div class="imgpro-success-status">
+                <span class="imgpro-stat-value imgpro-stat-active">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg>
+                    <?php esc_html_e('Active', 'bandwidth-saver'); ?>
+                </span>
+                <span class="imgpro-stat-label"><?php esc_html_e('CDN Status', 'bandwidth-saver'); ?></span>
             </div>
 
             <div class="imgpro-success-tip">

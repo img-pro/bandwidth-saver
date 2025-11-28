@@ -321,11 +321,12 @@ class ImgPro_CDN_Admin_Ajax {
         $this->settings->update([
             'onboarding_completed' => true,
             'onboarding_step' => 4,
+            'enabled' => true,
         ]);
 
         wp_send_json_success([
             'message' => __('Setup complete!', 'bandwidth-saver'),
-            'redirect' => admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud')
+            'redirect' => admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&activated=1')
         ]);
     }
 

@@ -681,6 +681,7 @@
 /* Actions */
 .imgpro-onboarding-actions {
     margin-bottom: var(--imgpro-space-4);
+    text-align: center;
 }
 
 .imgpro-onboarding-actions-split {
@@ -698,6 +699,17 @@
     font-size: var(--imgpro-text-sm);
     color: var(--imgpro-text-muted);
     text-align: center;
+}
+
+.imgpro-link-upgrade {
+    color: var(--imgpro-primary-600);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.imgpro-link-upgrade:hover {
+    color: var(--imgpro-primary-700);
+    text-decoration: underline;
 }
 
 /* Terms */
@@ -866,21 +878,18 @@
 }
 
 /* ==========================================================================
-   Success Stats (Step 4)
+   Success Status (Step 4)
    ========================================================================== */
 
-.imgpro-success-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--imgpro-space-4);
+.imgpro-success-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--imgpro-space-1);
     margin-bottom: var(--imgpro-space-6);
     padding: var(--imgpro-space-5);
     background: var(--imgpro-bg-subtle);
     border-radius: var(--imgpro-radius-lg);
-}
-
-.imgpro-stat {
-    text-align: center;
 }
 
 .imgpro-stat-value {
@@ -1654,10 +1663,6 @@
 
     .imgpro-account-actions .imgpro-btn {
         width: 100%;
-    }
-
-    .imgpro-success-stats {
-        grid-template-columns: 1fr;
     }
 
     .imgpro-onboarding-actions-split {

@@ -29,6 +29,14 @@ class ImgPro_CDN_Admin_Ajax {
     private $settings;
 
     /**
+     * API client instance
+     *
+     * @since 0.2.0
+     * @var ImgPro_CDN_API
+     */
+    private $api;
+
+    /**
      * Constructor
      *
      * @since 0.1.2
@@ -36,6 +44,7 @@ class ImgPro_CDN_Admin_Ajax {
      */
     public function __construct(ImgPro_CDN_Settings $settings) {
         $this->settings = $settings;
+        $this->api = ImgPro_CDN_API::instance();
     }
 
     /**
@@ -183,100 +192,96 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
-        // Check if API key already exists
-        $settings = $this->settings->get_all();
-        $api_key = $settings['cloud_api_key'] ?? '';
+        // Call API to register
+        $result = $this->api->create_site($email, $site_url, $marketing_opt_in);
 
-        if (empty($api_key)) {
-            $api_key = $this->generate_api_key();
-        }
+        if (is_wp_error($result)) {
+            $error_code = $result->get_error_code();
 
-        // Try to call API to register free account
-        $api_url = ImgPro_CDN_Settings::get_api_base_url();
-        $api_available = !empty($api_url) && strpos($api_url, 'localhost') === false;
-
-        if ($api_available) {
-            $response = wp_remote_post($api_url . '/api/register', [
-                'headers' => ['Content-Type' => 'application/json'],
-                'body' => wp_json_encode([
-                    'email' => $email,
-                    'site_url' => $site_url,
-                    'api_key' => $api_key,
-                    'tier' => 'free',
-                    'marketing_opt_in' => $marketing_opt_in,
-                ]),
-                'timeout' => 15,
-            ]);
-
-            // Only process API response if we got one (not a connection error)
-            if (!is_wp_error($response)) {
-                $status_code = wp_remote_retrieve_response_code($response);
-                $body = json_decode(wp_remote_retrieve_body($response), true);
-
-                // Handle existing account - try to recover
-                if (409 === $status_code && isset($body['existing'])) {
-                    if (ImgPro_CDN_Settings::recover_account($this->settings)) {
-                        wp_send_json_success([
-                            'message' => __('Found your existing account. It has been activated.', 'bandwidth-saver'),
-                            'recovered' => true,
-                            'next_step' => 3
-                        ]);
-                    } else {
-                        wp_send_json_error([
-                            'message' => __('This email is already registered. Try recovering your account.', 'bandwidth-saver'),
-                            'existing' => true,
-                            'code' => 'account_exists'
-                        ]);
-                    }
-                    return;
-                }
-
-                // If API explicitly rejected, show error
-                if ($status_code >= 400 && $status_code < 500 && isset($body['error'])) {
-                    wp_send_json_error([
-                        'message' => $body['error'],
-                        'code' => 'api_error'
-                    ]);
-                    return;
-                }
-
-                // API registration successful (status 201)
-                if ($status_code >= 200 && $status_code < 300 && isset($body['success'])) {
-                    // Update local settings with API response
-                    $this->settings->update([
-                        'cloud_api_key' => $api_key,
-                        'cloud_email' => $email,
-                        'cloud_tier' => $body['tier'] ?? ImgPro_CDN_Settings::TIER_FREE,
-                        'setup_mode' => ImgPro_CDN_Settings::MODE_CLOUD,
-                        'onboarding_step' => 3,
-                        'marketing_opt_in' => $marketing_opt_in,
-                        'storage_limit' => $body['storage_limit'] ?? ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
-                    ]);
-
+            // Handle existing account - try to recover
+            if ('conflict' === $error_code) {
+                $recovery = $this->api->find_site($site_url);
+                if (!is_wp_error($recovery)) {
+                    $this->save_site_to_settings($recovery, $email, $marketing_opt_in);
                     wp_send_json_success([
-                        'message' => __('Account created! Ready to activate your CDN.', 'bandwidth-saver'),
+                        'message' => __('Found your existing account. It has been activated.', 'bandwidth-saver'),
+                        'recovered' => true,
                         'next_step' => 3
                     ]);
                     return;
                 }
+
+                wp_send_json_error([
+                    'message' => __('This email is already registered. Try recovering your account.', 'bandwidth-saver'),
+                    'existing' => true,
+                    'code' => 'account_exists'
+                ]);
+                return;
             }
-            // If API unavailable or returned 500, fall through to local registration
+
+            // Connection error - fall back to local registration
+            if ('connection_error' === $error_code) {
+                $api_key = $this->generate_api_key();
+                $this->settings->update([
+                    'cloud_api_key' => $api_key,
+                    'cloud_email' => $email,
+                    'cloud_tier' => ImgPro_CDN_Settings::TIER_FREE,
+                    'setup_mode' => ImgPro_CDN_Settings::MODE_CLOUD,
+                    'onboarding_step' => 3,
+                    'marketing_opt_in' => $marketing_opt_in,
+                    'storage_limit' => ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
+                    'bandwidth_limit' => ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
+                ]);
+
+                wp_send_json_success([
+                    'message' => __('Account created! Ready to activate your CDN.', 'bandwidth-saver'),
+                    'next_step' => 3
+                ]);
+                return;
+            }
+
+            wp_send_json_error([
+                'message' => $result->get_error_message(),
+                'code' => $error_code
+            ]);
+            return;
         }
 
-        // Local registration fallback (works offline or when API unavailable)
-        $this->settings->update([
-            'cloud_api_key' => $api_key,
-            'cloud_email' => $email,
-            'cloud_tier' => ImgPro_CDN_Settings::TIER_FREE,
-            'setup_mode' => ImgPro_CDN_Settings::MODE_CLOUD,
-            'onboarding_step' => 3,
-            'marketing_opt_in' => $marketing_opt_in,
-            'storage_limit' => ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
-        ]);
+        // Success - save site data
+        $this->save_site_to_settings($result, $email, $marketing_opt_in);
 
         wp_send_json_success([
             'message' => __('Account created! Ready to activate your CDN.', 'bandwidth-saver'),
             'next_step' => 3
+        ]);
+    }
+
+    /**
+     * Save site data from API response to local settings
+     *
+     * @since 0.2.0
+     * @param array  $site           Site data from API.
+     * @param string $email          User email.
+     * @param bool   $marketing_opt_in Marketing consent.
+     * @return void
+     */
+    private function save_site_to_settings($site, $email, $marketing_opt_in = false) {
+        $tier_id = $this->api->get_tier_id($site);
+        $usage = $this->api->get_usage($site);
+
+        $this->settings->update([
+            'cloud_api_key' => $site['api_key'] ?? '',
+            'cloud_email' => $email,
+            'cloud_tier' => $tier_id,
+            'setup_mode' => ImgPro_CDN_Settings::MODE_CLOUD,
+            'onboarding_step' => 3,
+            'marketing_opt_in' => $marketing_opt_in,
+            'storage_used' => $usage['storage_used'],
+            'storage_limit' => $usage['storage_limit'] ?: ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
+            'bandwidth_used' => $usage['bandwidth_used'],
+            'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
+            'images_cached' => $usage['images_cached'],
+            'stats_updated_at' => time(),
         ]);
     }
 
@@ -333,6 +338,8 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * AJAX handler for syncing stats from API
      *
+     * Uses the API client to fetch fresh site data.
+     *
      * @since 0.2.0
      * @return void
      */
@@ -353,69 +360,86 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
-        // Call API to get stats
-        $response = wp_remote_get(
-            add_query_arg('api_key', $api_key, ImgPro_CDN_Settings::get_api_base_url() . '/api/stats'),
-            ['timeout' => 10]
-        );
+        // Force fetch fresh site data
+        $site = $this->api->get_site($api_key, true);
 
-        if (is_wp_error($response)) {
+        if (is_wp_error($site)) {
             wp_send_json_error([
                 'message' => __('Could not sync stats. Please try again.', 'bandwidth-saver'),
-                'code' => 'connection_error'
+                'code' => 'sync_error'
             ]);
             return;
         }
 
-        $status_code = wp_remote_retrieve_response_code($response);
-        $data = json_decode(wp_remote_retrieve_body($response), true);
-
-        if ($status_code >= 400 || !is_array($data)) {
-            wp_send_json_error([
-                'message' => __('Could not retrieve stats.', 'bandwidth-saver'),
-                'code' => 'api_error'
-            ]);
-            return;
-        }
-
-        // Update local settings with stats
-        $update = ['stats_updated_at' => time()];
-
-        if (isset($data['storage_used'])) {
-            $update['storage_used'] = absint($data['storage_used']);
-        }
-        if (isset($data['storage_limit'])) {
-            $update['storage_limit'] = absint($data['storage_limit']);
-        }
-        if (isset($data['images_cached'])) {
-            $update['images_cached'] = absint($data['images_cached']);
-        }
-        if (isset($data['bandwidth_saved'])) {
-            $update['bandwidth_saved'] = absint($data['bandwidth_saved']);
-        }
-
-        $this->settings->update($update);
+        // Update local settings with fresh data
+        $this->update_settings_from_site($site);
 
         // Get updated settings for response
         $updated_settings = $this->settings->get_all();
         $storage_limit = ImgPro_CDN_Settings::get_storage_limit($updated_settings);
+        $bandwidth_limit = ImgPro_CDN_Settings::get_bandwidth_limit($updated_settings);
 
         wp_send_json_success([
-            'storage_used' => $update['storage_used'] ?? 0,
+            'storage_used' => $updated_settings['storage_used'] ?? 0,
             'storage_limit' => $storage_limit,
             'storage_percentage' => ImgPro_CDN_Settings::get_storage_percentage($updated_settings),
-            'images_cached' => $update['images_cached'] ?? 0,
-            'bandwidth_saved' => $update['bandwidth_saved'] ?? 0,
+            'bandwidth_used' => $updated_settings['bandwidth_used'] ?? 0,
+            'bandwidth_limit' => $bandwidth_limit,
+            'bandwidth_percentage' => ImgPro_CDN_Settings::get_bandwidth_percentage($updated_settings),
+            'images_cached' => $updated_settings['images_cached'] ?? 0,
             'formatted' => [
-                'storage_used' => ImgPro_CDN_Settings::format_bytes($update['storage_used'] ?? 0),
+                'storage_used' => ImgPro_CDN_Settings::format_bytes($updated_settings['storage_used'] ?? 0),
                 'storage_limit' => ImgPro_CDN_Settings::format_bytes($storage_limit, 0),
-                'bandwidth_saved' => ImgPro_CDN_Settings::format_bytes($update['bandwidth_saved'] ?? 0),
+                'bandwidth_used' => ImgPro_CDN_Settings::format_bytes($updated_settings['bandwidth_used'] ?? 0),
+                'bandwidth_limit' => ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0),
             ]
         ]);
     }
 
     /**
-     * AJAX handler for Stripe checkout (Pro upgrade)
+     * Update local settings from site API response
+     *
+     * @since 0.2.0
+     * @param array $site Site data from API.
+     * @return void
+     */
+    private function update_settings_from_site($site) {
+        $tier_id = $this->api->get_tier_id($site);
+        $usage = $this->api->get_usage($site);
+        $domain = $this->api->get_custom_domain($site);
+
+        $update_data = [
+            'cloud_tier' => $tier_id,
+            'storage_used' => $usage['storage_used'],
+            'bandwidth_used' => $usage['bandwidth_used'],
+            'images_cached' => $usage['images_cached'],
+            'stats_updated_at' => time(),
+        ];
+
+        // Update storage/bandwidth limits if provided
+        if ($usage['storage_limit'] > 0) {
+            $update_data['storage_limit'] = $usage['storage_limit'];
+        }
+        if ($usage['bandwidth_limit'] > 0) {
+            $update_data['bandwidth_limit'] = $usage['bandwidth_limit'];
+        }
+
+        // Update custom domain if present
+        if ($domain) {
+            $update_data['custom_domain'] = $domain['domain'];
+            $update_data['custom_domain_status'] = $domain['status'];
+        }
+
+        // Disable if subscription is inactive
+        if (ImgPro_CDN_Settings::is_subscription_inactive(['cloud_tier' => $tier_id])) {
+            $update_data['enabled'] = false;
+        }
+
+        $this->settings->update($update_data);
+    }
+
+    /**
+     * AJAX handler for Stripe checkout (paid tier upgrade)
      *
      * @since 0.1.2
      * @return void
@@ -429,85 +453,110 @@ class ImgPro_CDN_Admin_Ajax {
             wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
         }
 
-        $email = get_option('admin_email');
-        $site_url = get_site_url();
+        // Get requested tier (default to 'pro' for backwards compatibility)
+        $tier_id = isset($_POST['tier_id']) ? sanitize_text_field(wp_unslash($_POST['tier_id'])) : 'pro';
+
+        // Validate tier_id is a paid tier
+        $valid_tiers = ['lite', 'pro', 'business'];
+        if (!in_array($tier_id, $valid_tiers, true)) {
+            wp_send_json_error([
+                'message' => __('Invalid plan selected. Please try again.', 'bandwidth-saver'),
+                'code' => 'invalid_tier'
+            ]);
+            return;
+        }
 
         $settings = $this->settings->get_all();
         $api_key = $settings['cloud_api_key'] ?? '';
+        $email = get_option('admin_email');
+        $site_url = get_site_url();
 
+        // Ensure we have an API key (create or recover site if needed)
         if (empty($api_key)) {
-            $api_key = $this->generate_api_key();
+            $site = $this->api->create_site($email, $site_url);
 
-            $settings['cloud_api_key'] = $api_key;
-            $settings['setup_mode'] = ImgPro_CDN_Settings::MODE_CLOUD;
-            update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
-            $this->settings->clear_cache();
-        }
+            if (is_wp_error($site)) {
+                $error_code = $site->get_error_code();
 
-        $response = wp_remote_post(ImgPro_CDN_Settings::get_api_base_url() . '/api/checkout', [
-            'headers' => ['Content-Type' => 'application/json'],
-            'body' => wp_json_encode([
-                'email' => $email,
-                'site_url' => $site_url,
-                'api_key' => $api_key,
-            ]),
-            'timeout' => 15,
-        ]);
-
-        if (is_wp_error($response)) {
-            ImgPro_CDN_Settings::handle_api_error($response, 'checkout');
-            wp_send_json_error([
-                'message' => __('Could not connect to billing service. Please try again in a moment.', 'bandwidth-saver'),
-                'code' => 'connection_error'
-            ]);
-            return;
-        }
-
-        $status_code = wp_remote_retrieve_response_code($response);
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-
-        if (409 === $status_code && isset($body['existing'])) {
-            if (ImgPro_CDN_Settings::recover_account($this->settings)) {
-                wp_send_json_success([
-                    'message' => __('Found your existing subscription. It has been activated.', 'bandwidth-saver'),
-                    'recovered' => true
-                ]);
-            } else {
-                wp_send_json_error([
-                    'message' => __('This site has an existing subscription but we could not activate it. Please contact support.', 'bandwidth-saver'),
-                    'existing' => true,
-                    'code' => 'recovery_failed'
-                ]);
+                // Account already exists - try to recover it
+                if ('conflict' === $error_code) {
+                    $site = $this->api->find_site($site_url);
+                    if (is_wp_error($site)) {
+                        wp_send_json_error([
+                            'message' => __('Account exists but could not be recovered. Please try again.', 'bandwidth-saver'),
+                            'code' => 'recovery_failed'
+                        ]);
+                        return;
+                    }
+                } else {
+                    wp_send_json_error([
+                        'message' => __('Could not create account. Please try again.', 'bandwidth-saver'),
+                        'code' => $error_code
+                    ]);
+                    return;
+                }
             }
-            return;
+
+            $api_key = $site['api_key'] ?? '';
+            $this->save_site_to_settings($site, $email);
         }
 
-        if ($status_code >= 400 && $status_code < 500) {
-            ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $body], 'checkout');
-            $error_message = isset($body['error']) && is_string($body['error'])
-                ? $body['error']
-                : __('Something went wrong. Please try again or contact support.', 'bandwidth-saver');
+        // Create checkout session with selected tier
+        $result = $this->api->create_checkout($api_key, $tier_id);
+
+        if (is_wp_error($result)) {
+            $error_code = $result->get_error_code();
+
+            if ('connection_error' === $error_code) {
+                wp_send_json_error([
+                    'message' => __('Could not connect to billing service. Please try again in a moment.', 'bandwidth-saver'),
+                    'code' => 'connection_error'
+                ]);
+                return;
+            }
+
             wp_send_json_error([
-                'message' => $error_message,
-                'code' => 'client_error'
+                'message' => $result->get_error_message(),
+                'code' => $error_code
             ]);
             return;
         }
 
-        if ($status_code >= 500) {
-            ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $body], 'checkout');
-            wp_send_json_error([
-                'message' => __('Billing service is temporarily unavailable. Please try again in a few minutes.', 'bandwidth-saver'),
-                'code' => 'server_error'
+        // Check if already subscribed - sync the subscription
+        if (!empty($result['already_subscribed']) && !empty($result['site'])) {
+            $site = $result['site'];
+            $this->save_site_to_settings($site, $site['email'] ?? get_option('admin_email'));
+
+            wp_send_json_success([
+                'recovered' => true,
+                'message' => __('Your subscription has been restored.', 'bandwidth-saver'),
             ]);
             return;
         }
 
-        if (isset($body['url'])) {
+        // Check if subscription was upgraded directly (no checkout needed)
+        if (!empty($result['upgraded'])) {
+            // Sync site data from API to get new tier limits
+            $site_data = $this->api->get_site($api_key);
+            if (!is_wp_error($site_data) && !empty($site_data['site'])) {
+                $this->save_site_to_settings($site_data['site'], $site_data['site']['email'] ?? get_option('admin_email'));
+            }
+
+            wp_send_json_success([
+                'upgraded' => true,
+                'message' => sprintf(
+                    /* translators: %s: tier name */
+                    __('Successfully upgraded to %s!', 'bandwidth-saver'),
+                    ucfirst($result['tier_id'] ?? 'new plan')
+                ),
+            ]);
+            return;
+        }
+
+        if (!empty($result['url'])) {
             set_transient('imgpro_cdn_pending_payment', true, HOUR_IN_SECONDS);
-            wp_send_json_success(['checkout_url' => $body['url']]);
+            wp_send_json_success(['checkout_url' => $result['url']]);
         } else {
-            ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $body], 'checkout');
             wp_send_json_error([
                 'message' => __('Could not create checkout. Please try again.', 'bandwidth-saver'),
                 'code' => 'invalid_response'
@@ -530,15 +579,32 @@ class ImgPro_CDN_Admin_Ajax {
             wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
         }
 
-        if (ImgPro_CDN_Settings::recover_account($this->settings)) {
-            wp_send_json_success([
-                'message' => __('Account recovered. Your subscription is now active.', 'bandwidth-saver')
-            ]);
-        } else {
+        $site_url = get_site_url();
+        $site = $this->api->find_site($site_url);
+
+        if (is_wp_error($site)) {
             wp_send_json_error([
                 'message' => __('No subscription found for this site. If you subscribed recently, please wait a moment and try again.', 'bandwidth-saver')
             ]);
+            return;
         }
+
+        // Save recovered site data
+        $email = $site['email'] ?? get_option('admin_email');
+        $this->save_site_to_settings($site, $email);
+
+        // Enable CDN if valid subscription
+        $tier_id = $this->api->get_tier_id($site);
+        if (in_array($tier_id, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
+            $this->settings->update([
+                'enabled' => true,
+                'onboarding_completed' => true,
+            ]);
+        }
+
+        wp_send_json_success([
+            'message' => __('Account recovered. Your subscription is now active.', 'bandwidth-saver')
+        ]);
     }
 
     /**
@@ -566,58 +632,37 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
-        $response = wp_remote_post(ImgPro_CDN_Settings::get_api_base_url() . '/api/portal', [
-            'headers' => ['Content-Type' => 'application/json'],
-            'body' => wp_json_encode(['api_key' => $api_key]),
-            'timeout' => 15,
-        ]);
+        $result = $this->api->create_portal($api_key);
 
-        if (is_wp_error($response)) {
-            ImgPro_CDN_Settings::handle_api_error($response, 'portal');
+        if (is_wp_error($result)) {
+            $error_code = $result->get_error_code();
+
+            if ('connection_error' === $error_code) {
+                wp_send_json_error([
+                    'message' => __('Could not connect to billing service. Please try again in a moment.', 'bandwidth-saver'),
+                    'code' => 'connection_error'
+                ]);
+                return;
+            }
+
+            if ('unauthorized' === $error_code) {
+                wp_send_json_error([
+                    'message' => __('Could not verify your subscription. Try recovering your account.', 'bandwidth-saver'),
+                    'code' => 'auth_error'
+                ]);
+                return;
+            }
+
             wp_send_json_error([
-                'message' => __('Could not connect to billing service. Please try again in a moment.', 'bandwidth-saver'),
-                'code' => 'connection_error'
+                'message' => $result->get_error_message(),
+                'code' => $error_code
             ]);
             return;
         }
 
-        $status_code = wp_remote_retrieve_response_code($response);
-        $data = json_decode(wp_remote_retrieve_body($response), true);
-
-        if (401 === $status_code || 403 === $status_code) {
-            ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $data], 'portal');
-            wp_send_json_error([
-                'message' => __('Could not verify your subscription. Try recovering your account.', 'bandwidth-saver'),
-                'code' => 'auth_error'
-            ]);
-            return;
-        }
-
-        if ($status_code >= 400 && $status_code < 500) {
-            ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $data], 'portal');
-            $error_message = isset($data['error']) && is_string($data['error'])
-                ? $data['error']
-                : __('Could not open subscription portal. Please try again or contact support.', 'bandwidth-saver');
-            wp_send_json_error([
-                'message' => $error_message,
-                'code' => 'client_error'
-            ]);
-            return;
-        }
-
-        if ($status_code >= 500) {
-            ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $data], 'portal');
-            wp_send_json_error([
-                'message' => __('Billing service is temporarily unavailable. Please try again in a few minutes.', 'bandwidth-saver'),
-                'code' => 'server_error'
-            ]);
-            return;
-        }
-
-        if (!empty($data['portal_url'])) {
-            wp_send_json_success(['portal_url' => $data['portal_url']]);
+        if (!empty($result['portal_url'])) {
+            wp_send_json_success(['portal_url' => $result['portal_url']]);
         } else {
-            ImgPro_CDN_Settings::handle_api_error(['status' => $status_code, 'body' => $data], 'portal');
             wp_send_json_error([
                 'message' => __('Could not open subscription portal. Please try again.', 'bandwidth-saver'),
                 'code' => 'invalid_response'
@@ -657,32 +702,22 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
-        $response = wp_remote_post(ImgPro_CDN_Settings::get_api_base_url() . '/api/custom-domain', [
-            'headers' => ['Content-Type' => 'application/json'],
-            'body' => wp_json_encode([
-                'api_key' => $api_key,
-                'domain' => $domain,
-            ]),
-            'timeout' => 30,
-        ]);
+        $result = $this->api->set_domain($api_key, $domain);
 
-        if (is_wp_error($response)) {
-            ImgPro_CDN_Settings::handle_api_error($response, 'custom_domain_add');
+        if (is_wp_error($result)) {
+            $error_code = $result->get_error_code();
+
+            if ('connection_error' === $error_code) {
+                wp_send_json_error([
+                    'message' => __('Could not connect to service. Please try again.', 'bandwidth-saver'),
+                    'code' => 'connection_error'
+                ]);
+                return;
+            }
+
             wp_send_json_error([
-                'message' => __('Could not connect to service. Please try again.', 'bandwidth-saver'),
-                'code' => 'connection_error'
-            ]);
-            return;
-        }
-
-        $status_code = wp_remote_retrieve_response_code($response);
-        $data = json_decode(wp_remote_retrieve_body($response), true);
-
-        if ($status_code >= 400) {
-            $error_message = isset($data['error']) ? $data['error'] : __('Could not add domain. Please try again.', 'bandwidth-saver');
-            wp_send_json_error([
-                'message' => $error_message,
-                'code' => 'api_error'
+                'message' => $result->get_error_message(),
+                'code' => $error_code
             ]);
             return;
         }
@@ -696,7 +731,7 @@ class ImgPro_CDN_Admin_Ajax {
             'message' => __('Domain added. Please configure your DNS.', 'bandwidth-saver'),
             'domain' => $domain,
             'status' => 'pending_dns',
-            'dns_record' => $data['dns_record'] ?? [
+            'dns_record' => $result['dns_record'] ?? [
                 'type' => 'CNAME',
                 'hostname' => $domain,
                 'target' => ImgPro_CDN_Settings::CUSTOM_DOMAIN_TARGET
@@ -729,37 +764,24 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
-        $response = wp_remote_get(
-            add_query_arg('api_key', $api_key, ImgPro_CDN_Settings::get_api_base_url() . '/api/custom-domain/status'),
-            ['timeout' => 15]
-        );
+        $result = $this->api->get_domain($api_key);
 
-        if (is_wp_error($response)) {
+        if (is_wp_error($result)) {
             wp_send_json_error([
                 'message' => __('Could not check status. Please try again.', 'bandwidth-saver'),
-                'code' => 'connection_error'
+                'code' => $result->get_error_code()
             ]);
             return;
         }
 
-        $status_code = wp_remote_retrieve_response_code($response);
-        $data = json_decode(wp_remote_retrieve_body($response), true);
-
-        if ($status_code >= 400) {
-            wp_send_json_error([
-                'message' => __('Could not check status.', 'bandwidth-saver'),
-                'code' => 'api_error'
-            ]);
-            return;
-        }
-
-        if (!empty($data['status']) && $data['status'] !== $settings['custom_domain_status']) {
+        // Update local status if changed
+        if (!empty($result['status']) && $result['status'] !== $settings['custom_domain_status']) {
             $this->settings->update([
-                'custom_domain_status' => $data['status'],
+                'custom_domain_status' => $result['status'],
             ]);
         }
 
-        wp_send_json_success($data);
+        wp_send_json_success($result);
     }
 
     /**
@@ -787,27 +809,12 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
-        $response = wp_remote_request(ImgPro_CDN_Settings::get_api_base_url() . '/api/custom-domain', [
-            'method' => 'DELETE',
-            'headers' => ['Content-Type' => 'application/json'],
-            'body' => wp_json_encode(['api_key' => $api_key]),
-            'timeout' => 30,
-        ]);
+        $result = $this->api->remove_domain($api_key);
 
-        if (is_wp_error($response)) {
-            wp_send_json_error([
-                'message' => __('Could not connect to service. Please try again.', 'bandwidth-saver'),
-                'code' => 'connection_error'
-            ]);
-            return;
-        }
-
-        $status_code = wp_remote_retrieve_response_code($response);
-
-        if ($status_code >= 400) {
+        if (is_wp_error($result)) {
             wp_send_json_error([
                 'message' => __('Could not remove domain. Please try again.', 'bandwidth-saver'),
-                'code' => 'api_error'
+                'code' => $result->get_error_code()
             ]);
             return;
         }

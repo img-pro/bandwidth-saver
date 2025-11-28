@@ -28,6 +28,14 @@ class ImgPro_CDN_Onboarding {
     private $settings;
 
     /**
+     * Plan selector instance
+     *
+     * @since 0.2.0
+     * @var ImgPro_CDN_Plan_Selector
+     */
+    private $plan_selector;
+
+    /**
      * Constructor
      *
      * @since 0.2.0
@@ -35,6 +43,7 @@ class ImgPro_CDN_Onboarding {
      */
     public function __construct(ImgPro_CDN_Settings $settings) {
         $this->settings = $settings;
+        $this->plan_selector = new ImgPro_CDN_Plan_Selector($settings);
     }
 
     /**
@@ -122,6 +131,8 @@ class ImgPro_CDN_Onboarding {
             <?php $this->render_skip_link(); ?>
         </div>
         <?php
+        // Render plan selector modal (available throughout onboarding)
+        $this->plan_selector->render_modal_wrapper();
     }
 
     /**
@@ -142,11 +153,11 @@ class ImgPro_CDN_Onboarding {
             <ul class="imgpro-onboarding-benefits">
                 <li>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span><strong><?php esc_html_e('1 GB free', 'bandwidth-saver'); ?></strong>, <?php esc_html_e('no credit card required', 'bandwidth-saver'); ?></span>
+                    <span><strong><?php esc_html_e('10 GB storage', 'bandwidth-saver'); ?></strong>, <?php esc_html_e('free forever', 'bandwidth-saver'); ?></span>
                 </li>
                 <li>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span><?php esc_html_e('Unlimited bandwidth, forever', 'bandwidth-saver'); ?></span>
+                    <span><strong><?php esc_html_e('50 GB/mo bandwidth', 'bandwidth-saver'); ?></strong>, <?php esc_html_e('soft limit', 'bandwidth-saver'); ?></span>
                 </li>
                 <li>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -167,7 +178,7 @@ class ImgPro_CDN_Onboarding {
 
             <p class="imgpro-onboarding-hint">
                 <?php esc_html_e('Need more storage?', 'bandwidth-saver'); ?>
-                <a href="#" id="imgpro-onboarding-upgrade" class="imgpro-link-upgrade"><?php esc_html_e('Upgrade to Pro', 'bandwidth-saver'); ?></a>
+                <button type="button" class="imgpro-btn-link imgpro-open-plan-selector"><?php esc_html_e('See upgrade options', 'bandwidth-saver'); ?></button>
             </p>
         </div>
         <?php

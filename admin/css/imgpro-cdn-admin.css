@@ -1087,75 +1087,6 @@
 }
 
 /* ==========================================================================
-   Dashboard - Account Card
-   ========================================================================== */
-
-.imgpro-account-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--imgpro-space-4);
-    padding: var(--imgpro-space-5) var(--imgpro-space-6);
-    background: linear-gradient(135deg, var(--imgpro-primary-50) 0%, var(--imgpro-bg) 100%);
-    border: 1px solid var(--imgpro-primary-200);
-    border-radius: var(--imgpro-radius-lg);
-}
-
-.imgpro-account-info {
-    display: flex;
-    align-items: center;
-    gap: var(--imgpro-space-4);
-}
-
-.imgpro-account-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    background: white;
-    border-radius: var(--imgpro-radius);
-    color: var(--imgpro-primary-600);
-    box-shadow: var(--imgpro-shadow-sm);
-}
-
-.imgpro-account-details h3 {
-    margin: 0 0 var(--imgpro-space-1);
-    font-size: var(--imgpro-text-base);
-    font-weight: 600;
-    color: var(--imgpro-text);
-}
-
-.imgpro-account-details p {
-    margin: 0;
-    font-size: var(--imgpro-text-sm);
-    color: var(--imgpro-text-secondary);
-}
-
-.imgpro-account-tier {
-    display: inline-block;
-    padding: var(--imgpro-space-1) var(--imgpro-space-2);
-    background: var(--imgpro-primary-100);
-    border-radius: var(--imgpro-radius-sm);
-    font-size: var(--imgpro-text-xs);
-    font-weight: 600;
-    color: var(--imgpro-primary-700);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.imgpro-account-tier.is-pro {
-    background: linear-gradient(135deg, var(--imgpro-primary-500) 0%, var(--imgpro-primary-600) 100%);
-    color: white;
-}
-
-.imgpro-account-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--imgpro-space-3);
-}
-
-/* ==========================================================================
    Dashboard - Tabs
    ========================================================================== */
 
@@ -1599,21 +1530,6 @@
         align-self: flex-end;
     }
 
-    .imgpro-account-card,
-    .imgpro-card.imgpro-account-card {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .imgpro-account-actions {
-        width: 100%;
-        flex-direction: column;
-    }
-
-    .imgpro-account-actions .imgpro-btn {
-        width: 100%;
-    }
-
     .imgpro-onboarding-actions-split {
         flex-direction: column;
     }
@@ -1975,17 +1891,22 @@
    ========================================================================== */
 
 /* ==========================================================================
-   Upgrade Card (Free tier CTA)
+   Account Card (Unified component for all tiers)
    ========================================================================== */
 
-.imgpro-upgrade-card {
-    background: linear-gradient(135deg, var(--imgpro-primary-600) 0%, var(--imgpro-primary-700) 100%);
+/* Base card */
+.imgpro-account-card {
     border-radius: var(--imgpro-radius-lg);
     margin-bottom: var(--imgpro-space-6);
     overflow: hidden;
 }
 
-.imgpro-upgrade-card-content {
+/* --- Free tier variant (upgrade CTA) --- */
+.imgpro-account-card--free {
+    background: linear-gradient(135deg, var(--imgpro-primary-600) 0%, var(--imgpro-primary-700) 100%);
+}
+
+.imgpro-account-card--free .imgpro-account-card__main {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1993,36 +1914,36 @@
     padding: var(--imgpro-space-5) var(--imgpro-space-6);
 }
 
-.imgpro-upgrade-card-info {
+.imgpro-account-card--free .imgpro-account-card__content {
     display: flex;
     flex-direction: column;
     gap: var(--imgpro-space-1);
 }
 
-.imgpro-upgrade-card-info strong {
+.imgpro-account-card__headline {
     font-size: var(--imgpro-text-base);
     font-weight: 600;
     color: white;
 }
 
-.imgpro-upgrade-card-info span {
+.imgpro-account-card__description {
     font-size: var(--imgpro-text-sm);
     color: rgba(255, 255, 255, 0.8);
 }
 
-.imgpro-upgrade-card .imgpro-btn-primary {
+.imgpro-account-card--free .imgpro-btn-primary {
     background: white;
     border-color: white;
     color: var(--imgpro-primary-700);
     flex-shrink: 0;
 }
 
-.imgpro-upgrade-card .imgpro-btn-primary:hover {
+.imgpro-account-card--free .imgpro-btn-primary:hover {
     background: var(--imgpro-primary-50);
     border-color: var(--imgpro-primary-50);
 }
 
-.imgpro-upgrade-card-account {
+.imgpro-account-card__footer {
     display: flex;
     align-items: center;
     gap: var(--imgpro-space-2);
@@ -2036,80 +1957,126 @@
     opacity: 0.5;
 }
 
+/* --- Paid tier variant --- */
+.imgpro-account-card.imgpro-account-card--paid {
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, var(--imgpro-gray-800) 0%, var(--imgpro-gray-900) 100%);
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__main {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--imgpro-space-4);
+    padding: var(--imgpro-space-5) var(--imgpro-space-6);
+    text-align: left;
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--imgpro-space-2);
+    flex: 1;
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__plan {
+    display: flex;
+    align-items: center;
+    gap: var(--imgpro-space-2);
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__tier {
+    font-size: var(--imgpro-text-lg);
+    font-weight: 700;
+    color: white;
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__plan-label {
+    font-size: var(--imgpro-text-lg);
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__limits {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--imgpro-space-2);
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__limit {
+    font-size: var(--imgpro-text-sm);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__separator {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__actions {
+    flex-shrink: 0;
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-btn-primary {
+    background: white;
+    border-color: white;
+    color: var(--imgpro-gray-900);
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-btn-primary:hover {
+    background: var(--imgpro-gray-100);
+    border-color: var(--imgpro-gray-100);
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--imgpro-space-2);
+    padding: var(--imgpro-space-3) var(--imgpro-space-6);
+    background: rgba(0, 0, 0, 0.15);
+    font-size: var(--imgpro-text-sm);
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 0;
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-btn-link {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: var(--imgpro-text-sm);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.imgpro-account-card.imgpro-account-card--paid .imgpro-btn-link:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+/* Responsive - Paid */
 @media (max-width: 600px) {
-    .imgpro-upgrade-card-content {
+    .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__main {
         flex-direction: column;
         align-items: stretch;
         text-align: center;
     }
 
-    .imgpro-upgrade-card-account {
+    .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__footer {
         justify-content: center;
     }
-}
 
-/* ==========================================================================
-   Account Card (Pro tier)
-   ========================================================================== */
+    .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__limits {
+        justify-content: center;
+    }
 
-.imgpro-card.imgpro-account-card {
-    margin-bottom: var(--imgpro-space-6);
-}
-
-.imgpro-account-plan {
-    display: block;
-    font-size: var(--imgpro-text-sm);
-    font-weight: 400;
-    color: var(--imgpro-text-secondary);
-}
-
-.imgpro-card.imgpro-account-card .imgpro-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: var(--imgpro-space-4);
-    border-bottom: none;
-}
-
-.imgpro-account-info {
-    display: flex;
-    align-items: center;
-    gap: var(--imgpro-space-3);
-}
-
-.imgpro-account-info svg {
-    color: var(--imgpro-text-muted);
-}
-
-.imgpro-account-info strong {
-    font-size: var(--imgpro-text-sm);
-    color: var(--imgpro-text);
-}
-
-.imgpro-tier-badge {
-    padding: var(--imgpro-space-1) var(--imgpro-space-2);
-    border-radius: var(--imgpro-radius-sm);
-    font-size: var(--imgpro-text-xs);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.imgpro-tier-badge.is-free {
-    background: var(--imgpro-gray-100);
-    color: var(--imgpro-gray-600);
-}
-
-.imgpro-tier-badge.is-pro {
-    background: linear-gradient(135deg, var(--imgpro-primary-500) 0%, var(--imgpro-primary-600) 100%);
-    color: white;
-}
-
-.imgpro-account-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--imgpro-space-3);
+    .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__actions {
+        align-self: center;
+    }
 }
 
 /* ==========================================================================
@@ -2743,4 +2710,728 @@
     .imgpro-custom-domain-info {
         justify-content: space-between;
     }
+}
+
+/* ==========================================================================
+   Plan Selector Modal
+
+   Design Intent:
+   - Premium feel with subtle depth and motion
+   - Clear visual hierarchy guiding to conversion
+   - Highlighted plan draws attention without being aggressive
+   ========================================================================== */
+
+.imgpro-plan-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--imgpro-space-6);
+}
+
+.imgpro-plan-modal__backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(9, 9, 11, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.imgpro-plan-modal__content {
+    position: relative;
+    max-width: 920px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--imgpro-bg);
+    border-radius: var(--imgpro-radius-xl);
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.03),
+        0 2px 4px rgba(0, 0, 0, 0.02),
+        0 12px 24px rgba(0, 0, 0, 0.06),
+        var(--imgpro-shadow-xl);
+}
+
+/* ==========================================================================
+   Plan Selector Component
+   ========================================================================== */
+
+.imgpro-plan-selector {
+    padding: var(--imgpro-space-10);
+}
+
+.imgpro-plan-selector--modal .imgpro-plan-selector__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: var(--imgpro-space-10);
+}
+
+.imgpro-plan-selector__header h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--imgpro-gray-900);
+}
+
+.imgpro-plan-selector__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin: -4px -4px 0 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: var(--imgpro-radius);
+    color: var(--imgpro-gray-400);
+    cursor: pointer;
+    transition: all var(--imgpro-transition-fast) var(--imgpro-ease-out);
+}
+
+.imgpro-plan-selector__close:hover {
+    background: var(--imgpro-gray-100);
+    color: var(--imgpro-gray-600);
+}
+
+.imgpro-plan-selector__close:active {
+    background: var(--imgpro-gray-200);
+}
+
+/* ==========================================================================
+   Plan Cards Grid
+   ========================================================================== */
+
+.imgpro-plan-selector__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--imgpro-space-5);
+    margin-bottom: var(--imgpro-space-8);
+}
+
+@media (max-width: 900px) {
+    .imgpro-plan-selector__grid {
+        grid-template-columns: 1fr;
+        max-width: 360px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+/* ==========================================================================
+   Individual Plan Card
+
+   Design Intent:
+   - Subtle elevation creates depth
+   - Hover state shows interactivity
+   - Selected state is clear but not jarring
+   ========================================================================== */
+
+.imgpro-plan-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: var(--imgpro-space-6);
+    background: var(--imgpro-bg);
+    border: 1px solid var(--imgpro-gray-200);
+    border-radius: var(--imgpro-radius-lg);
+    transition:
+        border-color var(--imgpro-transition-fast) var(--imgpro-ease-out),
+        box-shadow var(--imgpro-transition-base) var(--imgpro-ease-out),
+        transform var(--imgpro-transition-base) var(--imgpro-ease-out);
+    cursor: pointer;
+}
+
+.imgpro-plan-card:hover:not(.imgpro-plan-card--current) {
+    border-color: var(--imgpro-gray-300);
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 4px 12px rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+}
+
+/* Highlighted plan (Pro) - subtle visual emphasis */
+.imgpro-plan-card--highlight {
+    border-color: var(--imgpro-primary-200);
+    background: linear-gradient(180deg, rgba(0, 51, 255, 0.02) 0%, transparent 100%);
+    box-shadow:
+        0 0 0 1px var(--imgpro-primary-100),
+        0 1px 2px rgba(0, 51, 255, 0.04),
+        0 4px 12px rgba(0, 51, 255, 0.04);
+}
+
+.imgpro-plan-card--highlight:hover:not(.imgpro-plan-card--current) {
+    border-color: var(--imgpro-primary-300);
+    box-shadow:
+        0 0 0 1px var(--imgpro-primary-200),
+        0 4px 16px rgba(0, 51, 255, 0.08);
+}
+
+/* Current plan state */
+.imgpro-plan-card--current {
+    background: var(--imgpro-gray-50);
+    border-color: var(--imgpro-gray-200);
+    cursor: default;
+}
+
+/* Selected state - clear feedback */
+.imgpro-plan-card.is-selected {
+    border-color: var(--imgpro-primary-500);
+    box-shadow:
+        0 0 0 3px var(--imgpro-primary-100),
+        0 1px 2px rgba(0, 51, 255, 0.08);
+}
+
+.imgpro-plan-card.is-selected.imgpro-plan-card--highlight {
+    box-shadow:
+        0 0 0 3px var(--imgpro-primary-100),
+        0 4px 16px rgba(0, 51, 255, 0.12);
+}
+
+.imgpro-plan-card--downgrade {
+    opacity: 0.6;
+}
+
+.imgpro-plan-card--downgrade:hover {
+    opacity: 0.8;
+}
+
+/* ==========================================================================
+   Plan Card Badge
+   ========================================================================== */
+
+.imgpro-plan-card__badge {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--imgpro-primary-600);
+    color: white;
+    border-radius: 999px;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0, 51, 255, 0.2);
+}
+
+.imgpro-plan-card__badge--current {
+    background: var(--imgpro-gray-600);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   Plan Card Content
+   ========================================================================== */
+
+.imgpro-plan-card__header {
+    text-align: center;
+    margin-bottom: var(--imgpro-space-2);
+    padding-top: var(--imgpro-space-2);
+}
+
+.imgpro-plan-card__name {
+    margin: 0;
+    font-size: var(--imgpro-text-lg);
+    font-weight: 600;
+    color: var(--imgpro-gray-900);
+}
+
+.imgpro-plan-card__description {
+    margin: var(--imgpro-space-1) 0 0;
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-gray-500);
+}
+
+/* Price - Large, confident typography */
+.imgpro-plan-card__price {
+    text-align: center;
+    padding: var(--imgpro-space-4) 0 var(--imgpro-space-5);
+    border-bottom: 1px solid var(--imgpro-gray-100);
+    margin-bottom: var(--imgpro-space-5);
+}
+
+.imgpro-plan-card__amount {
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--imgpro-gray-900);
+}
+
+.imgpro-plan-card__period {
+    font-size: var(--imgpro-text-sm);
+    font-weight: 400;
+    color: var(--imgpro-gray-500);
+}
+
+/* ==========================================================================
+   Plan Card Features
+   ========================================================================== */
+
+.imgpro-plan-card__features {
+    flex: 1;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.imgpro-plan-card__feature {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--imgpro-space-3);
+    padding: 6px 0;
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-gray-600);
+    line-height: 1.4;
+}
+
+.imgpro-plan-card__feature strong {
+    font-weight: 600;
+    color: var(--imgpro-gray-900);
+}
+
+.imgpro-plan-card__feature-icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--imgpro-success-500);
+}
+
+.imgpro-plan-card__feature--disabled {
+    color: var(--imgpro-gray-400);
+}
+
+.imgpro-plan-card__feature--disabled .imgpro-plan-card__feature-icon {
+    color: var(--imgpro-gray-300);
+}
+
+/* ==========================================================================
+   Plan Card Action
+   ========================================================================== */
+
+.imgpro-plan-card__action {
+    margin-top: var(--imgpro-space-6);
+}
+
+.imgpro-plan-card__select {
+    width: 100%;
+    justify-content: center;
+}
+
+/* When card is selected, show different button state */
+.imgpro-plan-card.is-selected .imgpro-plan-card__select {
+    background: var(--imgpro-primary-600);
+    border-color: var(--imgpro-primary-600);
+    color: white;
+}
+
+.imgpro-plan-card.is-selected .imgpro-plan-card__select:hover {
+    background: var(--imgpro-primary-700);
+    border-color: var(--imgpro-primary-700);
+}
+
+.imgpro-plan-card__current-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--imgpro-space-2);
+    padding: 10px var(--imgpro-space-4);
+    font-size: var(--imgpro-text-sm);
+    font-weight: 500;
+    color: var(--imgpro-gray-500);
+    background: var(--imgpro-gray-100);
+    border-radius: var(--imgpro-radius);
+}
+
+.imgpro-plan-card__current-label svg {
+    color: var(--imgpro-success-500);
+}
+
+/* ==========================================================================
+   Plan Selector Footer
+   ========================================================================== */
+
+.imgpro-plan-selector__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--imgpro-space-6);
+    padding-top: var(--imgpro-space-8);
+    border-top: 1px solid var(--imgpro-gray-100);
+}
+
+.imgpro-plan-selector__selected {
+    display: flex;
+    align-items: baseline;
+    gap: var(--imgpro-space-3);
+}
+
+.imgpro-plan-selector__selected-label {
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-gray-500);
+}
+
+.imgpro-plan-selector__selected-plan {
+    font-size: var(--imgpro-text-base);
+    font-weight: 600;
+    color: var(--imgpro-gray-900);
+}
+
+.imgpro-plan-selector__selected-price {
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-gray-500);
+}
+
+/* Checkout button - prominent CTA */
+#imgpro-plan-checkout {
+    padding: 12px 24px;
+    font-size: var(--imgpro-text-base);
+    font-weight: 600;
+}
+
+#imgpro-plan-checkout:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.imgpro-plan-selector__hint {
+    text-align: center;
+    margin-top: var(--imgpro-space-5);
+    padding-top: var(--imgpro-space-5);
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-gray-500);
+}
+
+.imgpro-plan-selector__hint::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: var(--imgpro-gray-200);
+    margin: 0 auto var(--imgpro-space-5);
+}
+
+/* ==========================================================================
+   Upgrade CTA Component
+   ========================================================================== */
+
+.imgpro-upgrade-cta {
+    display: flex;
+    align-items: center;
+    gap: var(--imgpro-space-6);
+    padding: var(--imgpro-space-6);
+    background: linear-gradient(135deg, var(--imgpro-primary-50) 0%, var(--imgpro-bg) 100%);
+    border: 1px solid var(--imgpro-primary-100);
+    border-radius: var(--imgpro-radius-lg);
+}
+
+.imgpro-upgrade-cta--card {
+    flex-direction: row;
+}
+
+.imgpro-upgrade-cta__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--imgpro-primary-100);
+    border-radius: var(--imgpro-radius);
+    color: var(--imgpro-primary-600);
+}
+
+.imgpro-upgrade-cta__content {
+    flex: 1;
+}
+
+.imgpro-upgrade-cta__content h4 {
+    margin: 0 0 var(--imgpro-space-1);
+    font-size: var(--imgpro-text-base);
+    font-weight: 600;
+    color: var(--imgpro-text);
+}
+
+.imgpro-upgrade-cta__content p {
+    margin: 0;
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-text-secondary);
+}
+
+@media (max-width: 600px) {
+    .imgpro-upgrade-cta--card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .imgpro-plan-selector {
+        padding: var(--imgpro-space-6);
+    }
+
+    .imgpro-plan-selector--modal .imgpro-plan-selector__header {
+        margin-bottom: var(--imgpro-space-6);
+    }
+
+    .imgpro-plan-selector__header h2 {
+        font-size: var(--imgpro-text-xl);
+    }
+
+    .imgpro-plan-selector__footer {
+        flex-direction: column;
+        gap: var(--imgpro-space-4);
+    }
+
+    .imgpro-plan-selector__selected {
+        justify-content: center;
+    }
+
+    #imgpro-plan-checkout {
+        width: 100%;
+    }
+}
+
+/* ==========================================================================
+   Plan Modal Checkout Button Loading State
+   ========================================================================== */
+
+#imgpro-plan-checkout .imgpro-btn-loading {
+    display: none;
+}
+
+#imgpro-plan-checkout.is-loading .imgpro-btn-text,
+#imgpro-plan-checkout.is-loading .imgpro-btn-icon {
+    display: none;
+}
+
+#imgpro-plan-checkout.is-loading .imgpro-btn-loading {
+    display: flex;
+    align-items: center;
+    gap: var(--imgpro-space-2);
+}
+
+/* Spinner animation */
+@keyframes imgpro-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.imgpro-spinner {
+    animation: imgpro-spin 1s linear infinite;
+}
+
+/* Prevent body scroll when modal is open */
+body.imgpro-modal-open {
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   Confirmation Modal
+   ========================================================================== */
+
+.imgpro-confirm-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100001; /* Above plan modal */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--imgpro-space-6);
+}
+
+.imgpro-confirm-modal__backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(9, 9, 11, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.imgpro-confirm-modal__content {
+    position: relative;
+    max-width: 420px;
+    width: 100%;
+    background: var(--imgpro-bg);
+    border-radius: var(--imgpro-radius-xl);
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.03),
+        0 2px 4px rgba(0, 0, 0, 0.02),
+        0 12px 24px rgba(0, 0, 0, 0.06),
+        var(--imgpro-shadow-xl);
+    padding: var(--imgpro-space-8);
+}
+
+/* Header */
+.imgpro-confirm-modal__header {
+    text-align: center;
+    padding-bottom: var(--imgpro-space-6);
+    border-bottom: 1px solid var(--imgpro-gray-100);
+    margin-bottom: var(--imgpro-space-6);
+}
+
+.imgpro-confirm-modal__badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--imgpro-primary);
+    background: var(--imgpro-primary-50);
+    padding: var(--imgpro-space-1) var(--imgpro-space-3);
+    border-radius: 100px;
+    margin-bottom: var(--imgpro-space-3);
+}
+
+.imgpro-confirm-modal__title {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--imgpro-gray-900);
+    margin: 0 0 var(--imgpro-space-2) 0;
+    letter-spacing: -0.02em;
+}
+
+.imgpro-confirm-modal__price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 2px;
+}
+
+.imgpro-confirm-modal__price-amount {
+    font-size: 40px;
+    font-weight: 700;
+    color: var(--imgpro-gray-900);
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.imgpro-confirm-modal__price-period {
+    font-size: var(--imgpro-text-lg);
+    font-weight: 500;
+    color: var(--imgpro-gray-400);
+}
+
+/* Metrics grid (storage + bandwidth) */
+.imgpro-confirm-modal__metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--imgpro-space-3);
+    margin-bottom: var(--imgpro-space-4);
+}
+
+.imgpro-confirm-modal__metric {
+    text-align: center;
+    padding: var(--imgpro-space-4);
+    background: var(--imgpro-gray-50);
+    border-radius: var(--imgpro-radius-lg);
+}
+
+.imgpro-confirm-modal__metric-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--imgpro-gray-900);
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+}
+
+.imgpro-confirm-modal__metric-label {
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-gray-500);
+    font-weight: 500;
+}
+
+/* Current plan reference */
+.imgpro-confirm-modal__current {
+    text-align: center;
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-gray-400);
+    margin-bottom: var(--imgpro-space-5);
+}
+
+.imgpro-confirm-modal__current strong {
+    color: var(--imgpro-gray-600);
+    font-weight: 600;
+}
+
+/* Checklist (custom domain, priority support) */
+.imgpro-confirm-modal__checklist {
+    list-style: none;
+    margin: 0 0 var(--imgpro-space-6) 0;
+    padding: var(--imgpro-space-5) 0;
+    border-top: 1px solid var(--imgpro-gray-100);
+    border-bottom: 1px solid var(--imgpro-gray-100);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--imgpro-space-3);
+}
+
+.imgpro-confirm-modal__checklist:empty {
+    display: none;
+}
+
+.imgpro-confirm-modal__checklist li {
+    display: flex;
+    align-items: center;
+    gap: var(--imgpro-space-2);
+    font-size: var(--imgpro-text-sm);
+    font-weight: 500;
+    color: var(--imgpro-gray-700);
+}
+
+.imgpro-confirm-modal__checklist svg {
+    color: #22c55e;
+    flex-shrink: 0;
+}
+
+.imgpro-confirm-modal__footer {
+    text-align: center;
+}
+
+.imgpro-confirm-modal__note {
+    font-size: var(--imgpro-text-xs);
+    color: var(--imgpro-gray-400);
+    margin: 0 0 var(--imgpro-space-4) 0;
+}
+
+.imgpro-confirm-modal__actions {
+    display: flex;
+    gap: var(--imgpro-space-3);
+    justify-content: center;
+}
+
+.imgpro-confirm-modal__actions .imgpro-btn {
+    min-width: 120px;
+    padding-left: var(--imgpro-space-6);
+    padding-right: var(--imgpro-space-6);
+}
+
+/* Loading state for confirm button */
+#imgpro-upgrade-confirm .imgpro-btn-loading {
+    display: none;
+}
+
+#imgpro-upgrade-confirm.is-loading .imgpro-btn-text {
+    display: none;
+}
+
+#imgpro-upgrade-confirm.is-loading .imgpro-btn-loading {
+    display: flex;
+    align-items: center;
+    gap: var(--imgpro-space-2);
 }

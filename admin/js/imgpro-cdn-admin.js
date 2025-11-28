@@ -73,11 +73,8 @@
             completeOnboarding();
         });
 
-        // Upgrade to Pro link (from onboarding)
-        $('#imgpro-onboarding-upgrade').on('click', function(e) {
-            e.preventDefault();
-            handleCheckout($(this));
-        });
+        // Note: Upgrade link in onboarding now uses .imgpro-open-plan-selector class
+        // which is handled by initPlanSelector()
     }
 
     /**
@@ -217,11 +214,6 @@
             handleFreeSignup($(this));
         });
 
-        // Pro signup / upgrade buttons
-        $('#imgpro-pro-signup, #imgpro-upgrade-cta, #imgpro-upgrade-btn').on('click', function() {
-            handleCheckout($(this));
-        });
-
         // Recover account
         $('#imgpro-recover-account').on('click', function() {
             handleRecoverAccount($(this));
@@ -242,6 +234,18 @@
             // Update payment / manage - open Stripe portal
             handleManageSubscription($(this));
         });
+
+        // Direct upgrade to next tier (from account card) - show confirmation modal
+        $(document).on('click', '.imgpro-direct-upgrade', function(e) {
+            e.preventDefault();
+            const tierId = $(this).data('tier');
+            if (tierId) {
+                showUpgradeConfirmModal(tierId, $(this));
+            }
+        });
+
+        // Upgrade confirmation modal handlers
+        initUpgradeConfirmModal();
 
         // Advanced settings accordion
         initDetailsAccordion();
@@ -767,6 +771,383 @@
         }
     }
 
+    // ===== Plan Selector =====
+
+    /**
+     * Selected tier for plan selector
+     */
+    let selectedTierId = null;
+
+    /**
+     * Initialize plan selector modal and interactions
+     */
+    function initPlanSelector() {
+        const $modal = $('#imgpro-plan-modal');
+        const $selector = $('.imgpro-plan-selector');
+
+        if (!$selector.length) return;
+
+        // Open plan selector modal
+        $(document).on('click', '.imgpro-open-plan-selector', function(e) {
+            e.preventDefault();
+            openPlanModal();
+        });
+
+        // Close modal on X button
+        $(document).on('click', '.imgpro-plan-selector__close', function(e) {
+            e.preventDefault();
+            closePlanModal();
+        });
+
+        // Close modal on backdrop click
+        $(document).on('click', '.imgpro-plan-modal__backdrop', function() {
+            closePlanModal();
+        });
+
+        // Close modal on Escape key
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && $modal.is(':visible')) {
+                closePlanModal();
+            }
+        });
+
+        // Select plan card
+        $(document).on('click', '.imgpro-plan-card__select', function(e) {
+            e.preventDefault();
+            const $card = $(this).closest('.imgpro-plan-card');
+            selectPlanCard($card);
+        });
+
+        // Also allow clicking the entire card (except current plan)
+        $(document).on('click', '.imgpro-plan-card:not(.imgpro-plan-card--current)', function(e) {
+            // Ignore if clicking the button (handled above)
+            if ($(e.target).closest('.imgpro-plan-card__select').length) return;
+            selectPlanCard($(this));
+        });
+
+        // Checkout button
+        $(document).on('click', '#imgpro-plan-checkout', function(e) {
+            e.preventDefault();
+            if (selectedTierId) {
+                handlePlanCheckout($(this), selectedTierId);
+            }
+        });
+
+        // Pre-select first available card if none is current
+        initDefaultSelection();
+    }
+
+    /**
+     * Initialize default plan selection
+     */
+    function initDefaultSelection() {
+        const $selector = $('.imgpro-plan-selector');
+        if (!$selector.length) return;
+
+        const currentTier = $selector.data('current-tier') || '';
+
+        // If user is on free tier or no tier, pre-select Pro (highlighted)
+        if (!currentTier || currentTier === 'free') {
+            const $highlighted = $selector.find('.imgpro-plan-card--highlight');
+            if ($highlighted.length) {
+                selectPlanCard($highlighted, false);
+            } else {
+                // Fall back to first non-current card
+                const $firstAvailable = $selector.find('.imgpro-plan-card:not(.imgpro-plan-card--current)').first();
+                if ($firstAvailable.length) {
+                    selectPlanCard($firstAvailable, false);
+                }
+            }
+        }
+    }
+
+    /**
+     * Open the plan modal
+     */
+    function openPlanModal() {
+        const $modal = $('#imgpro-plan-modal');
+        if (!$modal.length) return;
+
+        $modal.fadeIn(200);
+        $('body').addClass('imgpro-modal-open');
+
+        // Re-initialize default selection when opening
+        initDefaultSelection();
+    }
+
+    /**
+     * Close the plan modal
+     */
+    function closePlanModal() {
+        const $modal = $('#imgpro-plan-modal');
+        $modal.fadeOut(200);
+        $('body').removeClass('imgpro-modal-open');
+    }
+
+    // ===== Upgrade Confirmation Modal =====
+
+    let pendingUpgradeTierId = null;
+    let pendingUpgradeButton = null;
+
+    /**
+     * Initialize upgrade confirmation modal handlers
+     */
+    function initUpgradeConfirmModal() {
+        const $modal = $('#imgpro-upgrade-confirm-modal');
+        if (!$modal.length) return;
+
+        // Cancel button
+        $('#imgpro-upgrade-cancel').on('click', function() {
+            closeUpgradeConfirmModal();
+        });
+
+        // Confirm button
+        $('#imgpro-upgrade-confirm').on('click', function() {
+            if (pendingUpgradeTierId) {
+                const $btn = $(this);
+                $btn.addClass('is-loading').prop('disabled', true);
+                $('#imgpro-upgrade-cancel').prop('disabled', true);
+                handlePlanCheckout($btn, pendingUpgradeTierId);
+            }
+        });
+
+        // Close on backdrop click
+        $modal.find('.imgpro-confirm-modal__backdrop').on('click', function() {
+            closeUpgradeConfirmModal();
+        });
+
+        // Close on Escape key
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && $modal.is(':visible')) {
+                closeUpgradeConfirmModal();
+            }
+        });
+    }
+
+    /**
+     * Show upgrade confirmation modal
+     */
+    function showUpgradeConfirmModal(tierId, $triggerButton) {
+        const $modal = $('#imgpro-upgrade-confirm-modal');
+        if (!$modal.length) return;
+
+        // Store pending upgrade info
+        pendingUpgradeTierId = tierId;
+        pendingUpgradeButton = $triggerButton;
+
+        // Get tier data from localized script
+        const tiers = imgproCdnAdmin.tiers || {};
+        const currentTierId = imgproCdnAdmin.tier;
+        const currentTier = tiers[currentTierId];
+        const newTier = tiers[tierId];
+
+        // Update new plan info
+        const tierName = newTier?.name || tierId.charAt(0).toUpperCase() + tierId.slice(1);
+        const tierPrice = newTier?.price?.formatted || '';
+        const tierPeriod = newTier?.price?.period || '/mo';
+
+        $('#imgpro-confirm-tier-name').text(tierName);
+        $('#imgpro-confirm-tier-price-amount').text(tierPrice);
+        $('#imgpro-confirm-tier-price-period').text(tierPeriod);
+        $('#imgpro-confirm-metrics').html(buildMetricsHtml(newTier));
+        $('#imgpro-confirm-checklist').html(buildChecklistHtml(newTier));
+
+        // Populate current plan reference (compact inline format)
+        const currentName = currentTier?.name || currentTierId?.charAt(0).toUpperCase() + currentTierId?.slice(1) || 'Current';
+        const currentLimits = buildLimitsString(currentTier);
+        $('#imgpro-confirm-current-name').text(currentName);
+        $('#imgpro-confirm-current-limits').text(currentLimits ? '· ' + currentLimits : '');
+
+        // Reset button states
+        const $confirmBtn = $('#imgpro-upgrade-confirm');
+        $confirmBtn.removeClass('is-loading').prop('disabled', false);
+        $('#imgpro-upgrade-cancel').prop('disabled', false);
+
+        // Show modal
+        $modal.fadeIn(200);
+        $('body').addClass('imgpro-modal-open');
+    }
+
+    /**
+     * Build HTML for metrics (storage + bandwidth)
+     */
+    function buildMetricsHtml(tier) {
+        if (!tier) return '';
+
+        let html = '';
+
+        if (tier.limits?.storage?.formatted) {
+            html += '<div class="imgpro-confirm-modal__metric">' +
+                        '<div class="imgpro-confirm-modal__metric-value">' + tier.limits.storage.formatted + '</div>' +
+                        '<div class="imgpro-confirm-modal__metric-label">Storage</div>' +
+                    '</div>';
+        }
+
+        if (tier.limits?.bandwidth?.formatted) {
+            html += '<div class="imgpro-confirm-modal__metric">' +
+                        '<div class="imgpro-confirm-modal__metric-value">' + tier.limits.bandwidth.formatted + '</div>' +
+                        '<div class="imgpro-confirm-modal__metric-label">Bandwidth/mo</div>' +
+                    '</div>';
+        }
+
+        return html;
+    }
+
+    /**
+     * Build HTML for checklist (custom domain, priority support)
+     */
+    function buildChecklistHtml(tier) {
+        if (!tier) return '';
+
+        const items = [];
+
+        if (tier.features?.custom_domain) {
+            items.push(
+                '<li>' +
+                    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+                    'Custom domain' +
+                '</li>'
+            );
+        }
+
+        if (tier.features?.priority_support) {
+            items.push(
+                '<li>' +
+                    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+                    'Priority support' +
+                '</li>'
+            );
+        }
+
+        return items.join('');
+    }
+
+    /**
+     * Build compact limits string for current plan reference
+     */
+    function buildLimitsString(tier) {
+        if (!tier) return '';
+
+        const parts = [];
+
+        if (tier.limits?.storage?.formatted) {
+            parts.push(tier.limits.storage.formatted);
+        }
+
+        if (tier.limits?.bandwidth?.formatted) {
+            parts.push(tier.limits.bandwidth.formatted + '/mo');
+        }
+
+        return parts.join(', ');
+    }
+
+    /**
+     * Close upgrade confirmation modal
+     */
+    function closeUpgradeConfirmModal() {
+        const $modal = $('#imgpro-upgrade-confirm-modal');
+        $modal.fadeOut(200);
+        $('body').removeClass('imgpro-modal-open');
+
+        // Clear pending upgrade
+        pendingUpgradeTierId = null;
+        pendingUpgradeButton = null;
+    }
+
+    /**
+     * Select a plan card
+     */
+    function selectPlanCard($card, enableCheckout = true) {
+        const $selector = $card.closest('.imgpro-plan-selector');
+
+        // Remove selection from all cards and reset their buttons
+        $selector.find('.imgpro-plan-card').each(function() {
+            const $thisCard = $(this);
+            $thisCard.removeClass('is-selected');
+
+            // Reset button to default state (secondary, "Select")
+            const $btn = $thisCard.find('.imgpro-plan-card__select');
+            if ($btn.length && !$thisCard.hasClass('imgpro-plan-card--current')) {
+                $btn.removeClass('imgpro-btn-primary').addClass('imgpro-btn-secondary');
+                // Only change text for upgrade buttons, not downgrade
+                if (!$thisCard.hasClass('imgpro-plan-card--downgrade')) {
+                    $btn.text(imgproCdnAdmin.i18n?.select || 'Select');
+                }
+            }
+        });
+
+        // Add selection to clicked card
+        $card.addClass('is-selected');
+
+        // Update the selected card's button to active state
+        const $selectedBtn = $card.find('.imgpro-plan-card__select');
+        if ($selectedBtn.length && !$card.hasClass('imgpro-plan-card--downgrade')) {
+            $selectedBtn.removeClass('imgpro-btn-secondary').addClass('imgpro-btn-primary');
+            $selectedBtn.text(imgproCdnAdmin.i18n?.selected || 'Selected');
+        }
+
+        // Update selected tier
+        selectedTierId = $card.data('tier-id');
+        const tierName = $card.data('tier-name');
+        const tierPrice = $card.data('tier-price');
+
+        // Update footer selection display
+        $('#imgpro-selected-plan-name').text(tierName);
+        $('#imgpro-selected-plan-price').text(tierPrice);
+
+        // Enable/disable checkout button
+        const $checkoutBtn = $('#imgpro-plan-checkout');
+        if (enableCheckout && selectedTierId) {
+            $checkoutBtn.prop('disabled', false);
+        }
+    }
+
+    /**
+     * Handle checkout for selected plan
+     */
+    function handlePlanCheckout($button, tierId) {
+        // Add loading state
+        $button.addClass('is-loading').prop('disabled', true);
+
+        $.ajax({
+            url: imgproCdnAdmin.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'imgpro_cdn_checkout',
+                tier_id: tierId,
+                nonce: imgproCdnAdmin.checkoutNonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    if (response.data.checkout_url) {
+                        window.location.href = response.data.checkout_url;
+                    } else if (response.data.upgraded) {
+                        // Subscription upgraded directly - show success and reload
+                        closePlanModal();
+                        closeUpgradeConfirmModal();
+                        showNotice('success', response.data.message || 'Subscription upgraded!');
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1500);
+                    } else if (response.data.recovered) {
+                        window.location.reload();
+                    }
+                } else {
+                    $button.removeClass('is-loading').prop('disabled', false);
+                    closePlanModal();
+                    closeUpgradeConfirmModal();
+                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.checkoutError);
+                }
+            },
+            error: function() {
+                $button.removeClass('is-loading').prop('disabled', false);
+                closePlanModal();
+                closeUpgradeConfirmModal();
+                showNotice('error', imgproCdnAdmin.i18n.genericError);
+            }
+        });
+    }
+
     // ===== Initialize =====
 
     $(document).ready(function() {
@@ -778,6 +1159,9 @@
             initDashboard();
             handlePaymentStatus();
         }
+
+        // Plan selector (available on both onboarding and dashboard)
+        initPlanSelector();
     });
 
 })(jQuery);

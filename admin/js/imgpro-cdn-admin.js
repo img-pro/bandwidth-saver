@@ -266,17 +266,19 @@
 
     /**
      * Handle main toggle
+     *
+     * Each mode (cloud/cloudflare) has its own independent enabled state.
      */
     function handleToggle($toggle) {
         const $card = $('#imgpro-toggle-card');
         const isEnabled = $toggle.is(':checked');
 
-        // Get current tab
-        const urlParams = new URLSearchParams(window.location.search);
-        let currentTab = urlParams.get('tab') || '';
-        if (!currentTab) {
-            const $activeTab = $('.imgpro-tab.is-active');
-            currentTab = $activeTab.length ? ($activeTab.attr('href').includes('cloudflare') ? 'cloudflare' : 'cloud') : '';
+        // Get mode from the toggle card's data attribute
+        const mode = $card.data('mode') || '';
+        if (!mode) {
+            showNotice('error', 'Unable to determine mode');
+            $toggle.prop('checked', !isEnabled);
+            return;
         }
 
         $card.addClass('is-loading');
@@ -287,7 +289,7 @@
             data: {
                 action: 'imgpro_cdn_toggle_enabled',
                 enabled: isEnabled ? 1 : 0,
-                current_tab: currentTab,
+                mode: mode,
                 nonce: imgproCdnAdmin.nonce
             },
             success: function(response) {
@@ -953,7 +955,7 @@
         $('#imgpro-confirm-checklist').html(buildChecklistHtml(newTier));
 
         // Populate current plan reference (compact inline format)
-        const currentName = currentTier?.name || currentTierId?.charAt(0).toUpperCase() + currentTierId?.slice(1) || 'Current';
+        const currentName = currentTier?.name || (currentTierId ? currentTierId.charAt(0).toUpperCase() + currentTierId.slice(1) : 'Current');
         const currentLimits = buildLimitsString(currentTier);
         $('#imgpro-confirm-current-name').text(currentName);
         $('#imgpro-confirm-current-limits').text(currentLimits ? '· ' + currentLimits : '');

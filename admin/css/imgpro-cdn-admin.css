@@ -566,18 +566,6 @@
     border-radius: var(--imgpro-radius-xl);
     box-shadow: var(--imgpro-shadow-lg), 0 0 40px rgba(0, 51, 255, 0.08);
     overflow: hidden;
-    animation: imgpro-fade-in var(--imgpro-transition-slow) var(--imgpro-ease-out);
-}
-
-@keyframes imgpro-fade-in {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .imgpro-onboarding-content {
@@ -1632,8 +1620,12 @@
    Dashboard Section
    ========================================================================== */
 
-.imgpro-dashboard {
-    /* Dashboard content container */
+/* Dashboard content containers - consistent spacing between cards */
+.imgpro-cloud-dashboard,
+.imgpro-selfhost-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--imgpro-space-4);
 }
 
 /* Toggle Card */
@@ -1901,9 +1893,13 @@
     overflow: hidden;
 }
 
-/* --- Free tier variant (upgrade CTA) --- */
+/* --- Free tier variant --- */
 .imgpro-account-card--free {
-    background: linear-gradient(135deg, var(--imgpro-primary-600) 0%, var(--imgpro-primary-700) 100%);
+    background: var(--imgpro-bg);
+    border: 1px solid var(--imgpro-border);
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .imgpro-account-card--free .imgpro-account-card__main {
@@ -1923,24 +1919,24 @@
 .imgpro-account-card__headline {
     font-size: var(--imgpro-text-base);
     font-weight: 600;
-    color: white;
+    color: var(--imgpro-gray-800);
 }
 
 .imgpro-account-card__description {
     font-size: var(--imgpro-text-sm);
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--imgpro-gray-600);
 }
 
 .imgpro-account-card--free .imgpro-btn-primary {
-    background: white;
-    border-color: white;
-    color: var(--imgpro-primary-700);
+    background: var(--imgpro-primary-600);
+    border-color: var(--imgpro-primary-600);
+    color: white;
     flex-shrink: 0;
 }
 
 .imgpro-account-card--free .imgpro-btn-primary:hover {
-    background: var(--imgpro-primary-50);
-    border-color: var(--imgpro-primary-50);
+    background: var(--imgpro-primary-700);
+    border-color: var(--imgpro-primary-700);
 }
 
 .imgpro-account-card__footer {
@@ -1948,9 +1944,9 @@
     align-items: center;
     gap: var(--imgpro-space-2);
     padding: var(--imgpro-space-3) var(--imgpro-space-6);
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.03);
     font-size: var(--imgpro-text-sm);
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--imgpro-gray-500);
 }
 
 .imgpro-separator {
@@ -1961,7 +1957,11 @@
 .imgpro-account-card.imgpro-account-card--paid {
     display: flex;
     flex-direction: column;
-    background: linear-gradient(135deg, var(--imgpro-gray-800) 0%, var(--imgpro-gray-900) 100%);
+    background: var(--imgpro-bg);
+    border: 1px solid var(--imgpro-border);
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__main {
@@ -1991,13 +1991,13 @@
 .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__tier {
     font-size: var(--imgpro-text-lg);
     font-weight: 700;
-    color: white;
+    color: var(--imgpro-gray-800);
 }
 
 .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__plan-label {
     font-size: var(--imgpro-text-lg);
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--imgpro-gray-500);
 }
 
 .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__limits {
@@ -2009,11 +2009,11 @@
 
 .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__limit {
     font-size: var(--imgpro-text-sm);
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--imgpro-gray-600);
 }
 
 .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__separator {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--imgpro-gray-400);
 }
 
 .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__actions {
@@ -2021,14 +2021,14 @@
 }
 
 .imgpro-account-card.imgpro-account-card--paid .imgpro-btn-primary {
-    background: white;
-    border-color: white;
-    color: var(--imgpro-gray-900);
+    background: var(--imgpro-primary-600);
+    border-color: var(--imgpro-primary-600);
+    color: white;
 }
 
 .imgpro-account-card.imgpro-account-card--paid .imgpro-btn-primary:hover {
-    background: var(--imgpro-gray-100);
-    border-color: var(--imgpro-gray-100);
+    background: var(--imgpro-primary-700);
+    border-color: var(--imgpro-primary-700);
 }
 
 .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__footer {
@@ -2037,14 +2037,14 @@
     justify-content: flex-start;
     gap: var(--imgpro-space-2);
     padding: var(--imgpro-space-3) var(--imgpro-space-6);
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.03);
     font-size: var(--imgpro-text-sm);
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--imgpro-gray-500);
     margin-top: 0;
 }
 
 .imgpro-account-card.imgpro-account-card--paid .imgpro-btn-link {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--imgpro-gray-600);
     text-decoration: none;
     font-size: var(--imgpro-text-sm);
     background: none;
@@ -2054,7 +2054,7 @@
 }
 
 .imgpro-account-card.imgpro-account-card--paid .imgpro-btn-link:hover {
-    color: white;
+    color: var(--imgpro-gray-800);
     text-decoration: underline;
 }
 
@@ -2245,7 +2245,7 @@
    ========================================================================== */
 
 .imgpro-tab-panel {
-    animation: imgpro-fade-in var(--imgpro-transition-base) var(--imgpro-ease-out);
+    /* Tab panel container */
 }
 
 .imgpro-tab-content {

@@ -182,9 +182,14 @@ class ImgPro_CDN_Settings {
      * @var array
      */
     private $defaults = [
+        // Legacy single enabled flag (kept for backwards compatibility)
         'enabled'            => false,
         'previously_enabled' => false,
         'setup_mode'         => '',
+
+        // Per-mode enabled states (independent toggles)
+        'cloud_enabled'      => false,
+        'cloudflare_enabled' => false,
 
         // Cloud mode settings
         'cloud_api_key'   => '',
@@ -315,12 +320,20 @@ class ImgPro_CDN_Settings {
             }
         }
 
-        // Enabled (boolean)
+        // Enabled (boolean) - legacy, kept for backwards compatibility
         if (isset($settings['enabled'])) {
             $validated['enabled'] = (bool) $settings['enabled'];
         }
 
-        // Previously enabled (boolean) - tracks enabled state when switching tabs
+        // Per-mode enabled states (boolean)
+        if (isset($settings['cloud_enabled'])) {
+            $validated['cloud_enabled'] = (bool) $settings['cloud_enabled'];
+        }
+        if (isset($settings['cloudflare_enabled'])) {
+            $validated['cloudflare_enabled'] = (bool) $settings['cloudflare_enabled'];
+        }
+
+        // Previously enabled (boolean) - legacy, kept for backwards compatibility
         if (isset($settings['previously_enabled'])) {
             $validated['previously_enabled'] = (bool) $settings['previously_enabled'];
         }
@@ -548,6 +561,43 @@ class ImgPro_CDN_Settings {
             return !empty($settings['cdn_url']);
         }
         return false;
+    }
+
+    /**
+     * Check if a specific mode is enabled
+     *
+     * Each mode has its own independent enabled state.
+     *
+     * @since 0.2.0
+     * @param string $mode     The mode to check ('cloud' or 'cloudflare').
+     * @param array  $settings The settings array to check against.
+     * @return bool True if the mode is enabled.
+     */
+    public static function is_mode_enabled($mode, $settings) {
+        if (self::MODE_CLOUD === $mode) {
+            return !empty($settings['cloud_enabled']);
+        } elseif (self::MODE_CLOUDFLARE === $mode) {
+            return !empty($settings['cloudflare_enabled']);
+        }
+        return false;
+    }
+
+    /**
+     * Check if CDN is currently active
+     *
+     * CDN is active when: current mode is valid AND that mode is enabled.
+     * This determines whether image rewriting actually happens.
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if CDN is currently active.
+     */
+    public static function is_cdn_active($settings) {
+        $mode = $settings['setup_mode'] ?? '';
+        if (empty($mode)) {
+            return false;
+        }
+        return self::is_mode_valid($mode, $settings) && self::is_mode_enabled($mode, $settings);
     }
 
     /**

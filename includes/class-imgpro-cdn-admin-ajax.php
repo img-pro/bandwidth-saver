@@ -98,47 +98,28 @@ class ImgPro_CDN_Admin_Ajax {
         }
 
         $enabled = isset($_POST['enabled']) && '1' === $_POST['enabled'];
-        $current_tab = isset($_POST['current_tab']) ? sanitize_text_field(wp_unslash($_POST['current_tab'])) : '';
+        $mode = isset($_POST['mode']) ? sanitize_text_field(wp_unslash($_POST['mode'])) : '';
+
+        // Validate mode
+        if (!in_array($mode, [ImgPro_CDN_Settings::MODE_CLOUD, ImgPro_CDN_Settings::MODE_CLOUDFLARE], true)) {
+            wp_send_json_error(['message' => __('Invalid mode specified', 'bandwidth-saver')]);
+            return;
+        }
 
         $current_settings = $this->settings->get_all();
 
-        // Smart enable: if trying to enable on unconfigured tab, switch to configured mode
-        if ($enabled && !empty($current_tab)) {
-            $current_mode_valid = ImgPro_CDN_Settings::is_mode_valid($current_tab, $current_settings);
-
-            if (!$current_mode_valid) {
-                $other_mode = (ImgPro_CDN_Settings::MODE_CLOUD === $current_tab)
-                    ? ImgPro_CDN_Settings::MODE_CLOUDFLARE
-                    : ImgPro_CDN_Settings::MODE_CLOUD;
-                $other_mode_valid = ImgPro_CDN_Settings::is_mode_valid($other_mode, $current_settings);
-
-                if ($other_mode_valid) {
-                    $current_settings['setup_mode'] = $other_mode;
-                    $current_settings['enabled'] = true;
-                    $current_settings['previously_enabled'] = false;
-
-                    update_option(ImgPro_CDN_Settings::OPTION_KEY, $current_settings);
-                    $this->settings->clear_cache();
-
-                    $redirect_url = add_query_arg([
-                        'tab' => $other_mode,
-                        'switch_mode' => $other_mode,
-                        '_wpnonce' => wp_create_nonce('imgpro_switch_mode')
-                    ], admin_url('options-general.php?page=imgpro-cdn-settings'));
-
-                    wp_send_json_success([
-                        'message' => __('Image CDN enabled. Images now load from Cloudflare.', 'bandwidth-saver'),
-                        'redirect' => $redirect_url
-                    ]);
-                    return;
-                }
-
-                wp_send_json_error(['message' => __('Please complete setup first. Choose Managed or Self-Host above.', 'bandwidth-saver')]);
-                return;
-            }
+        // Check if the mode is properly configured before allowing enable
+        if ($enabled && !ImgPro_CDN_Settings::is_mode_valid($mode, $current_settings)) {
+            wp_send_json_error(['message' => __('Please complete setup first before enabling.', 'bandwidth-saver')]);
+            return;
         }
 
-        if ($current_settings['enabled'] === $enabled) {
+        // Determine the field key for this mode
+        $enabled_key = ImgPro_CDN_Settings::MODE_CLOUD === $mode ? 'cloud_enabled' : 'cloudflare_enabled';
+
+        // Check if already in desired state
+        $current_enabled = ImgPro_CDN_Settings::is_mode_enabled($mode, $current_settings);
+        if ($current_enabled === $enabled) {
             $message = $enabled
                 ? __('Image CDN is active. Images are loading from Cloudflare.', 'bandwidth-saver')
                 : __('Image CDN is disabled. Images are loading from your server.', 'bandwidth-saver');
@@ -147,10 +128,12 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
-        $current_settings['enabled'] = $enabled;
+        // Update the mode-specific enabled state
+        $current_settings[$enabled_key] = $enabled;
 
+        // Also update setup_mode if enabling this mode
         if ($enabled) {
-            $current_settings['previously_enabled'] = false;
+            $current_settings['setup_mode'] = $mode;
         }
 
         $result = update_option(ImgPro_CDN_Settings::OPTION_KEY, $current_settings);

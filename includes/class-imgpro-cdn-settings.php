@@ -44,7 +44,7 @@ class ImgPro_CDN_Settings {
     const MODE_CLOUDFLARE = 'cloudflare';
 
     /**
-     * Subscription tier: None
+     * Subscription tier: None (not registered)
      *
      * @since 0.1.2
      * @var string
@@ -52,7 +52,23 @@ class ImgPro_CDN_Settings {
     const TIER_NONE = 'none';
 
     /**
-     * Subscription tier: Active
+     * Subscription tier: Free
+     *
+     * @since 0.2.0
+     * @var string
+     */
+    const TIER_FREE = 'free';
+
+    /**
+     * Subscription tier: Pro (paid)
+     *
+     * @since 0.2.0
+     * @var string
+     */
+    const TIER_PRO = 'pro';
+
+    /**
+     * Subscription tier: Active (legacy, maps to pro)
      *
      * @since 0.1.2
      * @var string
@@ -66,6 +82,38 @@ class ImgPro_CDN_Settings {
      * @var string
      */
     const TIER_CANCELLED = 'cancelled';
+
+    /**
+     * Subscription tier: Past due (payment failed, grace period)
+     *
+     * @since 0.2.0
+     * @var string
+     */
+    const TIER_PAST_DUE = 'past_due';
+
+    /**
+     * Subscription tier: Suspended (no access)
+     *
+     * @since 0.2.0
+     * @var string
+     */
+    const TIER_SUSPENDED = 'suspended';
+
+    /**
+     * Free tier storage limit in bytes (1 GB)
+     *
+     * @since 0.2.0
+     * @var int
+     */
+    const FREE_STORAGE_LIMIT = 1073741824;
+
+    /**
+     * Pro tier storage limit in bytes (100 GB)
+     *
+     * @since 0.2.0
+     * @var int
+     */
+    const PRO_STORAGE_LIMIT = 107374182400;
 
     /**
      * API base URL for cloud services
@@ -114,6 +162,18 @@ class ImgPro_CDN_Settings {
         // Custom domain settings (Cloud mode only)
         'custom_domain'        => '',
         'custom_domain_status' => '', // pending_dns, pending_ssl, active, error
+
+        // Usage stats (synced from Cloud API)
+        'storage_used'       => 0,
+        'storage_limit'      => 0,
+        'images_cached'      => 0,
+        'bandwidth_saved'    => 0,
+        'stats_updated_at'   => 0,
+
+        // Onboarding state
+        'onboarding_completed' => false,
+        'onboarding_step'      => 1,
+        'marketing_opt_in'     => false,
 
         // Cloudflare mode settings (single domain - worker serves images directly)
         'cdn_url'         => '',
@@ -241,9 +301,38 @@ class ImgPro_CDN_Settings {
         }
         if (isset($settings['cloud_tier'])) {
             $tier = sanitize_text_field($settings['cloud_tier']);
-            if (in_array($tier, [self::TIER_NONE, self::TIER_ACTIVE, self::TIER_CANCELLED], true)) {
+            if (in_array($tier, [self::TIER_NONE, self::TIER_FREE, self::TIER_PRO, self::TIER_ACTIVE, self::TIER_CANCELLED], true)) {
                 $validated['cloud_tier'] = $tier;
             }
+        }
+
+        // Usage stats (integers)
+        if (isset($settings['storage_used'])) {
+            $validated['storage_used'] = absint($settings['storage_used']);
+        }
+        if (isset($settings['storage_limit'])) {
+            $validated['storage_limit'] = absint($settings['storage_limit']);
+        }
+        if (isset($settings['images_cached'])) {
+            $validated['images_cached'] = absint($settings['images_cached']);
+        }
+        if (isset($settings['bandwidth_saved'])) {
+            $validated['bandwidth_saved'] = absint($settings['bandwidth_saved']);
+        }
+        if (isset($settings['stats_updated_at'])) {
+            $validated['stats_updated_at'] = absint($settings['stats_updated_at']);
+        }
+
+        // Onboarding state
+        if (isset($settings['onboarding_completed'])) {
+            $validated['onboarding_completed'] = (bool) $settings['onboarding_completed'];
+        }
+        if (isset($settings['onboarding_step'])) {
+            $step = absint($settings['onboarding_step']);
+            $validated['onboarding_step'] = max(1, min(4, $step)); // Clamp 1-4
+        }
+        if (isset($settings['marketing_opt_in'])) {
+            $validated['marketing_opt_in'] = (bool) $settings['marketing_opt_in'];
         }
 
         // Custom domain (Cloud mode only)
@@ -406,7 +495,7 @@ class ImgPro_CDN_Settings {
     /**
      * Check if a given mode has valid configuration
      *
-     * Cloud mode requires an active subscription.
+     * Cloud mode requires free or paid subscription.
      * Cloudflare mode requires CDN URL to be configured (single domain architecture).
      *
      * @since 0.1.3
@@ -416,11 +505,93 @@ class ImgPro_CDN_Settings {
      */
     public static function is_mode_valid($mode, $settings) {
         if (self::MODE_CLOUD === $mode) {
-            return self::TIER_ACTIVE === ($settings['cloud_tier'] ?? '');
+            $tier = $settings['cloud_tier'] ?? '';
+            // Valid tiers: free, pro, active (legacy), past_due (grace period)
+            return in_array($tier, [self::TIER_FREE, self::TIER_PRO, self::TIER_ACTIVE, self::TIER_PAST_DUE], true);
         } elseif (self::MODE_CLOUDFLARE === $mode) {
             return !empty($settings['cdn_url']);
         }
         return false;
+    }
+
+    /**
+     * Check if user has a paid subscription
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if user has pro/active subscription.
+     */
+    public static function is_pro($settings) {
+        $tier = $settings['cloud_tier'] ?? '';
+        // past_due still counts as pro (grace period)
+        return in_array($tier, [self::TIER_PRO, self::TIER_ACTIVE, self::TIER_PAST_DUE], true);
+    }
+
+    /**
+     * Check if user is on free tier
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if user is on free tier.
+     */
+    public static function is_free($settings) {
+        return self::TIER_FREE === ($settings['cloud_tier'] ?? '');
+    }
+
+    /**
+     * Check if subscription is cancelled or suspended
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if subscription is cancelled or suspended.
+     */
+    public static function is_subscription_inactive($settings) {
+        $tier = $settings['cloud_tier'] ?? '';
+        return in_array($tier, [self::TIER_CANCELLED, self::TIER_SUSPENDED], true);
+    }
+
+    /**
+     * Check if subscription needs attention (past due)
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if subscription is past due.
+     */
+    public static function is_past_due($settings) {
+        return self::TIER_PAST_DUE === ($settings['cloud_tier'] ?? '');
+    }
+
+    /**
+     * Get storage limit for current tier
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return int Storage limit in bytes.
+     */
+    public static function get_storage_limit($settings) {
+        if (self::is_pro($settings)) {
+            return self::PRO_STORAGE_LIMIT;
+        }
+        if (self::is_free($settings)) {
+            return self::FREE_STORAGE_LIMIT;
+        }
+        return 0;
+    }
+
+    /**
+     * Get storage usage percentage
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return float Percentage of storage used (0-100).
+     */
+    public static function get_storage_percentage($settings) {
+        $limit = self::get_storage_limit($settings);
+        if ($limit <= 0) {
+            return 0;
+        }
+        $used = $settings['storage_used'] ?? 0;
+        return min(100, ($used / $limit) * 100);
     }
 
     /**
@@ -494,15 +665,143 @@ class ImgPro_CDN_Settings {
         $settings['setup_mode'] = self::MODE_CLOUD;
         $settings['cloud_api_key'] = sanitize_text_field($body['api_key']);
         $settings['cloud_email'] = sanitize_email($body['email']);
-        $settings['cloud_tier'] = in_array($body['tier'], [self::TIER_ACTIVE, self::TIER_CANCELLED, self::TIER_NONE], true)
-            ? $body['tier']
-            : self::TIER_NONE;
-        // Only auto-enable if subscription is active
-        $settings['enabled'] = (self::TIER_ACTIVE === $settings['cloud_tier']);
+
+        // Handle tier (support both old and new tier names)
+        $tier = $body['tier'];
+        if (in_array($tier, [self::TIER_FREE, self::TIER_PRO, self::TIER_ACTIVE, self::TIER_CANCELLED, self::TIER_NONE], true)) {
+            $settings['cloud_tier'] = $tier;
+        } else {
+            $settings['cloud_tier'] = self::TIER_NONE;
+        }
+
+        // Update storage stats if provided
+        if (isset($body['storage_used'])) {
+            $settings['storage_used'] = absint($body['storage_used']);
+        }
+        if (isset($body['storage_limit'])) {
+            $settings['storage_limit'] = absint($body['storage_limit']);
+        }
+        if (isset($body['images_cached'])) {
+            $settings['images_cached'] = absint($body['images_cached']);
+        }
+        if (isset($body['bandwidth_saved'])) {
+            $settings['bandwidth_saved'] = absint($body['bandwidth_saved']);
+        }
+        $settings['stats_updated_at'] = time();
+
+        // Sync custom domain if present in cloud account
+        if (!empty($body['custom_domain'])) {
+            $settings['custom_domain'] = self::sanitize_domain($body['custom_domain']);
+            $settings['custom_domain_status'] = sanitize_text_field($body['custom_domain_status'] ?? 'pending_dns');
+        } else {
+            // Clear local custom domain if not in cloud account
+            $settings['custom_domain'] = '';
+            $settings['custom_domain_status'] = '';
+        }
+
+        // Auto-enable if subscription is valid (free or paid)
+        $settings['enabled'] = self::is_mode_valid(self::MODE_CLOUD, $settings);
+
+        // Mark onboarding as complete if recovering account
+        $settings['onboarding_completed'] = true;
 
         $result = update_option(self::OPTION_KEY, $settings);
         $settings_instance->clear_cache();
 
         return $result;
+    }
+
+    /**
+     * Format bytes to human readable string
+     *
+     * @since 0.2.0
+     * @param int $bytes Bytes to format.
+     * @param int $precision Decimal precision.
+     * @return string Formatted string (e.g., "1.5 GB").
+     */
+    public static function format_bytes($bytes, $precision = 1) {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= pow(1024, $pow);
+        return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+    /**
+     * Sync subscription status from cloud
+     *
+     * Checks the cloud API for current subscription status and updates local settings.
+     * Uses transient to avoid checking too frequently (once per hour max).
+     *
+     * @since 0.2.0
+     * @param ImgPro_CDN_Settings $settings_instance Settings instance to update.
+     * @param bool                $force             Force sync even if recently checked.
+     * @return bool|null True if synced successfully, false on error, null if skipped.
+     */
+    public static function sync_subscription_status($settings_instance, $force = false) {
+        // Check if we have a cloud account
+        $settings = $settings_instance->get_all();
+        $api_key = $settings['cloud_api_key'] ?? '';
+
+        if (empty($api_key)) {
+            return null; // No account to sync
+        }
+
+        // Check transient to avoid frequent API calls (1 hour cache)
+        $transient_key = 'imgpro_cdn_last_sync';
+        if (!$force && get_transient($transient_key)) {
+            return null; // Recently synced
+        }
+
+        // Call the account validation endpoint
+        $response = wp_remote_get(
+            self::get_api_base_url() . '/api/account/' . $api_key,
+            ['timeout' => 10]
+        );
+
+        if (is_wp_error($response)) {
+            self::handle_api_error($response, 'sync_status');
+            return false;
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+
+        if (404 === $status_code) {
+            // Account not found - might have been deleted
+            // Don't auto-disable, just log it
+            self::handle_api_error(['error' => 'Account not found in cloud'], 'sync_status');
+            set_transient($transient_key, time(), HOUR_IN_SECONDS);
+            return false;
+        }
+
+        if ($status_code >= 400 || !is_array($body)) {
+            self::handle_api_error(['error' => 'Invalid response', 'status' => $status_code], 'sync_status');
+            set_transient($transient_key, time(), HOUR_IN_SECONDS);
+            return false;
+        }
+
+        // Update local tier if different
+        $cloud_tier = $body['tier'] ?? '';
+        $local_tier = $settings['cloud_tier'] ?? '';
+
+        if (!empty($cloud_tier) && $cloud_tier !== $local_tier) {
+            $settings['cloud_tier'] = $cloud_tier;
+
+            // If subscription became invalid, disable CDN
+            if (self::is_subscription_inactive($settings)) {
+                $settings['enabled'] = false;
+            }
+
+            // Update settings
+            update_option(self::OPTION_KEY, $settings);
+            $settings_instance->clear_cache();
+        }
+
+        // Set transient to avoid frequent checks
+        set_transient($transient_key, time(), HOUR_IN_SECONDS);
+
+        return true;
     }
 }

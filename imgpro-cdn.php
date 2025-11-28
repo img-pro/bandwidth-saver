@@ -64,6 +64,7 @@ if (!defined('IMGPRO_CDN_PLUGIN_BASENAME')) {
 // Load required files
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-settings.php';
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-rewriter.php';
+require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-onboarding.php';
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-admin.php';
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-admin-ajax.php';
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-core.php';

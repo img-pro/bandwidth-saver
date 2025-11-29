@@ -1483,7 +1483,7 @@ class ImgPro_CDN_Admin {
                             value="1"
                             <?php checked($settings['debug_mode'], true); ?>
                         >
-                        <span><?php esc_html_e('Enable debug mode', 'bandwidth-saver'); ?></span>
+                        <span class="imgpro-checkbox-text"><?php esc_html_e('Enable debug mode', 'bandwidth-saver'); ?></span>
                     </label>
                     <p class="imgpro-input-hint"><?php esc_html_e('Adds debug info to image elements (visible in dev tools).', 'bandwidth-saver'); ?></p>
                 </div>

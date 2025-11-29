@@ -250,7 +250,7 @@ class ImgPro_CDN_Admin {
 
             // Disable if subscription is inactive
             if (ImgPro_CDN_Settings::is_subscription_inactive(['cloud_tier' => $tier_id])) {
-                $update_data['enabled'] = false;
+                $update_data['cloud_enabled'] = false;
             }
         }
 

@@ -278,7 +278,7 @@ class ImgPro_CDN_Admin_Ajax {
 
         // Disable if subscription is inactive
         if (ImgPro_CDN_Settings::is_subscription_inactive(['cloud_tier' => $tier_id])) {
-            $data['enabled'] = false;
+            $data['cloud_enabled'] = false;
         }
 
         return $data;

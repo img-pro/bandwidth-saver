@@ -4,7 +4,7 @@ Tags: cdn, images, cloudflare, performance, speed
 Requires at least: 6.2
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.1.7
+Stable tag: 0.1.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -240,6 +240,11 @@ You are responsible for the images served through your account.
 
 == Changelog ==
 
+= 0.1.8 =
+* Improved: Updated messaging to focus on global edge network
+* Fixed: Payment success now correctly enables CDN toggle
+* Fixed: Debug mode checkbox vertical alignment
+
 = 0.1.7 =
 * Improved: Redesigned CDN toggle card with accent color active state
 * Improved: Better visual feedback for SSL certificate issuance status
@@ -291,6 +296,9 @@ You are responsible for the images served through your account.
 * Initial release
 
 == Upgrade Notice ==
+
+= 0.1.8 =
+Fixed payment flow to automatically enable CDN. Recommended for all users.
 
 = 0.1.7 =
 Improved toggle UI and fixed tier upgrade sync. Recommended for all users.

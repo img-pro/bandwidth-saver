@@ -4,7 +4,7 @@ Tags: cdn, images, cloudflare, performance, bandwidth
 Requires at least: 6.2
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.1.6
+Stable tag: 0.1.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -258,6 +258,12 @@ We reserve the right to refuse, suspend, or terminate service at our discretion.
 You are responsible for the images served through your account. High-risk or high-volume sites should consider the Self-Hosted option for full control.
 
 == Changelog ==
+
+= 0.1.7 =
+* Improved: Redesigned CDN toggle card with accent color active state
+* Improved: Better visual feedback for SSL certificate issuance status
+* Fixed: Direct upgrade now properly saves new tier limits
+* Fixed: Removing self-hosted CDN domain now properly disables CDN
 
 = 0.1.6 =
 * New: Custom domain support for Managed mode (e.g., cdn.yoursite.com)

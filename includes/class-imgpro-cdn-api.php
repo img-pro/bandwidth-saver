@@ -6,7 +6,7 @@
  * Handles requests, responses, errors, and caching.
  *
  * @package ImgPro_CDN
- * @since   0.2.0
+ * @since   0.1.7
  */
 
 if (!defined('ABSPATH')) {
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 /**
  * API Client class
  *
- * @since 0.2.0
+ * @since 0.1.7
  */
 class ImgPro_CDN_API {
 

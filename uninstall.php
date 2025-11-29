@@ -26,6 +26,9 @@ delete_option('imgpro_cdn_version');
 // Delete transients
 delete_transient('imgpro_cdn_pricing');
 delete_transient('imgpro_cdn_pending_payment');
+delete_transient('imgpro_cdn_tiers');
+delete_transient('imgpro_cdn_site_data');
+delete_transient('imgpro_cdn_payment_pending_recovery');
 
 // For multisite installations
 if (is_multisite()) {
@@ -53,6 +56,9 @@ if (is_multisite()) {
             // Delete transients for this site
             delete_transient('imgpro_cdn_pricing');
             delete_transient('imgpro_cdn_pending_payment');
+            delete_transient('imgpro_cdn_tiers');
+            delete_transient('imgpro_cdn_site_data');
+            delete_transient('imgpro_cdn_payment_pending_recovery');
 
             restore_current_blog();
         }

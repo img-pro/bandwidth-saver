@@ -31,7 +31,7 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * API client instance
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var ImgPro_CDN_API
      */
     private $api;
@@ -153,7 +153,7 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * AJAX handler for free tier registration
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     public function ajax_free_register() {
@@ -242,7 +242,7 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * Save site data from API response to local settings
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array  $site           Site data from API.
      * @param string $email          User email.
      * @param bool   $marketing_opt_in Marketing consent.
@@ -271,7 +271,7 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * AJAX handler for updating onboarding step
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     public function ajax_update_onboarding_step() {
@@ -294,7 +294,7 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * AJAX handler for completing onboarding
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     public function ajax_complete_onboarding() {
@@ -323,7 +323,7 @@ class ImgPro_CDN_Admin_Ajax {
      *
      * Uses the API client to fetch fresh site data.
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     public function ajax_sync_stats() {
@@ -382,7 +382,7 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * Update local settings from site API response
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $site Site data from API.
      * @return void
      */

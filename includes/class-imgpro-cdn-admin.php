@@ -31,7 +31,7 @@ class ImgPro_CDN_Admin {
     /**
      * Onboarding instance
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var ImgPro_CDN_Onboarding
      */
     private $onboarding;
@@ -39,7 +39,7 @@ class ImgPro_CDN_Admin {
     /**
      * API client instance
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var ImgPro_CDN_API
      */
     private $api;
@@ -47,7 +47,7 @@ class ImgPro_CDN_Admin {
     /**
      * Plan selector instance
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var ImgPro_CDN_Plan_Selector
      */
     private $plan_selector;
@@ -82,7 +82,7 @@ class ImgPro_CDN_Admin {
     /**
      * Handle skip onboarding request
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     public function handle_skip_onboarding() {
@@ -163,7 +163,7 @@ class ImgPro_CDN_Admin {
     /**
      * Save site data from API response to local settings
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $site Site data from API.
      * @return void
      */
@@ -204,7 +204,7 @@ class ImgPro_CDN_Admin {
      * Uses cached data if available and fresh, otherwise fetches from API.
      * Updates local settings with any changes from the cloud.
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     private function sync_site_data() {
@@ -580,7 +580,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render onboarding page wrapper
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     private function render_onboarding_page() {
@@ -596,7 +596,7 @@ class ImgPro_CDN_Admin {
      *
      * Status badge reflects the current tab's mode-specific enabled state.
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array  $settings    Plugin settings.
      * @param string $current_tab Current tab/mode being viewed.
      * @return void
@@ -632,7 +632,7 @@ class ImgPro_CDN_Admin {
      *
      * Each mode has its own independent enabled state.
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array  $settings   Plugin settings.
      * @param string $setup_mode Current setup mode.
      * @return void
@@ -692,7 +692,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render subscription alerts (cancelled, past_due)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings Plugin settings.
      * @return void
      */
@@ -710,7 +710,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render stats grid
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings Plugin settings.
      * @return void
      */
@@ -766,7 +766,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render subscription alert banner
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param string $type     Alert type ('cancelled', 'past_due', 'suspended').
      * @param array  $settings Plugin settings.
      * @return void
@@ -893,7 +893,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render Cloud signup CTA
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $pricing Pricing information.
      * @return void
      */
@@ -961,7 +961,7 @@ class ImgPro_CDN_Admin {
      * 4. Custom Domain
      * 5. Advanced Settings
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings Plugin settings.
      * @return void
      */
@@ -1495,7 +1495,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render page footer
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     private function render_footer() {

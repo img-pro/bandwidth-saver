@@ -44,7 +44,7 @@ class ImgPro_CDN_Settings {
     const MODE_CLOUDFLARE = 'cloudflare';
 
     /**
-     * Subscription tier: None
+     * Subscription tier: None (not registered)
      *
      * @since 0.1.2
      * @var string
@@ -52,7 +52,39 @@ class ImgPro_CDN_Settings {
     const TIER_NONE = 'none';
 
     /**
-     * Subscription tier: Active
+     * Subscription tier: Free
+     *
+     * @since 0.2.0
+     * @var string
+     */
+    const TIER_FREE = 'free';
+
+    /**
+     * Subscription tier: Lite (paid)
+     *
+     * @since 0.2.0
+     * @var string
+     */
+    const TIER_LITE = 'lite';
+
+    /**
+     * Subscription tier: Pro (paid)
+     *
+     * @since 0.2.0
+     * @var string
+     */
+    const TIER_PRO = 'pro';
+
+    /**
+     * Subscription tier: Business (paid)
+     *
+     * @since 0.2.0
+     * @var string
+     */
+    const TIER_BUSINESS = 'business';
+
+    /**
+     * Subscription tier: Active (legacy, maps to pro)
      *
      * @since 0.1.2
      * @var string
@@ -66,6 +98,54 @@ class ImgPro_CDN_Settings {
      * @var string
      */
     const TIER_CANCELLED = 'cancelled';
+
+    /**
+     * Subscription tier: Past due (payment failed, grace period)
+     *
+     * @since 0.2.0
+     * @var string
+     */
+    const TIER_PAST_DUE = 'past_due';
+
+    /**
+     * Subscription tier: Suspended (no access)
+     *
+     * @since 0.2.0
+     * @var string
+     */
+    const TIER_SUSPENDED = 'suspended';
+
+    /**
+     * Free tier storage limit in bytes (10 GB)
+     *
+     * @since 0.2.0
+     * @var int
+     */
+    const FREE_STORAGE_LIMIT = 10737418240;
+
+    /**
+     * Pro tier storage limit in bytes (120 GB)
+     *
+     * @since 0.2.0
+     * @var int
+     */
+    const PRO_STORAGE_LIMIT = 128849018880;
+
+    /**
+     * Free tier bandwidth limit in bytes (50 GB)
+     *
+     * @since 0.2.0
+     * @var int
+     */
+    const FREE_BANDWIDTH_LIMIT = 53687091200;
+
+    /**
+     * Pro tier bandwidth limit in bytes (2 TB)
+     *
+     * @since 0.2.0
+     * @var int
+     */
+    const PRO_BANDWIDTH_LIMIT = 2199023255552;
 
     /**
      * API base URL for cloud services
@@ -102,9 +182,14 @@ class ImgPro_CDN_Settings {
      * @var array
      */
     private $defaults = [
+        // Legacy single enabled flag (kept for backwards compatibility)
         'enabled'            => false,
         'previously_enabled' => false,
         'setup_mode'         => '',
+
+        // Per-mode enabled states (independent toggles)
+        'cloud_enabled'      => false,
+        'cloudflare_enabled' => false,
 
         // Cloud mode settings
         'cloud_api_key'   => '',
@@ -114,6 +199,19 @@ class ImgPro_CDN_Settings {
         // Custom domain settings (Cloud mode only)
         'custom_domain'        => '',
         'custom_domain_status' => '', // pending_dns, pending_ssl, active, error
+
+        // Usage stats (synced from Cloud API)
+        'storage_used'       => 0,
+        'storage_limit'      => 0,
+        'bandwidth_used'     => 0,
+        'bandwidth_limit'    => 0,
+        'images_cached'      => 0,
+        'stats_updated_at'   => 0,
+
+        // Onboarding state
+        'onboarding_completed' => false,
+        'onboarding_step'      => 1,
+        'marketing_opt_in'     => false,
 
         // Cloudflare mode settings (single domain - worker serves images directly)
         'cdn_url'         => '',
@@ -222,12 +320,20 @@ class ImgPro_CDN_Settings {
             }
         }
 
-        // Enabled (boolean)
+        // Enabled (boolean) - legacy, kept for backwards compatibility
         if (isset($settings['enabled'])) {
             $validated['enabled'] = (bool) $settings['enabled'];
         }
 
-        // Previously enabled (boolean) - tracks enabled state when switching tabs
+        // Per-mode enabled states (boolean)
+        if (isset($settings['cloud_enabled'])) {
+            $validated['cloud_enabled'] = (bool) $settings['cloud_enabled'];
+        }
+        if (isset($settings['cloudflare_enabled'])) {
+            $validated['cloudflare_enabled'] = (bool) $settings['cloudflare_enabled'];
+        }
+
+        // Previously enabled (boolean) - legacy, kept for backwards compatibility
         if (isset($settings['previously_enabled'])) {
             $validated['previously_enabled'] = (bool) $settings['previously_enabled'];
         }
@@ -241,9 +347,41 @@ class ImgPro_CDN_Settings {
         }
         if (isset($settings['cloud_tier'])) {
             $tier = sanitize_text_field($settings['cloud_tier']);
-            if (in_array($tier, [self::TIER_NONE, self::TIER_ACTIVE, self::TIER_CANCELLED], true)) {
+            if (in_array($tier, [self::TIER_NONE, self::TIER_FREE, self::TIER_LITE, self::TIER_PRO, self::TIER_BUSINESS, self::TIER_ACTIVE, self::TIER_CANCELLED, self::TIER_PAST_DUE, self::TIER_SUSPENDED], true)) {
                 $validated['cloud_tier'] = $tier;
             }
+        }
+
+        // Usage stats (integers)
+        if (isset($settings['storage_used'])) {
+            $validated['storage_used'] = absint($settings['storage_used']);
+        }
+        if (isset($settings['storage_limit'])) {
+            $validated['storage_limit'] = absint($settings['storage_limit']);
+        }
+        if (isset($settings['bandwidth_used'])) {
+            $validated['bandwidth_used'] = absint($settings['bandwidth_used']);
+        }
+        if (isset($settings['bandwidth_limit'])) {
+            $validated['bandwidth_limit'] = absint($settings['bandwidth_limit']);
+        }
+        if (isset($settings['images_cached'])) {
+            $validated['images_cached'] = absint($settings['images_cached']);
+        }
+        if (isset($settings['stats_updated_at'])) {
+            $validated['stats_updated_at'] = absint($settings['stats_updated_at']);
+        }
+
+        // Onboarding state
+        if (isset($settings['onboarding_completed'])) {
+            $validated['onboarding_completed'] = (bool) $settings['onboarding_completed'];
+        }
+        if (isset($settings['onboarding_step'])) {
+            $step = absint($settings['onboarding_step']);
+            $validated['onboarding_step'] = max(1, min(4, $step)); // Clamp 1-4
+        }
+        if (isset($settings['marketing_opt_in'])) {
+            $validated['marketing_opt_in'] = (bool) $settings['marketing_opt_in'];
         }
 
         // Custom domain (Cloud mode only)
@@ -406,7 +544,7 @@ class ImgPro_CDN_Settings {
     /**
      * Check if a given mode has valid configuration
      *
-     * Cloud mode requires an active subscription.
+     * Cloud mode requires free or paid subscription.
      * Cloudflare mode requires CDN URL to be configured (single domain architecture).
      *
      * @since 0.1.3
@@ -416,11 +554,187 @@ class ImgPro_CDN_Settings {
      */
     public static function is_mode_valid($mode, $settings) {
         if (self::MODE_CLOUD === $mode) {
-            return self::TIER_ACTIVE === ($settings['cloud_tier'] ?? '');
+            $tier = $settings['cloud_tier'] ?? '';
+            // Valid tiers: free, lite, pro, business, active (legacy), past_due (grace period)
+            return in_array($tier, [self::TIER_FREE, self::TIER_LITE, self::TIER_PRO, self::TIER_BUSINESS, self::TIER_ACTIVE, self::TIER_PAST_DUE], true);
         } elseif (self::MODE_CLOUDFLARE === $mode) {
             return !empty($settings['cdn_url']);
         }
         return false;
+    }
+
+    /**
+     * Check if a specific mode is enabled
+     *
+     * Each mode has its own independent enabled state.
+     *
+     * @since 0.2.0
+     * @param string $mode     The mode to check ('cloud' or 'cloudflare').
+     * @param array  $settings The settings array to check against.
+     * @return bool True if the mode is enabled.
+     */
+    public static function is_mode_enabled($mode, $settings) {
+        if (self::MODE_CLOUD === $mode) {
+            return !empty($settings['cloud_enabled']);
+        } elseif (self::MODE_CLOUDFLARE === $mode) {
+            return !empty($settings['cloudflare_enabled']);
+        }
+        return false;
+    }
+
+    /**
+     * Check if CDN is currently active
+     *
+     * CDN is active when: current mode is valid AND that mode is enabled.
+     * This determines whether image rewriting actually happens.
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if CDN is currently active.
+     */
+    public static function is_cdn_active($settings) {
+        $mode = $settings['setup_mode'] ?? '';
+        if (empty($mode)) {
+            return false;
+        }
+        return self::is_mode_valid($mode, $settings) && self::is_mode_enabled($mode, $settings);
+    }
+
+    /**
+     * Check if user has any paid subscription (lite, pro, or business)
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if user has a paid subscription.
+     */
+    public static function is_paid($settings) {
+        $tier = $settings['cloud_tier'] ?? '';
+        // past_due still counts as paid (grace period)
+        return in_array($tier, [self::TIER_LITE, self::TIER_PRO, self::TIER_BUSINESS, self::TIER_ACTIVE, self::TIER_PAST_DUE], true);
+    }
+
+    /**
+     * Check if user has a paid subscription (alias for is_paid for backwards compatibility)
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if user has a paid subscription.
+     */
+    public static function is_pro($settings) {
+        return self::is_paid($settings);
+    }
+
+    /**
+     * Check if tier has custom domain feature
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if custom domain is available.
+     */
+    public static function has_custom_domain($settings) {
+        $tier = $settings['cloud_tier'] ?? '';
+        // Custom domain available on Pro and Business (not Lite)
+        return in_array($tier, [self::TIER_PRO, self::TIER_BUSINESS, self::TIER_ACTIVE, self::TIER_PAST_DUE], true);
+    }
+
+    /**
+     * Check if user is on free tier
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if user is on free tier.
+     */
+    public static function is_free($settings) {
+        return self::TIER_FREE === ($settings['cloud_tier'] ?? '');
+    }
+
+    /**
+     * Check if subscription is cancelled or suspended
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if subscription is cancelled or suspended.
+     */
+    public static function is_subscription_inactive($settings) {
+        $tier = $settings['cloud_tier'] ?? '';
+        return in_array($tier, [self::TIER_CANCELLED, self::TIER_SUSPENDED], true);
+    }
+
+    /**
+     * Check if subscription needs attention (past due)
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return bool True if subscription is past due.
+     */
+    public static function is_past_due($settings) {
+        return self::TIER_PAST_DUE === ($settings['cloud_tier'] ?? '');
+    }
+
+    /**
+     * Get storage limit for current tier
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return int Storage limit in bytes.
+     */
+    public static function get_storage_limit($settings) {
+        if (self::is_pro($settings)) {
+            return self::PRO_STORAGE_LIMIT;
+        }
+        if (self::is_free($settings)) {
+            return self::FREE_STORAGE_LIMIT;
+        }
+        return 0;
+    }
+
+    /**
+     * Get storage usage percentage
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return float Percentage of storage used (0-100).
+     */
+    public static function get_storage_percentage($settings) {
+        $limit = self::get_storage_limit($settings);
+        if ($limit <= 0) {
+            return 0;
+        }
+        $used = $settings['storage_used'] ?? 0;
+        return min(100, ($used / $limit) * 100);
+    }
+
+    /**
+     * Get bandwidth limit for current tier
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return int Bandwidth limit in bytes.
+     */
+    public static function get_bandwidth_limit($settings) {
+        if (self::is_pro($settings)) {
+            return self::PRO_BANDWIDTH_LIMIT;
+        }
+        if (self::is_free($settings)) {
+            return self::FREE_BANDWIDTH_LIMIT;
+        }
+        return 0;
+    }
+
+    /**
+     * Get bandwidth usage percentage
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return float Percentage of bandwidth used (0-100).
+     */
+    public static function get_bandwidth_percentage($settings) {
+        $limit = self::get_bandwidth_limit($settings);
+        if ($limit <= 0) {
+            return 0;
+        }
+        $used = $settings['bandwidth_used'] ?? 0;
+        return min(100, ($used / $limit) * 100);
     }
 
     /**
@@ -445,64 +759,19 @@ class ImgPro_CDN_Settings {
     }
 
     /**
-     * Recover account details from Managed API
+     * Format bytes to human readable string
      *
-     * Attempts to recover subscription details for the current site.
-     *
-     * @since 0.1.3
-     * @param ImgPro_CDN_Settings $settings_instance Settings instance to update.
-     * @return bool True if recovery was successful.
+     * @since 0.2.0
+     * @param int $bytes Bytes to format.
+     * @param int $precision Decimal precision.
+     * @return string Formatted string (e.g., "1.5 GB").
      */
-    public static function recover_account($settings_instance) {
-        $site_url = get_site_url();
-
-        $response = wp_remote_post(self::get_api_base_url() . '/api/recover', [
-            'headers' => ['Content-Type' => 'application/json'],
-            'body' => wp_json_encode(['site_url' => $site_url]),
-            'timeout' => 10,
-        ]);
-
-        if (is_wp_error($response)) {
-            self::handle_api_error($response, 'recovery');
-            return false;
-        }
-
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-
-        // Validate response structure
-        if (!is_array($body)) {
-            self::handle_api_error(['error' => 'Invalid response structure'], 'recovery');
-            return false;
-        }
-
-        // Validate required fields with proper types
-        if (empty($body['api_key']) || !is_string($body['api_key'])) {
-            self::handle_api_error(['error' => 'Missing or invalid api_key'], 'recovery');
-            return false;
-        }
-        if (empty($body['email']) || !is_string($body['email'])) {
-            self::handle_api_error(['error' => 'Missing or invalid email'], 'recovery');
-            return false;
-        }
-        if (empty($body['tier']) || !is_string($body['tier'])) {
-            self::handle_api_error(['error' => 'Missing or invalid tier'], 'recovery');
-            return false;
-        }
-
-        // Update settings with validated and sanitized data
-        $settings = $settings_instance->get_all();
-        $settings['setup_mode'] = self::MODE_CLOUD;
-        $settings['cloud_api_key'] = sanitize_text_field($body['api_key']);
-        $settings['cloud_email'] = sanitize_email($body['email']);
-        $settings['cloud_tier'] = in_array($body['tier'], [self::TIER_ACTIVE, self::TIER_CANCELLED, self::TIER_NONE], true)
-            ? $body['tier']
-            : self::TIER_NONE;
-        // Only auto-enable if subscription is active
-        $settings['enabled'] = (self::TIER_ACTIVE === $settings['cloud_tier']);
-
-        $result = update_option(self::OPTION_KEY, $settings);
-        $settings_instance->clear_cache();
-
-        return $result;
+    public static function format_bytes($bytes, $precision = 1) {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= pow(1024, $pow);
+        return round($bytes, $precision) . ' ' . $units[$pow];
     }
 }

@@ -149,7 +149,8 @@ class ImgPro_CDN_Rewriter {
      * @return void
      */
     public function init() {
-        if (!$this->settings->get('enabled')) {
+        // Check if CDN is active (current mode is valid AND enabled)
+        if (!ImgPro_CDN_Settings::is_cdn_active($this->settings->get_all())) {
             return;
         }
 

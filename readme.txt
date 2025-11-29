@@ -100,7 +100,7 @@ This plugin may not be the right fit if you:
 **Managed (Recommended for most users)**
 One click setup. We operate the Cloudflare Worker and R2 storage. No Cloudflare account required for Managed mode. Images are cached and delivered through Cloudflare infrastructure operated by ImgPro.
 
-The Managed plan costs $9.99 per month and includes up to 100 GB of cached image storage and unlimited bandwidth. Storage refers only to the total weight of cached images in R2. It does not include HTML, CSS, JavaScript, PDFs, videos, or other file types. Storage is cumulative, not monthly traffic.
+The free tier includes 10 GB storage and 50 GB bandwidth. The Pro plan costs $14.99 per month and includes 120 GB of storage with 2 TB bandwidth. Storage refers only to the total weight of cached images in R2. It does not include HTML, CSS, JavaScript, PDFs, videos, or other file types. Storage is cumulative, not monthly traffic.
 
 This comfortably supports everything from small blogs to large, image-heavy WordPress installations.
 
@@ -147,7 +147,7 @@ Self-Hosted: About 15 minutes if familiar with Cloudflare.
 
 = How much does it cost? =
 
-Managed: $9.99 per month for up to 100 GB storage and unlimited bandwidth.
+Managed: Free tier with 10 GB storage + 50 GB bandwidth. Pro tier at $14.99/month with 120 GB storage + 2 TB bandwidth.
 Self-Hosted: Free. You pay Cloudflare directly.
 
 = How much faster will my images load? =

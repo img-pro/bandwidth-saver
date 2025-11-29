@@ -56,11 +56,6 @@
             handleFreeRegistration($(this));
         });
 
-        // Step 2: Recover Account
-        $('#imgpro-onboarding-recover').on('click', function() {
-            handleRecoverAccount($(this));
-        });
-
         // Step 3: Activate Toggle
         $('#imgpro-activate-toggle').on('change', function() {
             if ($(this).is(':checked')) {
@@ -127,7 +122,12 @@
                     }
                 } else {
                     $button.removeClass('is-loading').prop('disabled', false);
-                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.registrationError);
+                    // Account exists - show verification modal (email already sent)
+                    if (response.data.show_recovery) {
+                        showRecoveryVerificationModal(response.data.email_hint);
+                    } else {
+                        showNotice('error', response.data.message || imgproCdnAdmin.i18n.registrationError);
+                    }
                 }
             },
             error: function() {
@@ -367,7 +367,12 @@
                     }, 1000);
                 } else {
                     $button.prop('disabled', false).text(originalText);
-                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.registrationError);
+                    // Account exists - show verification modal (email already sent)
+                    if (response.data.show_recovery) {
+                        showRecoveryVerificationModal(response.data.email_hint);
+                    } else {
+                        showNotice('error', response.data.message || imgproCdnAdmin.i18n.registrationError);
+                    }
                 }
             },
             error: function() {
@@ -380,8 +385,10 @@
     /**
      * Handle checkout (Pro upgrade)
      */
-    function handleCheckout($button) {
+    function handleCheckout($button, tierId) {
         const originalText = $button.text();
+        // Get tier from parameter, button data attribute, or default to 'pro'
+        const tier = tierId || $button.data('tier') || 'pro';
         $button.prop('disabled', true).text(imgproCdnAdmin.i18n.creatingCheckout);
 
         $.ajax({
@@ -389,6 +396,7 @@
             type: 'POST',
             data: {
                 action: 'imgpro_cdn_checkout',
+                tier_id: tier,
                 nonce: imgproCdnAdmin.checkoutNonce
             },
             success: function(response) {
@@ -400,7 +408,12 @@
                     }
                 } else {
                     $button.prop('disabled', false).text(originalText);
-                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.checkoutError);
+                    // Account exists - show verification modal (email already sent)
+                    if (response.data.show_recovery) {
+                        showRecoveryVerificationModal(response.data.email_hint, tier);
+                    } else {
+                        showNotice('error', response.data.message || imgproCdnAdmin.i18n.checkoutError);
+                    }
                 }
             },
             error: function() {
@@ -411,12 +424,14 @@
     }
 
     /**
-     * Handle recover account
+     * Handle recover account - Step 1: Request verification code
+     * @param {jQuery} $button - The button element
+     * @param {boolean} skipConfirm - Skip confirmation dialog (for auto-triggered recovery)
      */
-    function handleRecoverAccount($button) {
+    function handleRecoverAccount($button, skipConfirm) {
         const originalText = $button.text();
 
-        if (!confirm(imgproCdnAdmin.i18n.recoverConfirm)) {
+        if (!skipConfirm && !confirm(imgproCdnAdmin.i18n.recoverConfirm)) {
             return;
         }
 
@@ -426,22 +441,169 @@
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
             data: {
-                action: 'imgpro_cdn_recover_account',
+                action: 'imgpro_cdn_request_recovery',
                 nonce: imgproCdnAdmin.onboardingNonce || imgproCdnAdmin.checkoutNonce
             },
             success: function(response) {
-                if (response.success) {
+                $button.prop('disabled', false).text(originalText);
+
+                if (response.success && response.data.step === 'verify') {
+                    // Show verification code modal
+                    showRecoveryVerificationModal(response.data.email_hint);
+                } else if (response.success) {
                     showNotice('success', response.data.message);
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 1000);
                 } else {
-                    $button.prop('disabled', false).text(originalText);
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.recoverError);
                 }
             },
             error: function() {
                 $button.prop('disabled', false).text(originalText);
+                showNotice('error', imgproCdnAdmin.i18n.genericError);
+            }
+        });
+    }
+
+    /**
+     * Show recovery verification code modal
+     * @param {string} emailHint - Masked email hint (e.g., "i•••••@domain.com")
+     * @param {string|null} pendingTierId - Tier ID to checkout after verification (null = just recover)
+     */
+    function showRecoveryVerificationModal(emailHint, pendingTierId) {
+        // Remove existing modal if any
+        $('#imgpro-recovery-modal').remove();
+
+        const descText = imgproCdnAdmin.i18n.accountFoundDesc || 'We found an existing account for this site. To restore access, enter the verification code sent to:';
+        const emailDisplay = emailHint || imgproCdnAdmin.i18n.yourEmail || 'your registered email';
+
+        const modalHtml = `
+            <div id="imgpro-recovery-modal" class="imgpro-modal-overlay">
+                <div class="imgpro-modal">
+                    <button type="button" class="imgpro-modal-close">&times;</button>
+                    <div class="imgpro-modal-header">
+                        <h2>${imgproCdnAdmin.i18n.accountFound || 'Welcome Back'}</h2>
+                    </div>
+                    <div class="imgpro-modal-body">
+                        <p>${descText} <strong>${emailDisplay}</strong></p>
+                        <div class="imgpro-verification-input">
+                            <input type="text"
+                                   id="imgpro-recovery-code"
+                                   maxlength="6"
+                                   pattern="[0-9]*"
+                                   inputmode="numeric"
+                                   placeholder="000000"
+                                   autocomplete="off"
+                                   data-1p-ignore="true"
+                                   data-lpignore="true">
+                        </div>
+                        <p class="imgpro-hint">${imgproCdnAdmin.i18n.codeExpires}</p>
+                    </div>
+                    <div class="imgpro-modal-footer">
+                        <button type="button" class="imgpro-btn imgpro-btn-secondary" id="imgpro-recovery-cancel">
+                            ${imgproCdnAdmin.i18n.cancel}
+                        </button>
+                        <button type="button" class="imgpro-btn imgpro-btn-primary" id="imgpro-recovery-verify">
+                            ${imgproCdnAdmin.i18n.verify}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        $('body').append(modalHtml);
+
+        const $modal = $('#imgpro-recovery-modal');
+        const $input = $('#imgpro-recovery-code');
+
+        // Focus input
+        setTimeout(function() {
+            $input.focus();
+        }, 100);
+
+        // Handle close
+        $modal.find('.imgpro-modal-close, #imgpro-recovery-cancel').on('click', function() {
+            $modal.remove();
+        });
+
+        // Handle verify
+        $('#imgpro-recovery-verify').on('click', function() {
+            handleRecoveryVerification($input.val(), pendingTierId);
+        });
+
+        // Handle enter key
+        $input.on('keypress', function(e) {
+            if (e.which === 13) {
+                handleRecoveryVerification($input.val(), pendingTierId);
+            }
+        });
+
+        // Only allow numbers
+        $input.on('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    }
+
+    /**
+     * Handle recovery verification - Step 2: Verify code
+     * @param {string} code - 6-digit verification code
+     * @param {string|null} pendingTierId - Tier to checkout after verification
+     */
+    function handleRecoveryVerification(code, pendingTierId) {
+        const $modal = $('#imgpro-recovery-modal');
+        const $button = $('#imgpro-recovery-verify');
+        const $input = $('#imgpro-recovery-code');
+
+        if (!code || code.length !== 6) {
+            $input.addClass('error').focus();
+            showNotice('error', imgproCdnAdmin.i18n.invalidCode);
+            return;
+        }
+
+        $button.prop('disabled', true).text(imgproCdnAdmin.i18n.verifying);
+        $input.prop('disabled', true);
+
+        $.ajax({
+            url: imgproCdnAdmin.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'imgpro_cdn_verify_recovery',
+                code: code,
+                pending_tier_id: pendingTierId || '',
+                nonce: imgproCdnAdmin.onboardingNonce || imgproCdnAdmin.checkoutNonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    $modal.remove();
+
+                    // If upgrade confirmation needed, reload page and show modal
+                    if (response.data.show_upgrade && response.data.pending_tier_id) {
+                        // Reload page with parameter to trigger upgrade modal
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('show_upgrade', response.data.pending_tier_id);
+                        url.searchParams.delete('payment_status'); // Clean up any old params
+                        window.location.href = url.toString();
+                        return;
+                    }
+
+                    // If there's a checkout URL, go there (upgrade needed)
+                    if (response.data.checkout_url) {
+                        window.location.href = response.data.checkout_url;
+                        return;
+                    }
+
+                    // Otherwise just reload (already on same/higher plan)
+                    showNotice('success', response.data.message);
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    $button.prop('disabled', false).text(imgproCdnAdmin.i18n.verify);
+                    $input.prop('disabled', false).addClass('error').val('').focus();
+                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.verificationFailed);
+                }
+            },
+            error: function() {
+                $button.prop('disabled', false).text(imgproCdnAdmin.i18n.verify);
+                $input.prop('disabled', false);
                 showNotice('error', imgproCdnAdmin.i18n.genericError);
             }
         });
@@ -1138,7 +1300,12 @@
                     $button.removeClass('is-loading').prop('disabled', false);
                     closePlanModal();
                     closeUpgradeConfirmModal();
-                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.checkoutError);
+                    // Account exists - show verification modal with pending tier
+                    if (response.data.show_recovery) {
+                        showRecoveryVerificationModal(response.data.email_hint, tierId);
+                    } else {
+                        showNotice('error', response.data.message || imgproCdnAdmin.i18n.checkoutError);
+                    }
                 }
             },
             error: function() {
@@ -1160,10 +1327,32 @@
             // Dashboard & settings
             initDashboard();
             handlePaymentStatus();
+            handleShowUpgrade();
         }
 
         // Plan selector (available on both onboarding and dashboard)
         initPlanSelector();
     });
+
+    /**
+     * Handle show_upgrade URL parameter (after account recovery)
+     */
+    function handleShowUpgrade() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const upgradeTier = urlParams.get('show_upgrade');
+
+        if (upgradeTier) {
+            // Clean up URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete('show_upgrade');
+            window.history.replaceState({}, '', url.toString());
+
+            // Show success notice and upgrade modal
+            showNotice('success', imgproCdnAdmin.i18n.accountRecovered || 'Account recovered!');
+            setTimeout(function() {
+                showUpgradeConfirmModal(upgradeTier, null);
+            }, 300);
+        }
+    }
 
 })(jQuery);

@@ -134,12 +134,20 @@ class ImgPro_CDN_Admin {
             return;
         }
 
-        // Try to recover/sync account from cloud
-        $site_url = get_site_url();
-        $site = $this->api->find_site($site_url);
+        // Sync account from cloud using stored API key
+        $settings = $this->settings->get_all();
+        $api_key = $settings['cloud_api_key'] ?? '';
+
+        if (empty($api_key)) {
+            // No API key - can't sync, set transient to retry
+            set_transient('imgpro_cdn_payment_pending_recovery', true, 60);
+            return;
+        }
+
+        $site = $this->api->get_site($api_key, true); // Force refresh
 
         if (!is_wp_error($site)) {
-            // Save site data to settings
+            // Save refreshed site data
             $this->save_site_to_settings($site);
 
             // Enable if subscription is valid
@@ -152,7 +160,6 @@ class ImgPro_CDN_Admin {
                     'onboarding_completed' => true,
                 ]);
                 delete_transient('imgpro_cdn_pending_payment');
-                // Only show "activated" message when CDN is actually enabled
                 wp_safe_redirect(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&activated=1'));
                 exit;
             }
@@ -163,7 +170,7 @@ class ImgPro_CDN_Admin {
             exit;
         }
 
-        // If recovery fails, set a transient to show a notice and try again later
+        // If sync fails, set a transient to show a notice and try again later
         set_transient('imgpro_cdn_payment_pending_recovery', true, 60);
     }
 
@@ -358,7 +365,17 @@ class ImgPro_CDN_Admin {
                     'genericError' => __('Something went wrong. Please try again.', 'bandwidth-saver'),
                     'settingsError' => __('Could not save settings. Please try again.', 'bandwidth-saver'),
                     // Confirm dialogs
-                    'recoverConfirm' => __('This will look up your existing subscription. Continue?', 'bandwidth-saver'),
+                    'recoverConfirm' => __('This will send a verification code to your registered email. Continue?', 'bandwidth-saver'),
+                    // Recovery verification
+                    'accountFound' => __('Welcome Back', 'bandwidth-saver'),
+                    'accountFoundDesc' => __('We found an existing account for this site. To restore access, enter the verification code sent to:', 'bandwidth-saver'),
+                    'codeExpires' => __('The code expires in 15 minutes.', 'bandwidth-saver'),
+                    'verify' => __('Verify', 'bandwidth-saver'),
+                    'verifying' => __('Verifying...', 'bandwidth-saver'),
+                    'cancel' => __('Cancel', 'bandwidth-saver'),
+                    'invalidCode' => __('Please enter a valid 6-digit code.', 'bandwidth-saver'),
+                    'verificationFailed' => __('Verification failed. Please check your code and try again.', 'bandwidth-saver'),
+                    'accountRecovered' => __('Account recovered!', 'bandwidth-saver'),
                     // Success messages
                     'subscriptionActivated' => __('Subscription activated. Your images now load from the global edge network.', 'bandwidth-saver'),
                     'accountCreated' => __('Account created! Let\'s activate your CDN.', 'bandwidth-saver'),

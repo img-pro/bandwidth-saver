@@ -260,12 +260,6 @@ class ImgPro_CDN_Onboarding {
                 </p>
             </form>
 
-            <div class="imgpro-onboarding-recovery">
-                <span><?php esc_html_e('Already have an account?', 'bandwidth-saver'); ?></span>
-                <button type="button" class="imgpro-btn-link" id="imgpro-onboarding-recover">
-                    <?php esc_html_e('Recover it', 'bandwidth-saver'); ?>
-                </button>
-            </div>
         </div>
         <?php
     }

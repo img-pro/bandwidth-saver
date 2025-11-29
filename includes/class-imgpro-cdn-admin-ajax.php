@@ -58,6 +58,8 @@ class ImgPro_CDN_Admin_Ajax {
         add_action('wp_ajax_imgpro_cdn_checkout', [$this, 'ajax_checkout']);
         add_action('wp_ajax_imgpro_cdn_manage_subscription', [$this, 'ajax_manage_subscription']);
         add_action('wp_ajax_imgpro_cdn_recover_account', [$this, 'ajax_recover_account']);
+        add_action('wp_ajax_imgpro_cdn_request_recovery', [$this, 'ajax_request_recovery']);
+        add_action('wp_ajax_imgpro_cdn_verify_recovery', [$this, 'ajax_verify_recovery']);
         add_action('wp_ajax_imgpro_cdn_add_custom_domain', [$this, 'ajax_add_custom_domain']);
         add_action('wp_ajax_imgpro_cdn_check_custom_domain', [$this, 'ajax_check_custom_domain']);
         add_action('wp_ajax_imgpro_cdn_remove_custom_domain', [$this, 'ajax_remove_custom_domain']);
@@ -181,23 +183,26 @@ class ImgPro_CDN_Admin_Ajax {
         if (is_wp_error($result)) {
             $error_code = $result->get_error_code();
 
-            // Handle existing account - try to recover
+            // Handle existing account - trigger secure recovery flow
             if ('conflict' === $error_code) {
-                $recovery = $this->api->find_site($site_url);
-                if (!is_wp_error($recovery)) {
-                    $this->save_site_to_settings($recovery, $email, $marketing_opt_in);
-                    wp_send_json_success([
-                        'message' => __('Found your existing account. It has been activated.', 'bandwidth-saver'),
-                        'recovered' => true,
-                        'next_step' => 3
+                // Automatically request recovery code
+                $recovery_result = $this->api->request_recovery($site_url);
+
+                if (!is_wp_error($recovery_result)) {
+                    // Recovery email sent - tell JS to show verification modal
+                    wp_send_json_error([
+                        'message'       => __('We found an existing account for this site.', 'bandwidth-saver'),
+                        'show_recovery' => true,
+                        'email_hint'    => $recovery_result['email_hint'] ?? null,
+                        'code'          => 'account_exists',
                     ]);
                     return;
                 }
 
+                // Recovery request failed
                 wp_send_json_error([
-                    'message' => __('This email is already registered. Try recovering your account.', 'bandwidth-saver'),
-                    'existing' => true,
-                    'code' => 'account_exists'
+                    'message' => __('An account exists but recovery failed. Please try again.', 'bandwidth-saver'),
+                    'code'    => 'recovery_failed',
                 ]);
                 return;
             }
@@ -461,16 +466,25 @@ class ImgPro_CDN_Admin_Ajax {
             if (is_wp_error($site)) {
                 $error_code = $site->get_error_code();
 
-                // Account already exists - try to recover it
+                // Account already exists - trigger secure recovery flow
                 if ('conflict' === $error_code) {
-                    $site = $this->api->find_site($site_url);
-                    if (is_wp_error($site)) {
+                    $recovery_result = $this->api->request_recovery($site_url);
+
+                    if (!is_wp_error($recovery_result)) {
                         wp_send_json_error([
-                            'message' => __('Account exists but could not be recovered. Please try again.', 'bandwidth-saver'),
-                            'code' => 'recovery_failed'
+                            'message'       => __('We found an existing account for this site.', 'bandwidth-saver'),
+                            'show_recovery' => true,
+                            'email_hint'    => $recovery_result['email_hint'] ?? null,
+                            'code'          => 'account_exists',
                         ]);
                         return;
                     }
+
+                    wp_send_json_error([
+                        'message' => __('An account exists but recovery failed. Please try again.', 'bandwidth-saver'),
+                        'code'    => 'recovery_failed',
+                    ]);
+                    return;
                 } else {
                     wp_send_json_error([
                         'message' => __('Could not create account. Please try again.', 'bandwidth-saver'),
@@ -548,9 +562,10 @@ class ImgPro_CDN_Admin_Ajax {
     }
 
     /**
-     * AJAX handler for account recovery
+     * AJAX handler for account recovery (legacy - redirects to new flow)
      *
      * @since 0.1.2
+     * @deprecated 0.1.9 Use ajax_request_recovery() and ajax_verify_recovery() instead.
      * @return void
      */
     public function ajax_recover_account() {
@@ -562,12 +577,78 @@ class ImgPro_CDN_Admin_Ajax {
             wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
         }
 
+        // Redirect to new recovery flow - request verification code
+        $this->ajax_request_recovery();
+    }
+
+    /**
+     * AJAX handler for requesting account recovery (step 1)
+     *
+     * Sends a verification code to the registered email.
+     *
+     * @since 0.1.9
+     * @return void
+     */
+    public function ajax_request_recovery() {
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout') && !wp_verify_nonce($nonce, 'imgpro_cdn_onboarding')) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
+        }
+
         $site_url = get_site_url();
-        $site = $this->api->find_site($site_url);
+        $result = $this->api->request_recovery($site_url);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error([
+                'message' => $result->get_error_message(),
+                'code'    => $result->get_error_code(),
+            ]);
+            return;
+        }
+
+        wp_send_json_success([
+            'message'    => $result['message'] ?? __('If an account exists, a verification code has been sent to the registered email.', 'bandwidth-saver'),
+            'email_hint' => $result['email_hint'] ?? null,
+            'step'       => 'verify',
+        ]);
+    }
+
+    /**
+     * AJAX handler for verifying recovery code (step 2)
+     *
+     * Verifies the code and restores account access.
+     *
+     * @since 0.1.9
+     * @return void
+     */
+    public function ajax_verify_recovery() {
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout') && !wp_verify_nonce($nonce, 'imgpro_cdn_onboarding')) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
+        }
+
+        $code = isset($_POST['code']) ? sanitize_text_field(wp_unslash($_POST['code'])) : '';
+        if (empty($code) || strlen($code) !== 6) {
+            wp_send_json_error([
+                'message' => __('Please enter a valid 6-digit verification code.', 'bandwidth-saver'),
+                'code'    => 'invalid_code',
+            ]);
+            return;
+        }
+
+        $site_url = get_site_url();
+        $site = $this->api->verify_recovery($site_url, $code);
 
         if (is_wp_error($site)) {
             wp_send_json_error([
-                'message' => __('No subscription found for this site. If you subscribed recently, please wait a moment and try again.', 'bandwidth-saver')
+                'message' => $site->get_error_message(),
+                'code'    => $site->get_error_code(),
             ]);
             return;
         }
@@ -577,16 +658,44 @@ class ImgPro_CDN_Admin_Ajax {
         $this->save_site_to_settings($site, $email);
 
         // Enable CDN if valid subscription
-        $tier_id = $this->api->get_tier_id($site);
-        if (in_array($tier_id, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
+        $current_tier_id = $this->api->get_tier_id($site);
+        if (in_array($current_tier_id, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
             $this->settings->update([
                 'enabled' => true,
                 'onboarding_completed' => true,
             ]);
         }
 
+        // Check if user wanted to upgrade to a specific tier
+        $pending_tier_id = isset($_POST['pending_tier_id']) ? sanitize_text_field(wp_unslash($_POST['pending_tier_id'])) : '';
+
+        if (!empty($pending_tier_id)) {
+            // Tier priority order (higher = better)
+            $tier_priority = [
+                ImgPro_CDN_Settings::TIER_FREE     => 1,
+                ImgPro_CDN_Settings::TIER_LITE     => 2,
+                ImgPro_CDN_Settings::TIER_PRO      => 3,
+                ImgPro_CDN_Settings::TIER_BUSINESS => 4,
+            ];
+
+            $current_priority = $tier_priority[$current_tier_id] ?? 0;
+            $pending_priority = $tier_priority[$pending_tier_id] ?? 0;
+
+            // If upgrading to a higher tier, return flag so JS can show confirmation modal
+            if ($pending_priority > $current_priority) {
+                wp_send_json_success([
+                    'message'         => __('Account recovered! Please confirm your upgrade.', 'bandwidth-saver'),
+                    'recovered'       => true,
+                    'show_upgrade'    => true,
+                    'pending_tier_id' => $pending_tier_id,
+                ]);
+                return;
+            }
+        }
+
         wp_send_json_success([
-            'message' => __('Account recovered. Your subscription is now active.', 'bandwidth-saver')
+            'message'   => __('Account recovered successfully! Your subscription is now active.', 'bandwidth-saver'),
+            'recovered' => true,
         ]);
     }
 

@@ -116,6 +116,7 @@ class ImgPro_CDN_API {
     /**
      * Find site by URL (for account recovery)
      *
+     * @deprecated Use request_recovery() and verify_recovery() instead.
      * @param string $site_url WordPress site URL.
      * @return array|WP_Error Site data array or error.
      */
@@ -124,8 +125,53 @@ class ImgPro_CDN_API {
             return new WP_Error('missing_site_url', __('Site URL is required', 'bandwidth-saver'));
         }
 
-        $response = $this->request('GET', '/api/sites', [
+        // This endpoint is now disabled for security - use recovery flow instead
+        return new WP_Error(
+            'deprecated_endpoint',
+            __('Direct site lookup is no longer available. Please use email verification for account recovery.', 'bandwidth-saver')
+        );
+    }
+
+    /**
+     * Request account recovery (step 1)
+     *
+     * Sends a verification code to the registered email address.
+     *
+     * @since 0.1.9
+     * @param string $site_url WordPress site URL.
+     * @return array|WP_Error Response with email_hint or error.
+     */
+    public function request_recovery($site_url) {
+        if (empty($site_url)) {
+            return new WP_Error('missing_site_url', __('Site URL is required', 'bandwidth-saver'));
+        }
+
+        return $this->request('POST', '/api/recovery/request', [
             'site_url' => $site_url,
+        ]);
+    }
+
+    /**
+     * Verify recovery code (step 2)
+     *
+     * Verifies the code sent to email and returns site data if valid.
+     *
+     * @since 0.1.9
+     * @param string $site_url WordPress site URL.
+     * @param string $code     6-digit verification code from email.
+     * @return array|WP_Error Site data array or error.
+     */
+    public function verify_recovery($site_url, $code) {
+        if (empty($site_url)) {
+            return new WP_Error('missing_site_url', __('Site URL is required', 'bandwidth-saver'));
+        }
+        if (empty($code)) {
+            return new WP_Error('missing_code', __('Verification code is required', 'bandwidth-saver'));
+        }
+
+        $response = $this->request('POST', '/api/recovery/verify', [
+            'site_url' => $site_url,
+            'code'     => $code,
         ]);
 
         if (is_wp_error($response)) {

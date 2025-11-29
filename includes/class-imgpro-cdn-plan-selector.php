@@ -234,7 +234,7 @@ class ImgPro_CDN_Plan_Selector {
                         <?php esc_html_e('Downgrade', 'bandwidth-saver'); ?>
                     </button>
                 <?php else: ?>
-                    <button type="button" class="imgpro-btn <?php echo $is_highlighted ? 'imgpro-btn-primary' : 'imgpro-btn-secondary'; ?> imgpro-plan-card__select" data-tier="<?php echo esc_attr($tier['id']); ?>">
+                    <button type="button" class="imgpro-btn <?php echo esc_attr( $is_highlighted ? 'imgpro-btn-primary' : 'imgpro-btn-secondary' ); ?> imgpro-plan-card__select" data-tier="<?php echo esc_attr($tier['id']); ?>">
                         <?php esc_html_e('Select', 'bandwidth-saver'); ?>
                     </button>
                 <?php endif; ?>

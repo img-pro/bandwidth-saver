@@ -373,7 +373,7 @@ class ImgPro_CDN_Onboarding {
                 /* translators: %d: step number */
                 $step_label = sprintf(esc_attr__('Step %d', 'bandwidth-saver'), $i);
                 ?>
-                <span class="imgpro-progress-dot <?php echo $i < $current_step ? 'completed' : ''; ?> <?php echo $i === $current_step ? 'active' : ''; ?>" aria-label="<?php echo esc_attr($step_label); ?>"></span>
+                <span class="imgpro-progress-dot <?php echo esc_attr( $i < $current_step ? 'completed' : '' ); ?> <?php echo esc_attr( $i === $current_step ? 'active' : '' ); ?>" aria-label="<?php echo esc_attr($step_label); ?>"></span>
             <?php endfor; ?>
         </div>
         <?php

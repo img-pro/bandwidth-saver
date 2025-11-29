@@ -655,7 +655,7 @@ class ImgPro_CDN_Admin {
             </div>
             <div class="imgpro-header-meta">
                 <?php if ($is_mode_configured): ?>
-                    <span class="imgpro-status-badge <?php echo $is_active ? 'imgpro-status-active' : 'imgpro-status-inactive'; ?>" id="imgpro-status-badge" data-mode="<?php echo esc_attr($mode); ?>">
+                    <span class="imgpro-status-badge <?php echo esc_attr( $is_active ? 'imgpro-status-active' : 'imgpro-status-inactive' ); ?>" id="imgpro-status-badge" data-mode="<?php echo esc_attr($mode); ?>">
                         <span class="imgpro-status-dot"></span>
                         <span class="imgpro-status-text"><?php echo $is_active ? esc_html__('CDN Active', 'bandwidth-saver') : esc_html__('CDN Inactive', 'bandwidth-saver'); ?></span>
                     </span>
@@ -685,7 +685,7 @@ class ImgPro_CDN_Admin {
             ? 'imgpro_cdn_settings[cloud_enabled]'
             : 'imgpro_cdn_settings[cloudflare_enabled]';
         ?>
-        <div class="imgpro-toggle-card <?php echo $is_enabled ? 'is-active' : 'is-inactive'; ?>" id="imgpro-toggle-card" data-mode="<?php echo esc_attr($mode); ?>">
+        <div class="imgpro-toggle-card <?php echo esc_attr( $is_enabled ? 'is-active' : 'is-inactive' ); ?>" id="imgpro-toggle-card" data-mode="<?php echo esc_attr($mode); ?>">
             <form method="post" action="options.php" class="imgpro-toggle-form">
                 <?php settings_fields('imgpro_cdn_settings_group'); ?>
                 <input type="hidden" name="imgpro_cdn_settings[setup_mode]" value="<?php echo esc_attr($mode); ?>">
@@ -717,7 +717,7 @@ class ImgPro_CDN_Admin {
                             value="1"
                             <?php checked($is_enabled, true); ?>
                             role="switch"
-                            aria-checked="<?php echo $is_enabled ? 'true' : 'false'; ?>"
+                            aria-checked="<?php echo esc_attr( $is_enabled ? 'true' : 'false' ); ?>"
                         >
                         <span class="imgpro-toggle-slider"></span>
                         <span class="screen-reader-text"><?php esc_html_e('Toggle Image CDN', 'bandwidth-saver'); ?></span>
@@ -772,7 +772,7 @@ class ImgPro_CDN_Admin {
                     <span class="imgpro-stat-limit">/ <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($storage_limit, 0)); ?></span>
                 </div>
                 <div class="imgpro-progress-bar">
-                    <div class="imgpro-progress-fill <?php echo $storage_percentage >= 90 ? 'is-critical' : ($storage_percentage >= 70 ? 'is-warning' : ''); ?>" style="width: <?php echo esc_attr(min(100, $storage_percentage)); ?>%"></div>
+                    <div class="imgpro-progress-fill <?php echo esc_attr( $storage_percentage >= 90 ? 'is-critical' : ( $storage_percentage >= 70 ? 'is-warning' : '' ) ); ?>" style="width: <?php echo esc_attr(min(100, $storage_percentage)); ?>%"></div>
                 </div>
             </div>
 
@@ -785,7 +785,7 @@ class ImgPro_CDN_Admin {
                     <span class="imgpro-stat-limit">/ <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0)); ?></span>
                 </div>
                 <div class="imgpro-progress-bar">
-                    <div class="imgpro-progress-fill <?php echo $bandwidth_percentage >= 90 ? 'is-critical' : ($bandwidth_percentage >= 70 ? 'is-warning' : ''); ?>" style="width: <?php echo esc_attr(min(100, $bandwidth_percentage)); ?>%"></div>
+                    <div class="imgpro-progress-fill <?php echo esc_attr( $bandwidth_percentage >= 90 ? 'is-critical' : ( $bandwidth_percentage >= 70 ? 'is-warning' : '' ) ); ?>" style="width: <?php echo esc_attr(min(100, $bandwidth_percentage)); ?>%"></div>
                 </div>
             </div>
 

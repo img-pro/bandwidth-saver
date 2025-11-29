@@ -141,7 +141,7 @@ class ImgPro_CDN_Admin_Ajax {
 
         if (false !== $result) {
             $message = $enabled
-                ? __('Image CDN enabled. Images now load from Cloudflare.', 'bandwidth-saver')
+                ? __('Image CDN enabled. Images now load from the global network.', 'bandwidth-saver')
                 : __('Image CDN disabled. Images now load from your server.', 'bandwidth-saver');
 
             wp_send_json_success(['message' => $message]);

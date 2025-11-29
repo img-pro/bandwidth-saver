@@ -174,9 +174,11 @@ Yes. The infrastructure is built on Cloudflare's global network. Business plan s
 
 == Screenshots ==
 
-1. One-click CDN enablement
-2. Clear status and usage indicators
-3. Works with virtually all themes and page builders
+1. Get started in under a minute
+2. Your images are now loading from the edge
+3. Upgrade when you need more
+4. Use your own domain (Pro+)
+5. Or self-host on your Cloudflare account
 
 == Privacy ==
 

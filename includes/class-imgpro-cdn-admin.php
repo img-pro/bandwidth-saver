@@ -144,15 +144,22 @@ class ImgPro_CDN_Admin {
 
             // Enable if subscription is valid
             $tier_id = $this->api->get_tier_id($site);
-            if (in_array($tier_id, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
+            $valid_tiers = [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE];
+
+            if (in_array($tier_id, $valid_tiers, true)) {
                 $this->settings->update([
                     'enabled' => true,
                     'onboarding_completed' => true,
                 ]);
+                delete_transient('imgpro_cdn_pending_payment');
+                // Only show "activated" message when CDN is actually enabled
+                wp_safe_redirect(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&activated=1'));
+                exit;
             }
 
+            // Site found but tier not ready yet (webhook may be pending)
             delete_transient('imgpro_cdn_pending_payment');
-            wp_safe_redirect(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&activated=1'));
+            wp_safe_redirect(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&subscription_pending=1'));
             exit;
         }
 
@@ -330,13 +337,13 @@ class ImgPro_CDN_Admin {
                     'inactiveLabel' => __('CDN Inactive', 'bandwidth-saver'),
                     'activeMessage' => sprintf(
                         /* translators: 1: opening span tag, 2: closing span tag, 3: opening span tag, 4: closing span tag */
-                        __('%1$sImages are loading from Cloudflare.%2$s %3$sYour server handles less traffic.%4$s', 'bandwidth-saver'),
+                        __('%1$sImages are loading from the global network.%2$s %3$sYour server handles less traffic.%4$s', 'bandwidth-saver'),
                         '<span class="imgpro-cdn-nowrap imgpro-cdn-hide-mobile">',
                         '</span>',
                         '<span class="imgpro-cdn-nowrap">',
                         '</span>'
                     ),
-                    'disabledMessage' => __('Enable to serve images from Cloudflare instead of your server', 'bandwidth-saver'),
+                    'disabledMessage' => __('Enable to serve images from the global edge network', 'bandwidth-saver'),
                     // Button states
                     'creatingCheckout' => __('Creating checkout...', 'bandwidth-saver'),
                     'creatingAccount' => __('Creating account...', 'bandwidth-saver'),
@@ -353,14 +360,14 @@ class ImgPro_CDN_Admin {
                     // Confirm dialogs
                     'recoverConfirm' => __('This will look up your existing subscription. Continue?', 'bandwidth-saver'),
                     // Success messages
-                    'subscriptionActivated' => __('Subscription activated. Images now load from Cloudflare.', 'bandwidth-saver'),
+                    'subscriptionActivated' => __('Subscription activated. Your images now load from the global edge network.', 'bandwidth-saver'),
                     'accountCreated' => __('Account created! Let\'s activate your CDN.', 'bandwidth-saver'),
                     'checkoutCancelled' => __('Checkout cancelled. You can try again anytime.', 'bandwidth-saver'),
                     // Toggle UI text
                     'cdnActiveHeading' => __('Image CDN is Active', 'bandwidth-saver'),
                     'cdnInactiveHeading' => __('Image CDN is Inactive', 'bandwidth-saver'),
-                    'cdnActiveDesc' => __('Images are being delivered from Cloudflare edge locations worldwide.', 'bandwidth-saver'),
-                    'cdnInactiveDesc' => __('Enable to serve images from Cloudflare instead of your server.', 'bandwidth-saver'),
+                    'cdnActiveDesc' => __('Images are being delivered from the global edge network.', 'bandwidth-saver'),
+                    'cdnInactiveDesc' => __('Enable to serve images from the global edge network.', 'bandwidth-saver'),
                     // Custom domain
                     'addingDomain' => __('Adding domain...', 'bandwidth-saver'),
                     'checkingStatus' => __('Checking...', 'bandwidth-saver'),
@@ -471,7 +478,19 @@ class ImgPro_CDN_Admin {
             ?>
             <div class="imgpro-notice imgpro-notice-success">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M6 10l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <p><strong><?php esc_html_e('Subscription activated. Images now load from Cloudflare.', 'bandwidth-saver'); ?></strong></p>
+                <p><strong><?php esc_html_e('Subscription activated. Your images now load from the global edge network.', 'bandwidth-saver'); ?></strong></p>
+            </div>
+            <?php
+        }
+
+        if (filter_input(INPUT_GET, 'subscription_pending', FILTER_VALIDATE_BOOLEAN)) {
+            ?>
+            <div class="imgpro-notice imgpro-notice-info">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M10 6v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <div>
+                    <strong><?php esc_html_e('Subscription received! Activating your account...', 'bandwidth-saver'); ?></strong>
+                    <p><?php esc_html_e('Enable the CDN toggle below to start serving images faster.', 'bandwidth-saver'); ?></p>
+                </div>
             </div>
             <?php
         }
@@ -611,7 +630,7 @@ class ImgPro_CDN_Admin {
             <div class="imgpro-header-brand">
                 <div>
                     <h1><?php esc_html_e('Bandwidth Saver', 'bandwidth-saver'); ?></h1>
-                    <p class="imgpro-tagline"><?php esc_html_e('Image CDN powered by Cloudflare', 'bandwidth-saver'); ?></p>
+                    <p class="imgpro-tagline"><?php esc_html_e('Image CDN for WordPress', 'bandwidth-saver'); ?></p>
                 </div>
             </div>
             <div class="imgpro-header-meta">
@@ -664,8 +683,8 @@ class ImgPro_CDN_Admin {
                             </h2>
                             <p id="imgpro-toggle-description">
                                 <?php echo $is_enabled
-                                    ? esc_html__('Images are being delivered from Cloudflare edge locations worldwide.', 'bandwidth-saver')
-                                    : esc_html__('Enable to serve images from Cloudflare instead of your server.', 'bandwidth-saver'); ?>
+                                    ? esc_html__('Images are being delivered from the global edge network.', 'bandwidth-saver')
+                                    : esc_html__('Enable to serve images from the global edge network.', 'bandwidth-saver'); ?>
                             </p>
                         </div>
                     </div>
@@ -902,7 +921,7 @@ class ImgPro_CDN_Admin {
         <div class="imgpro-cta-card">
             <div class="imgpro-cta-content">
                 <h2><?php esc_html_e('Skip the Setup. We Handle Everything.', 'bandwidth-saver'); ?></h2>
-                <p><?php esc_html_e('Images load from Cloudflare with zero configuration. Takes less than a minute.', 'bandwidth-saver'); ?></p>
+                <p><?php esc_html_e('Images load from a global edge network with zero configuration. Takes less than a minute.', 'bandwidth-saver'); ?></p>
 
                 <ul class="imgpro-feature-list">
                     <li>

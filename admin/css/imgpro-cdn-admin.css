@@ -667,8 +667,9 @@
     width: 100%;
     max-width: 520px;
     background: var(--imgpro-bg);
+    border: 1px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-xl);
-    box-shadow: var(--imgpro-shadow-lg), 0 0 40px rgba(0, 51, 255, 0.08);
+    box-shadow: var(--imgpro-card-shadow);
     overflow: hidden;
 }
 
@@ -677,8 +678,22 @@
 }
 
 @media (max-width: 600px) {
+    .imgpro-onboarding-wrapper {
+        padding: var(--imgpro-space-4) 0;
+        min-height: auto;
+    }
+
+    .imgpro-onboarding {
+        max-width: none;
+    }
+
     .imgpro-onboarding-content {
-        padding: var(--imgpro-space-8) var(--imgpro-space-5);
+        padding: var(--imgpro-space-5) var(--imgpro-space-4);
+    }
+
+    .imgpro-onboarding h1,
+    .imgpro-onboarding-description {
+        padding: 0 var(--imgpro-space-2);
     }
 }
 
@@ -763,17 +778,6 @@
     font-size: var(--imgpro-text-sm);
     color: var(--imgpro-text-muted);
     text-align: center;
-}
-
-.imgpro-link-upgrade {
-    color: var(--imgpro-primary-600);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.imgpro-link-upgrade:hover {
-    color: var(--imgpro-primary-700);
-    text-decoration: underline;
 }
 
 /* Terms */
@@ -979,10 +983,6 @@
    Dashboard - Main Toggle Card
    ========================================================================== */
 
-.imgpro-main-toggle {
-    margin-bottom: var(--imgpro-space-6);
-}
-
 .imgpro-toggle-card {
     display: flex;
     align-items: center;
@@ -1022,39 +1022,6 @@
     flex: 1;
 }
 
-.imgpro-toggle-status {
-    display: flex;
-    align-items: center;
-    gap: var(--imgpro-space-3);
-    margin-bottom: var(--imgpro-space-2);
-}
-
-.imgpro-toggle-status-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-}
-
-.is-active .imgpro-toggle-status-icon {
-    background: var(--imgpro-success-100);
-    color: var(--imgpro-success-600);
-}
-
-.is-inactive .imgpro-toggle-status-icon {
-    background: var(--imgpro-warning-100);
-    color: var(--imgpro-warning-600);
-}
-
-.imgpro-toggle-status h3 {
-    margin: 0;
-    font-size: var(--imgpro-text-lg);
-    font-weight: 600;
-    color: var(--imgpro-text);
-}
-
 .imgpro-toggle-description {
     margin: 0;
     font-size: var(--imgpro-text-sm);
@@ -1063,10 +1030,11 @@
 
 /* ==========================================================================
    Dashboard - Stats Grid
+   TODO: Re-enable for next release
    ========================================================================== */
 
 .imgpro-stats-grid {
-    display: grid;
+    display: none; /* Hidden for now - re-enable for next release */
     grid-template-columns: repeat(3, 1fr);
     gap: var(--imgpro-space-4);
     margin-bottom: var(--imgpro-space-6);
@@ -1242,6 +1210,12 @@
     color: var(--imgpro-error-600);
 }
 
+.imgpro-notice-info {
+    background: var(--imgpro-primary-50);
+    border: 1px solid var(--imgpro-primary-200);
+    color: var(--imgpro-primary-700);
+}
+
 .imgpro-notice p {
     margin: 0;
     font-size: var(--imgpro-text-sm);
@@ -1311,7 +1285,6 @@
    ========================================================================== */
 
 @media (max-width: 782px) {
-    .imgpro-cdn-header,
     .imgpro-header {
         flex-direction: column;
         align-items: flex-start;
@@ -1520,25 +1493,6 @@
     letter-spacing: 0.05em;
 }
 
-.imgpro-stat-tier {
-    padding: var(--imgpro-space-1) var(--imgpro-space-2);
-    border-radius: var(--imgpro-radius-sm);
-    font-size: var(--imgpro-text-xs);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.imgpro-stat-tier.is-free {
-    background: var(--imgpro-gray-100);
-    color: var(--imgpro-gray-600);
-}
-
-.imgpro-stat-tier.is-pro {
-    background: linear-gradient(135deg, var(--imgpro-primary-500) 0%, var(--imgpro-primary-600) 100%);
-    color: white;
-}
-
 .imgpro-stat-value {
     font-size: var(--imgpro-text-2xl);
     font-weight: 700;
@@ -1611,12 +1565,10 @@
 
 .imgpro-cta-card {
     padding: var(--imgpro-space-10) var(--imgpro-space-8);
-    background: linear-gradient(135deg, var(--imgpro-primary-50) 0%, var(--imgpro-bg) 100%);
-    border: 1px solid var(--imgpro-primary-100);
+    background: var(--imgpro-bg);
+    border: 1px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-lg);
-    box-shadow:
-        var(--imgpro-card-shadow),
-        0 0 0 1px rgba(0, 51, 255, 0.03);
+    box-shadow: var(--imgpro-card-shadow);
     text-align: center;
     margin-bottom: var(--imgpro-space-6);
 }
@@ -1870,16 +1822,6 @@
     transform: rotate(90deg);
 }
 
-.imgpro-details-badge {
-    margin-left: auto;
-    padding: var(--imgpro-space-1) var(--imgpro-space-2);
-    background: var(--imgpro-success-100);
-    border-radius: var(--imgpro-radius-sm);
-    font-size: var(--imgpro-text-xs);
-    font-weight: 500;
-    color: var(--imgpro-success-700);
-}
-
 .imgpro-details-content {
     padding: var(--imgpro-space-5);
     background: var(--imgpro-bg);
@@ -1900,65 +1842,6 @@
     margin: 0 0 var(--imgpro-space-2);
     font-size: var(--imgpro-text-sm);
     font-weight: 600;
-    color: var(--imgpro-text);
-}
-
-.imgpro-section-description {
-    margin: 0 0 var(--imgpro-space-4);
-    font-size: var(--imgpro-text-sm);
-    color: var(--imgpro-text-secondary);
-}
-
-.imgpro-section-description code {
-    padding: var(--imgpro-space-1) var(--imgpro-space-2);
-    background: var(--imgpro-bg-muted);
-    border-radius: var(--imgpro-radius-sm);
-    font-family: var(--imgpro-font-mono);
-    font-size: var(--imgpro-text-xs);
-}
-
-.imgpro-inline-form {
-    display: flex;
-    gap: var(--imgpro-space-3);
-}
-
-.imgpro-inline-form .imgpro-input {
-    flex: 1;
-    padding: var(--imgpro-space-3) var(--imgpro-space-4);
-    font-family: var(--imgpro-font-sans);
-    font-size: var(--imgpro-text-sm);
-    color: var(--imgpro-text);
-    background: var(--imgpro-bg);
-    border: 1px solid var(--imgpro-border);
-    border-radius: var(--imgpro-radius);
-}
-
-.imgpro-inline-form .imgpro-input:focus {
-    outline: none;
-    border-color: var(--imgpro-primary-500);
-    box-shadow: 0 0 0 3px var(--imgpro-primary-100);
-}
-
-.imgpro-divider {
-    border: none;
-    border-top: 1px solid var(--imgpro-border);
-    margin: var(--imgpro-space-6) 0;
-}
-
-.imgpro-domain-status {
-    display: flex;
-    align-items: center;
-    gap: var(--imgpro-space-3);
-    flex-wrap: wrap;
-}
-
-.imgpro-domain-value {
-    padding: var(--imgpro-space-2) var(--imgpro-space-3);
-    background: var(--imgpro-bg-subtle);
-    border: 1px solid var(--imgpro-border);
-    border-radius: var(--imgpro-radius);
-    font-family: var(--imgpro-font-mono);
-    font-size: var(--imgpro-text-sm);
     color: var(--imgpro-text);
 }
 
@@ -2189,8 +2072,14 @@
 }
 
 /* ==========================================================================
-   Custom Domain - Pending Card (outside Advanced Settings)
+   Custom Domain Components
+
+   Two card types:
+   - Pending Card: Status display with DNS verification
+   - Configuration Card: Form for domain input
    ========================================================================== */
+
+/* Pending Status Card */
 
 .imgpro-domain-pending-card {
     background: var(--imgpro-bg);
@@ -2326,9 +2215,7 @@
     }
 }
 
-/* ==========================================================================
-   Custom Domain - Configuration Card
-   ========================================================================== */
+/* Configuration Form Card */
 
 .imgpro-custom-domain-card {
     padding: var(--imgpro-space-5);
@@ -2347,31 +2234,6 @@
     font-size: var(--imgpro-text-sm);
     font-weight: 600;
     color: var(--imgpro-text);
-}
-
-.imgpro-custom-domain-title {
-    display: flex;
-    align-items: center;
-    gap: var(--imgpro-space-2);
-    margin-bottom: var(--imgpro-space-1);
-}
-
-.imgpro-custom-domain-title h4 {
-    margin: 0;
-    font-size: var(--imgpro-text-sm);
-    font-weight: 600;
-    color: var(--imgpro-text);
-}
-
-.imgpro-pro-badge {
-    padding: var(--imgpro-space-1) var(--imgpro-space-2);
-    background: linear-gradient(135deg, var(--imgpro-primary-500) 0%, var(--imgpro-primary-600) 100%);
-    border-radius: var(--imgpro-radius-sm);
-    font-size: var(--imgpro-text-xs);
-    font-weight: 600;
-    color: white;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 
 .imgpro-custom-domain-header p {

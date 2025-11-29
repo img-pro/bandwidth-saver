@@ -911,19 +911,19 @@ class ImgPro_CDN_Admin {
                 <ul class="imgpro-feature-list">
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span><strong><?php esc_html_e('10 GB storage + 50 GB bandwidth free', 'bandwidth-saver'); ?></strong></span>
+                        <span><strong><?php esc_html_e('10 GB storage', 'bandwidth-saver'); ?></strong>, <?php esc_html_e('free forever', 'bandwidth-saver'); ?></span>
                     </li>
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span>No Cloudflare account needed</span>
+                        <span><strong><?php esc_html_e('50 GB/mo bandwidth', 'bandwidth-saver'); ?></strong>, <?php esc_html_e('soft limit', 'bandwidth-saver'); ?></span>
                     </li>
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span>No DNS changes required</span>
+                        <span><?php esc_html_e('300+ edge locations worldwide', 'bandwidth-saver'); ?></span>
                     </li>
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span>300+ edge locations worldwide</span>
+                        <span><?php esc_html_e('Automatic fallback if CDN is ever down', 'bandwidth-saver'); ?></span>
                     </li>
                 </ul>
 

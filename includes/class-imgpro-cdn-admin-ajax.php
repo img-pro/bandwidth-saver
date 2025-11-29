@@ -245,7 +245,49 @@ class ImgPro_CDN_Admin_Ajax {
     }
 
     /**
+     * Extract common site data for settings update
+     *
+     * Consolidates site data extraction used by both save_site_to_settings()
+     * and update_settings_from_site() to ensure consistent handling.
+     *
+     * @since 0.1.9
+     * @param array $site Site data from API.
+     * @return array Settings data to update.
+     */
+    private function extract_site_settings($site) {
+        $tier_id = $this->api->get_tier_id($site);
+        $usage = $this->api->get_usage($site);
+        $domain = $this->api->get_custom_domain($site);
+
+        $data = [
+            'cloud_tier' => $tier_id,
+            'storage_used' => $usage['storage_used'],
+            'bandwidth_used' => $usage['bandwidth_used'],
+            'images_cached' => $usage['images_cached'],
+            'stats_updated_at' => time(),
+            // Always set limits (use defaults for free tier)
+            'storage_limit' => $usage['storage_limit'] ?: ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
+            'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
+        ];
+
+        // Update custom domain if present
+        if ($domain) {
+            $data['custom_domain'] = $domain['domain'];
+            $data['custom_domain_status'] = $domain['status'];
+        }
+
+        // Disable if subscription is inactive
+        if (ImgPro_CDN_Settings::is_subscription_inactive(['cloud_tier' => $tier_id])) {
+            $data['enabled'] = false;
+        }
+
+        return $data;
+    }
+
+    /**
      * Save site data from API response to local settings
+     *
+     * Used after account creation or recovery to store all account details.
      *
      * @since 0.1.7
      * @param array  $site           Site data from API.
@@ -254,23 +296,16 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     private function save_site_to_settings($site, $email, $marketing_opt_in = false) {
-        $tier_id = $this->api->get_tier_id($site);
-        $usage = $this->api->get_usage($site);
+        $data = $this->extract_site_settings($site);
 
-        $this->settings->update([
-            'cloud_api_key' => $site['api_key'] ?? '',
-            'cloud_email' => $email,
-            'cloud_tier' => $tier_id,
-            'setup_mode' => ImgPro_CDN_Settings::MODE_CLOUD,
-            'onboarding_step' => 3,
-            'marketing_opt_in' => $marketing_opt_in,
-            'storage_used' => $usage['storage_used'],
-            'storage_limit' => $usage['storage_limit'] ?: ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
-            'bandwidth_used' => $usage['bandwidth_used'],
-            'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
-            'images_cached' => $usage['images_cached'],
-            'stats_updated_at' => time(),
-        ]);
+        // Add registration-specific fields
+        $data['cloud_api_key'] = $site['api_key'] ?? '';
+        $data['cloud_email'] = $email;
+        $data['setup_mode'] = ImgPro_CDN_Settings::MODE_CLOUD;
+        $data['onboarding_step'] = 3;
+        $data['marketing_opt_in'] = $marketing_opt_in;
+
+        $this->settings->update($data);
     }
 
     /**
@@ -314,7 +349,7 @@ class ImgPro_CDN_Admin_Ajax {
         $this->settings->update([
             'onboarding_completed' => true,
             'onboarding_step' => 4,
-            'enabled' => true,
+            'cloud_enabled' => true,
         ]);
 
         wp_send_json_success([
@@ -387,43 +422,14 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * Update local settings from site API response
      *
+     * Used for syncing stats and refreshing site data.
+     *
      * @since 0.1.7
      * @param array $site Site data from API.
      * @return void
      */
     private function update_settings_from_site($site) {
-        $tier_id = $this->api->get_tier_id($site);
-        $usage = $this->api->get_usage($site);
-        $domain = $this->api->get_custom_domain($site);
-
-        $update_data = [
-            'cloud_tier' => $tier_id,
-            'storage_used' => $usage['storage_used'],
-            'bandwidth_used' => $usage['bandwidth_used'],
-            'images_cached' => $usage['images_cached'],
-            'stats_updated_at' => time(),
-        ];
-
-        // Update storage/bandwidth limits if provided
-        if ($usage['storage_limit'] > 0) {
-            $update_data['storage_limit'] = $usage['storage_limit'];
-        }
-        if ($usage['bandwidth_limit'] > 0) {
-            $update_data['bandwidth_limit'] = $usage['bandwidth_limit'];
-        }
-
-        // Update custom domain if present
-        if ($domain) {
-            $update_data['custom_domain'] = $domain['domain'];
-            $update_data['custom_domain_status'] = $domain['status'];
-        }
-
-        // Disable if subscription is inactive
-        if (ImgPro_CDN_Settings::is_subscription_inactive(['cloud_tier' => $tier_id])) {
-            $update_data['enabled'] = false;
-        }
-
-        $this->settings->update($update_data);
+        $this->settings->update($this->extract_site_settings($site));
     }
 
     /**
@@ -661,7 +667,7 @@ class ImgPro_CDN_Admin_Ajax {
         $current_tier_id = $this->api->get_tier_id($site);
         if (in_array($current_tier_id, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
             $this->settings->update([
-                'enabled' => true,
+                'cloud_enabled' => true,
                 'onboarding_completed' => true,
             ]);
         }

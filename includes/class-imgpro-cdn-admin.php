@@ -156,7 +156,7 @@ class ImgPro_CDN_Admin {
 
             if (in_array($tier_id, $valid_tiers, true)) {
                 $this->settings->update([
-                    'enabled' => true,
+                    'cloud_enabled' => true,
                     'onboarding_completed' => true,
                 ]);
                 delete_transient('imgpro_cdn_pending_payment');
@@ -363,6 +363,7 @@ class ImgPro_CDN_Admin {
                     'recoverError' => __('Could not recover account. Please try again.', 'bandwidth-saver'),
                     'portalError' => __('Could not open subscription portal. Please try again.', 'bandwidth-saver'),
                     'genericError' => __('Something went wrong. Please try again.', 'bandwidth-saver'),
+                    'timeoutError' => __('Request timed out. Please check your connection and try again.', 'bandwidth-saver'),
                     'settingsError' => __('Could not save settings. Please try again.', 'bandwidth-saver'),
                     // Confirm dialogs
                     'recoverConfirm' => __('This will send a verification code to your registered email. Continue?', 'bandwidth-saver'),
@@ -378,6 +379,7 @@ class ImgPro_CDN_Admin {
                     'accountRecovered' => __('Account recovered!', 'bandwidth-saver'),
                     // Success messages
                     'subscriptionActivated' => __('Subscription activated. Your images now load from the global edge network.', 'bandwidth-saver'),
+                    'subscriptionUpgraded' => __('Subscription upgraded successfully!', 'bandwidth-saver'),
                     'accountCreated' => __('Account created! Let\'s activate your CDN.', 'bandwidth-saver'),
                     'checkoutCancelled' => __('Checkout cancelled. You can try again anytime.', 'bandwidth-saver'),
                     // Toggle UI text
@@ -394,6 +396,7 @@ class ImgPro_CDN_Admin {
                     'domainActive' => __('Custom domain is active.', 'bandwidth-saver'),
                     'confirmRemoveDomain' => __('Remove this custom domain? Images will be served from the default domain.', 'bandwidth-saver'),
                     'confirmRemoveCdnDomain' => __('Remove this CDN domain? The Image CDN will be disabled.', 'bandwidth-saver'),
+                    'cdnDomainRemoved' => __('CDN domain removed.', 'bandwidth-saver'),
                     // Upgrade prompts
                     'upgradeTitle' => __('Need more capacity?', 'bandwidth-saver'),
                     'upgradeSubtitle' => __('Upgrade to Pro for 120 GB storage + 2 TB bandwidth', 'bandwidth-saver'),

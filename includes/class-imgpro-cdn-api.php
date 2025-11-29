@@ -114,25 +114,6 @@ class ImgPro_CDN_API {
     }
 
     /**
-     * Find site by URL (for account recovery)
-     *
-     * @deprecated Use request_recovery() and verify_recovery() instead.
-     * @param string $site_url WordPress site URL.
-     * @return array|WP_Error Site data array or error.
-     */
-    public function find_site($site_url) {
-        if (empty($site_url)) {
-            return new WP_Error('missing_site_url', __('Site URL is required', 'bandwidth-saver'));
-        }
-
-        // This endpoint is now disabled for security - use recovery flow instead
-        return new WP_Error(
-            'deprecated_endpoint',
-            __('Direct site lookup is no longer available. Please use email verification for account recovery.', 'bandwidth-saver')
-        );
-    }
-
-    /**
      * Request account recovery (step 1)
      *
      * Sends a verification code to the registered email address.
@@ -577,7 +558,28 @@ class ImgPro_CDN_API {
         }
 
         $status_code = wp_remote_retrieve_response_code($response);
-        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $raw_body = wp_remote_retrieve_body($response);
+        $body = json_decode($raw_body, true);
+
+        // Handle JSON decode errors
+        if (null === $body && '' !== $raw_body) {
+            $json_error = json_last_error_msg();
+            do_action('imgpro_cdn_api_error', [
+                'status'   => $status_code,
+                'message'  => 'Invalid JSON response: ' . $json_error,
+                'endpoint' => $endpoint,
+            ], $endpoint);
+
+            return new WP_Error(
+                'json_error',
+                __('Invalid response from server. Please try again.', 'bandwidth-saver'),
+                [
+                    'status'    => $status_code,
+                    'raw_body'  => substr($raw_body, 0, 500), // Truncate for debugging
+                    'json_error' => $json_error,
+                ]
+            );
+        }
 
         // Handle API errors
         if ($status_code >= 400) {

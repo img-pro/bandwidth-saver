@@ -11,7 +11,21 @@
 (function($) {
     'use strict';
 
+    // ===== Constants =====
+
+    var AJAX_TIMEOUT = 30000; // 30 seconds for API-dependent operations
+
     // ===== Utility Functions =====
+
+    /**
+     * Escape HTML special characters to prevent XSS
+     */
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
     /**
      * Show admin notice
@@ -79,6 +93,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_update_onboarding_step',
                 step: step,
@@ -89,6 +104,10 @@
                     // Reload to show new step
                     window.location.reload();
                 }
+            },
+            error: function(xhr, status) {
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -107,6 +126,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_free_register',
                 email: email,
@@ -130,9 +150,10 @@
                     }
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.removeClass('is-loading').prop('disabled', false);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message || imgproCdnAdmin.i18n.genericError);
             }
         });
     }
@@ -147,6 +168,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_toggle_enabled',
                 enabled: 1,
@@ -166,10 +188,11 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.settingsError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $card.removeClass('is-loading');
                 $('#imgpro-activate-toggle').prop('checked', false);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -181,6 +204,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_complete_onboarding',
                 nonce: imgproCdnAdmin.onboardingNonce
@@ -260,9 +284,12 @@
         if ($('#imgpro-stats-grid').length && imgproCdnAdmin.tier !== 'none') {
             // Sync stats every 5 minutes while page is open
             syncStats();
-            setInterval(syncStats, 5 * 60 * 1000);
+            setInterval(syncStats, 5 * 60 * 1000); // 5 minutes
         }
     }
+
+    // Track if stats sync is in progress to prevent race conditions
+    var statsSyncInProgress = false;
 
     /**
      * Handle main toggle
@@ -286,6 +313,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_toggle_enabled',
                 enabled: isEnabled ? 1 : 0,
@@ -310,9 +338,10 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.settingsError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $toggle.prop('checked', !isEnabled);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             },
             complete: function() {
                 $card.removeClass('is-loading');
@@ -355,6 +384,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_free_register',
                 nonce: imgproCdnAdmin.checkoutNonce
@@ -375,9 +405,10 @@
                     }
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -394,6 +425,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_checkout',
                 tier_id: tier,
@@ -416,9 +448,10 @@
                     }
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -440,6 +473,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_request_recovery',
                 nonce: imgproCdnAdmin.onboardingNonce || imgproCdnAdmin.checkoutNonce
@@ -456,9 +490,10 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.recoverError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -473,7 +508,7 @@
         $('#imgpro-recovery-modal').remove();
 
         const descText = imgproCdnAdmin.i18n.accountFoundDesc || 'We found an existing account for this site. To restore access, enter the verification code sent to:';
-        const emailDisplay = emailHint || imgproCdnAdmin.i18n.yourEmail || 'your registered email';
+        const emailDisplay = escapeHtml(emailHint || imgproCdnAdmin.i18n.yourEmail || 'your registered email');
 
         const modalHtml = `
             <div id="imgpro-recovery-modal" class="imgpro-modal-overlay">
@@ -564,6 +599,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_verify_recovery',
                 code: code,
@@ -601,10 +637,11 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.verificationFailed);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(imgproCdnAdmin.i18n.verify);
                 $input.prop('disabled', false);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -619,6 +656,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_manage_subscription',
                 nonce: imgproCdnAdmin.checkoutNonce
@@ -631,20 +669,29 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.portalError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
 
     /**
      * Sync stats from API
+     * Includes debouncing to prevent race conditions from concurrent calls
      */
     function syncStats() {
+        // Prevent concurrent requests
+        if (statsSyncInProgress) {
+            return;
+        }
+        statsSyncInProgress = true;
+
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_sync_stats',
                 nonce: imgproCdnAdmin.nonce
@@ -654,17 +701,17 @@
                     // Update stats display
                     const $storageVal = $('#imgpro-stat-storage');
                     if ($storageVal.length) {
-                        $storageVal.html(response.data.formatted.storage_used +
-                            '<span class="imgpro-stat-limit">/ ' + response.data.formatted.storage_limit + '</span>');
+                        $storageVal.html(escapeHtml(response.data.formatted.storage_used) +
+                            '<span class="imgpro-stat-limit">/ ' + escapeHtml(response.data.formatted.storage_limit) + '</span>');
                     }
 
-                    $('#imgpro-stat-images').text(response.data.images_cached.toLocaleString());
-                    $('#imgpro-stat-bandwidth').text(response.data.formatted.bandwidth_saved);
+                    $('#imgpro-stat-images').text((response.data.images_cached || 0).toLocaleString());
+                    $('#imgpro-stat-bandwidth').text(response.data.formatted.bandwidth_used || '0 B');
 
                     // Update progress bar
                     const $progressFill = $('.imgpro-progress-fill');
                     if ($progressFill.length) {
-                        const percentage = Math.min(100, response.data.storage_percentage);
+                        const percentage = Math.min(100, response.data.storage_percentage || 0);
                         $progressFill.css('width', percentage + '%');
 
                         $progressFill.removeClass('is-warning is-critical');
@@ -675,6 +722,9 @@
                         }
                     }
                 }
+            },
+            complete: function() {
+                statsSyncInProgress = false;
             }
         });
     }
@@ -748,6 +798,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_add_custom_domain',
                 domain: domain,
@@ -766,11 +817,12 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.genericError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
                 $input.prop('disabled', false);
                 $section.removeClass('is-loading');
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -785,6 +837,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_check_custom_domain',
                 nonce: imgproCdnAdmin.customDomainNonce
@@ -809,9 +862,10 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.genericError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -833,6 +887,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_remove_custom_domain',
                 nonce: imgproCdnAdmin.customDomainNonce
@@ -849,10 +904,11 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.genericError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
                 $section.removeClass('is-loading');
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -873,7 +929,7 @@
      * Handle remove CDN domain (self-hosted)
      */
     function handleRemoveCdnDomain($button) {
-        if (!confirm(imgproCdnAdmin.i18n.confirmRemoveCdnDomain || 'Remove this CDN domain? The Image CDN will be disabled.')) {
+        if (!confirm(imgproCdnAdmin.i18n.confirmRemoveCdnDomain)) {
             return;
         }
 
@@ -881,17 +937,17 @@
         $section.addClass('is-loading');
         $button.prop('disabled', true);
 
-        // Use AJAX to clear the CDN URL
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_remove_cdn_domain',
                 nonce: imgproCdnAdmin.nonce
             },
             success: function(response) {
                 if (response.success) {
-                    showNotice('success', response.data.message || 'CDN domain removed.');
+                    showNotice('success', response.data.message || imgproCdnAdmin.i18n.cdnDomainRemoved);
                     setTimeout(function() {
                         window.location.reload();
                     }, 1000);
@@ -901,10 +957,11 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.genericError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $section.removeClass('is-loading');
                 $button.prop('disabled', false);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -1142,14 +1199,14 @@
 
         if (tier.limits?.storage?.formatted) {
             html += '<div class="imgpro-confirm-modal__metric">' +
-                        '<div class="imgpro-confirm-modal__metric-value">' + tier.limits.storage.formatted + '</div>' +
+                        '<div class="imgpro-confirm-modal__metric-value">' + escapeHtml(tier.limits.storage.formatted) + '</div>' +
                         '<div class="imgpro-confirm-modal__metric-label">Storage</div>' +
                     '</div>';
         }
 
         if (tier.limits?.bandwidth?.formatted) {
             html += '<div class="imgpro-confirm-modal__metric">' +
-                        '<div class="imgpro-confirm-modal__metric-value">' + tier.limits.bandwidth.formatted + '</div>' +
+                        '<div class="imgpro-confirm-modal__metric-value">' + escapeHtml(tier.limits.bandwidth.formatted) + '</div>' +
                         '<div class="imgpro-confirm-modal__metric-label">Bandwidth/mo</div>' +
                     '</div>';
         }
@@ -1276,6 +1333,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_checkout',
                 tier_id: tierId,
@@ -1289,7 +1347,7 @@
                         // Subscription upgraded directly - show success and reload
                         closePlanModal();
                         closeUpgradeConfirmModal();
-                        showNotice('success', response.data.message || 'Subscription upgraded!');
+                        showNotice('success', response.data.message || imgproCdnAdmin.i18n.subscriptionUpgraded);
                         setTimeout(function() {
                             window.location.reload();
                         }, 1500);
@@ -1308,11 +1366,12 @@
                     }
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.removeClass('is-loading').prop('disabled', false);
                 closePlanModal();
                 closeUpgradeConfirmModal();
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }

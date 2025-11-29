@@ -435,6 +435,15 @@
     outline-offset: 2px;
 }
 
+/* Toggle on active card - green track for success */
+.imgpro-toggle-card.is-active .imgpro-toggle-slider {
+    background: var(--imgpro-success-400);
+}
+
+.imgpro-toggle-card.is-active .imgpro-toggle input:checked + .imgpro-toggle-slider {
+    background: var(--imgpro-success-500);
+}
+
 /* ==========================================================================
    Forms
    ========================================================================== */
@@ -981,6 +990,11 @@
 
 /* ==========================================================================
    Dashboard - Main Toggle Card
+
+   Design Philosophy:
+   - Card stays neutral/white in all states (stage, not actor)
+   - State communicated through icon + toggle switch
+   - Subtle, confident, premium feel
    ========================================================================== */
 
 .imgpro-toggle-card {
@@ -990,27 +1004,44 @@
     gap: var(--imgpro-space-6);
     padding: var(--imgpro-space-5) var(--imgpro-space-6);
     background: var(--imgpro-bg);
-    border: 2px solid var(--imgpro-border);
+    border: 1px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-lg);
     box-shadow: var(--imgpro-card-shadow);
     margin-bottom: var(--imgpro-space-6);
     transition: all var(--imgpro-transition-base) var(--imgpro-ease-out);
 }
 
+/* Active state - accent background, inverted card */
 .imgpro-toggle-card.is-active {
-    background: var(--imgpro-success-50);
-    border-color: var(--imgpro-success-500);
+    background: #0033ff;
+    border-color: #0033ff;
     box-shadow:
-        var(--imgpro-card-shadow),
-        0 0 0 3px rgba(16, 185, 129, 0.1);
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        0 2px 4px rgba(0, 0, 0, 0.1),
+        0 4px 16px -4px rgba(0, 51, 255, 0.3);
 }
 
+.imgpro-toggle-card.is-active .imgpro-toggle-info h2,
+.imgpro-toggle-card.is-active .imgpro-toggle-info p,
+.imgpro-toggle-card.is-active .imgpro-toggle-description {
+    color: white;
+}
+
+/* Inactive state - understated, inviting action */
 .imgpro-toggle-card.is-inactive {
-    background: var(--imgpro-warning-50);
-    border-color: var(--imgpro-warning-500);
+    background: var(--imgpro-bg);
+    border-color: var(--imgpro-border);
+}
+
+.imgpro-toggle-card:hover {
+    box-shadow: var(--imgpro-card-shadow-hover);
+}
+
+.imgpro-toggle-card.is-active:hover {
     box-shadow:
-        var(--imgpro-card-shadow),
-        0 0 0 3px rgba(245, 158, 11, 0.1);
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 4px 8px rgba(0, 0, 0, 0.15),
+        0 8px 24px -4px rgba(0, 51, 255, 0.4);
 }
 
 .imgpro-toggle-card.is-loading {
@@ -1427,25 +1458,26 @@
     gap: var(--imgpro-space-4);
 }
 
+/* Toggle Icon - Reinforces state */
 .imgpro-toggle-icon {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 48px;
     height: 48px;
-    background: var(--imgpro-bg);
-    border-radius: var(--imgpro-radius);
-    box-shadow: var(--imgpro-shadow-sm);
+    border-radius: var(--imgpro-radius-lg);
+    transition: all var(--imgpro-transition-fast) var(--imgpro-ease-out);
 }
 
 .imgpro-toggle-card.is-active .imgpro-toggle-icon {
-    background: var(--imgpro-success-100);
-    color: var(--imgpro-success-600);
+    background: var(--imgpro-bg);
+    color: #0033ff;
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.15);
 }
 
 .imgpro-toggle-card.is-inactive .imgpro-toggle-icon {
-    background: var(--imgpro-warning-100);
-    color: var(--imgpro-warning-600);
+    background: var(--imgpro-gray-100);
+    color: var(--imgpro-gray-400);
 }
 
 .imgpro-toggle-info h2 {
@@ -2129,7 +2161,15 @@
 .imgpro-domain-pending-card.is-pending-ssl .imgpro-domain-pending-icon {
     background: var(--imgpro-primary-100);
     color: var(--imgpro-primary-600);
-    animation: imgpro-spin 2s linear infinite;
+}
+
+.imgpro-domain-pending-card.is-pending-ssl .imgpro-domain-pending-icon svg {
+    animation: imgpro-pulse 2s ease-in-out infinite;
+}
+
+@keyframes imgpro-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 .imgpro-domain-pending-card.is-error .imgpro-domain-pending-icon {

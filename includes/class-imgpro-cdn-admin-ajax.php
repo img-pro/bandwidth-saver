@@ -521,8 +521,8 @@ class ImgPro_CDN_Admin_Ajax {
         if (!empty($result['upgraded'])) {
             // Sync site data from API to get new tier limits
             $site_data = $this->api->get_site($api_key);
-            if (!is_wp_error($site_data) && !empty($site_data['site'])) {
-                $this->save_site_to_settings($site_data['site'], $site_data['site']['email'] ?? get_option('admin_email'));
+            if (!is_wp_error($site_data)) {
+                $this->save_site_to_settings($site_data, $site_data['email'] ?? get_option('admin_email'));
             }
 
             wp_send_json_success([
@@ -830,7 +830,7 @@ class ImgPro_CDN_Admin_Ajax {
         // Clear the CDN URL and disable the CDN
         $this->settings->update([
             'cdn_url' => '',
-            'enabled' => false,
+            'cloudflare_enabled' => false,
         ]);
 
         wp_send_json_success([

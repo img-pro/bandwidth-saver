@@ -654,11 +654,7 @@ class ImgPro_CDN_Admin {
                 <div class="imgpro-toggle-content">
                     <div class="imgpro-toggle-info">
                         <div class="imgpro-toggle-icon">
-                            <?php if ($is_enabled): ?>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 4L12 14.01l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <?php else: ?>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                            <?php endif; ?>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"/></svg>
                         </div>
                         <div>
                             <h2 id="imgpro-toggle-heading">
@@ -1344,7 +1340,7 @@ class ImgPro_CDN_Admin {
             <div class="imgpro-domain-pending-header">
                 <div class="imgpro-domain-pending-icon">
                     <?php if ('pending_ssl' === $domain_status): ?>
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2v4m0 8v4M4.93 4.93l2.83 2.83m4.48 4.48l2.83 2.83M2 10h4m8 0h4M4.93 15.07l2.83-2.83m4.48-4.48l2.83-2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
                     <?php elseif ('error' === $domain_status): ?>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M12.5 7.5l-5 5m0-5l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                     <?php else: ?>

@@ -85,13 +85,16 @@
     --imgpro-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --imgpro-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
-    --imgpro-text-xs: 0.75rem;
-    --imgpro-text-sm: 0.875rem;
-    --imgpro-text-base: 1rem;
-    --imgpro-text-lg: 1.125rem;
-    --imgpro-text-xl: 1.25rem;
-    --imgpro-text-2xl: 1.5rem;
-    --imgpro-text-3xl: 1.875rem;
+    --imgpro-text-2xs: 0.6875rem;  /* 11px - for very small labels */
+    --imgpro-text-xs: 0.75rem;      /* 12px */
+    --imgpro-text-sm: 0.875rem;     /* 14px */
+    --imgpro-text-base: 1rem;       /* 16px */
+    --imgpro-text-lg: 1.125rem;     /* 18px */
+    --imgpro-text-xl: 1.25rem;      /* 20px */
+    --imgpro-text-2xl: 1.5rem;      /* 24px */
+    --imgpro-text-3xl: 1.875rem;    /* 30px */
+    --imgpro-text-4xl: 2rem;        /* 32px - display */
+    --imgpro-text-5xl: 2.5rem;      /* 40px - large display */
 
     --imgpro-leading-tight: 1.25;
     --imgpro-leading-normal: 1.5;
@@ -105,14 +108,45 @@
     --imgpro-radius-xl: 16px;
     --imgpro-radius-full: 9999px;
 
-    /* Shadows */
-    --imgpro-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --imgpro-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-    --imgpro-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --imgpro-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --imgpro-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    --imgpro-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    --imgpro-shadow-glow: 0 0 20px rgba(0, 51, 255, 0.15);
+    /* Shadows - Premium, refined depth */
+    --imgpro-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --imgpro-shadow-sm:
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 1px 3px rgba(0, 0, 0, 0.06);
+    --imgpro-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        0 4px 8px rgba(0, 0, 0, 0.04);
+    --imgpro-shadow-md:
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        0 4px 8px rgba(0, 0, 0, 0.04),
+        0 8px 16px rgba(0, 0, 0, 0.04);
+    --imgpro-shadow-lg:
+        0 4px 8px rgba(0, 0, 0, 0.04),
+        0 8px 16px rgba(0, 0, 0, 0.04),
+        0 16px 32px rgba(0, 0, 0, 0.04);
+    --imgpro-shadow-xl:
+        0 8px 16px rgba(0, 0, 0, 0.04),
+        0 16px 32px rgba(0, 0, 0, 0.06),
+        0 32px 64px rgba(0, 0, 0, 0.08);
+    --imgpro-shadow-glow: 0 0 20px rgba(0, 51, 255, 0.12);
+    --imgpro-shadow-glow-lg: 0 0 40px rgba(0, 51, 255, 0.15);
+
+    /* Card-specific shadows */
+    --imgpro-card-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.03),
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 2px 4px rgba(0, 0, 0, 0.04);
+    --imgpro-card-shadow-hover:
+        0 0 0 1px rgba(0, 0, 0, 0.04),
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        0 4px 8px rgba(0, 0, 0, 0.04),
+        0 8px 16px rgba(0, 0, 0, 0.02);
+
+    /* Breakpoints */
+    --imgpro-bp-sm: 600px;
+    --imgpro-bp-md: 782px;
+    --imgpro-bp-lg: 960px;
 
     /* Transitions */
     --imgpro-transition-fast: 150ms;
@@ -318,6 +352,18 @@
     border-color: var(--imgpro-success-700);
 }
 
+/* Danger Button */
+.imgpro-btn-danger {
+    background: transparent;
+    border-color: transparent;
+    color: var(--imgpro-error-500);
+}
+
+.imgpro-btn-danger:hover {
+    background: var(--imgpro-error-50);
+    color: var(--imgpro-error-600);
+}
+
 /* ==========================================================================
    Spinner Animation
    ========================================================================== */
@@ -470,16 +516,106 @@
 }
 
 /* ==========================================================================
-   Cards
+   Cards - Unified Component System
+
+   Base card with premium depth and polish. All card variants extend this.
+   Use modifiers for specific variants: --elevated, --interactive, --featured
    ========================================================================== */
 
 .imgpro-card {
+    position: relative;
     background: var(--imgpro-bg);
     border: 1px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-lg);
+    box-shadow: var(--imgpro-card-shadow);
     overflow: hidden;
+    transition:
+        border-color var(--imgpro-transition-fast) var(--imgpro-ease-out),
+        box-shadow var(--imgpro-transition-base) var(--imgpro-ease-out),
+        transform var(--imgpro-transition-base) var(--imgpro-ease-out);
 }
 
+/* Card with more visual prominence */
+.imgpro-card--elevated {
+    box-shadow: var(--imgpro-shadow-md);
+}
+
+/* Interactive card - responds to hover */
+.imgpro-card--interactive:hover {
+    border-color: var(--imgpro-border-hover);
+    box-shadow: var(--imgpro-card-shadow-hover);
+    transform: translateY(-1px);
+}
+
+/* Featured/highlighted card */
+.imgpro-card--featured {
+    border-color: var(--imgpro-primary-200);
+    background: linear-gradient(180deg, rgba(0, 51, 255, 0.02) 0%, transparent 100%);
+}
+
+/* Card sections */
+.imgpro-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--imgpro-space-4);
+    padding: var(--imgpro-space-5) var(--imgpro-space-6);
+    border-bottom: 1px solid var(--imgpro-border);
+}
+
+.imgpro-card__body {
+    padding: var(--imgpro-space-6);
+}
+
+.imgpro-card__footer {
+    display: flex;
+    align-items: center;
+    gap: var(--imgpro-space-2);
+    padding: var(--imgpro-space-3) var(--imgpro-space-6);
+    background: rgba(0, 0, 0, 0.02);
+    border-top: 1px solid var(--imgpro-border);
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-text-muted);
+}
+
+/* Card title */
+.imgpro-card__title {
+    margin: 0;
+    font-size: var(--imgpro-text-base);
+    font-weight: 600;
+    color: var(--imgpro-text);
+}
+
+/* Card description */
+.imgpro-card__description {
+    margin: 0;
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-text-secondary);
+}
+
+/* Card with horizontal layout (icon + content + action) */
+.imgpro-card--horizontal .imgpro-card__body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--imgpro-space-4);
+}
+
+/* Card content wrapper */
+.imgpro-card__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--imgpro-space-1);
+    flex: 1;
+    min-width: 0;
+}
+
+/* Card actions */
+.imgpro-card__actions {
+    flex-shrink: 0;
+}
+
+/* Legacy support - old class names map to new system */
 .imgpro-card-header {
     padding: var(--imgpro-space-5) var(--imgpro-space-6);
     border-bottom: 1px solid var(--imgpro-border);
@@ -493,6 +629,13 @@
     padding: var(--imgpro-space-4) var(--imgpro-space-6);
     background: var(--imgpro-bg-subtle);
     border-top: 1px solid var(--imgpro-border);
+}
+
+/* Footer separator */
+.imgpro-card__separator,
+.imgpro-separator {
+    color: var(--imgpro-gray-400);
+    opacity: 0.6;
 }
 
 /* ==========================================================================
@@ -514,9 +657,9 @@
 }
 
 .imgpro-brand-name {
-    font-size: 2rem;
+    font-size: var(--imgpro-text-4xl);
     font-weight: 700;
-    color: var(--imgpro-gray-700);
+    color: var(--imgpro-text-secondary);
     letter-spacing: -0.03em;
 }
 
@@ -849,6 +992,7 @@
     background: var(--imgpro-bg);
     border: 2px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-lg);
+    box-shadow: var(--imgpro-card-shadow);
     margin-bottom: var(--imgpro-space-6);
     transition: all var(--imgpro-transition-base) var(--imgpro-ease-out);
 }
@@ -856,11 +1000,17 @@
 .imgpro-toggle-card.is-active {
     background: var(--imgpro-success-50);
     border-color: var(--imgpro-success-500);
+    box-shadow:
+        var(--imgpro-card-shadow),
+        0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .imgpro-toggle-card.is-inactive {
     background: var(--imgpro-warning-50);
     border-color: var(--imgpro-warning-500);
+    box-shadow:
+        var(--imgpro-card-shadow),
+        0 0 0 3px rgba(245, 158, 11, 0.1);
 }
 
 .imgpro-toggle-card.is-loading {
@@ -1347,6 +1497,12 @@
     background: var(--imgpro-bg);
     border: 1px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-lg);
+    box-shadow: var(--imgpro-card-shadow);
+    transition: box-shadow var(--imgpro-transition-base) var(--imgpro-ease-out);
+}
+
+.imgpro-stat-card:hover {
+    box-shadow: var(--imgpro-card-shadow-hover);
 }
 
 .imgpro-stat-header {
@@ -1458,6 +1614,9 @@
     background: linear-gradient(135deg, var(--imgpro-primary-50) 0%, var(--imgpro-bg) 100%);
     border: 1px solid var(--imgpro-primary-100);
     border-radius: var(--imgpro-radius-lg);
+    box-shadow:
+        var(--imgpro-card-shadow),
+        0 0 0 1px rgba(0, 51, 255, 0.03);
     text-align: center;
     margin-bottom: var(--imgpro-space-6);
 }
@@ -1537,30 +1696,18 @@
 }
 
 /* ==========================================================================
-   Account Card
+   Account Card - Extends unified card system
+
+   Uses .imgpro-card base with account-specific modifiers.
    ========================================================================== */
 
-/* ==========================================================================
-   Account Card (Unified component for all tiers)
-   ========================================================================== */
-
-/* Base card */
+/* Base account card - extends .imgpro-card */
 .imgpro-account-card {
-    border-radius: var(--imgpro-radius-lg);
     margin-bottom: var(--imgpro-space-6);
-    overflow: hidden;
 }
 
-/* --- Free tier variant --- */
-.imgpro-account-card--free {
-    background: var(--imgpro-bg);
-    border: 1px solid var(--imgpro-border);
-    box-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.04),
-        0 1px 3px rgba(0, 0, 0, 0.06);
-}
-
-.imgpro-account-card--free .imgpro-account-card__main {
+/* Account card main content area */
+.imgpro-account-card__main {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1568,171 +1715,116 @@
     padding: var(--imgpro-space-5) var(--imgpro-space-6);
 }
 
-.imgpro-account-card--free .imgpro-account-card__content {
+/* Account card content */
+.imgpro-account-card__content {
     display: flex;
     flex-direction: column;
     gap: var(--imgpro-space-1);
+    flex: 1;
+    min-width: 0;
+}
+
+/* Free tier - upsell variant */
+.imgpro-account-card--free {
+    background: var(--imgpro-bg);
+    border: 1px solid var(--imgpro-border);
+    border-radius: var(--imgpro-radius-lg);
+    box-shadow: var(--imgpro-card-shadow);
+    overflow: hidden;
 }
 
 .imgpro-account-card__headline {
     font-size: var(--imgpro-text-base);
     font-weight: 600;
-    color: var(--imgpro-gray-800);
+    color: var(--imgpro-text);
 }
 
 .imgpro-account-card__description {
     font-size: var(--imgpro-text-sm);
-    color: var(--imgpro-gray-600);
+    color: var(--imgpro-text-secondary);
 }
 
-.imgpro-account-card--free .imgpro-btn-primary {
-    background: var(--imgpro-primary-600);
-    border-color: var(--imgpro-primary-600);
-    color: white;
-    flex-shrink: 0;
-}
-
-.imgpro-account-card--free .imgpro-btn-primary:hover {
-    background: var(--imgpro-primary-700);
-    border-color: var(--imgpro-primary-700);
-}
-
-.imgpro-account-card__footer {
-    display: flex;
-    align-items: center;
-    gap: var(--imgpro-space-2);
-    padding: var(--imgpro-space-3) var(--imgpro-space-6);
-    background: rgba(0, 0, 0, 0.03);
-    font-size: var(--imgpro-text-sm);
-    color: var(--imgpro-gray-500);
-}
-
-.imgpro-separator {
-    opacity: 0.5;
-}
-
-/* --- Paid tier variant --- */
-.imgpro-account-card.imgpro-account-card--paid {
+/* Paid tier variant */
+.imgpro-account-card--paid {
     display: flex;
     flex-direction: column;
     background: var(--imgpro-bg);
     border: 1px solid var(--imgpro-border);
-    box-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.04),
-        0 1px 3px rgba(0, 0, 0, 0.06);
+    border-radius: var(--imgpro-radius-lg);
+    box-shadow: var(--imgpro-card-shadow);
+    overflow: hidden;
 }
 
-.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__main {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--imgpro-space-4);
-    padding: var(--imgpro-space-5) var(--imgpro-space-6);
-    text-align: left;
-}
-
-.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+.imgpro-account-card--paid .imgpro-account-card__content {
     gap: var(--imgpro-space-2);
-    flex: 1;
 }
 
-.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__plan {
+/* Plan display */
+.imgpro-account-card__plan {
     display: flex;
     align-items: center;
     gap: var(--imgpro-space-2);
 }
 
-.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__tier {
+.imgpro-account-card__tier {
     font-size: var(--imgpro-text-lg);
     font-weight: 700;
-    color: var(--imgpro-gray-800);
+    color: var(--imgpro-text);
 }
 
-.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__plan-label {
+.imgpro-account-card__plan-label {
     font-size: var(--imgpro-text-lg);
     font-weight: 400;
-    color: var(--imgpro-gray-500);
+    color: var(--imgpro-text-muted);
 }
 
-.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__limits {
+/* Limits row */
+.imgpro-account-card__limits {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: var(--imgpro-space-2);
 }
 
-.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__limit {
+.imgpro-account-card__limit {
     font-size: var(--imgpro-text-sm);
-    color: var(--imgpro-gray-600);
+    color: var(--imgpro-text-secondary);
 }
 
-.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__separator {
-    color: var(--imgpro-gray-400);
-}
-
-.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__actions {
+/* Actions */
+.imgpro-account-card__actions {
     flex-shrink: 0;
 }
 
-.imgpro-account-card.imgpro-account-card--paid .imgpro-btn-primary {
-    background: var(--imgpro-primary-600);
-    border-color: var(--imgpro-primary-600);
-    color: white;
-}
-
-.imgpro-account-card.imgpro-account-card--paid .imgpro-btn-primary:hover {
-    background: var(--imgpro-primary-700);
-    border-color: var(--imgpro-primary-700);
-}
-
-.imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__footer {
+/* Footer */
+.imgpro-account-card__footer {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
     gap: var(--imgpro-space-2);
     padding: var(--imgpro-space-3) var(--imgpro-space-6);
-    background: rgba(0, 0, 0, 0.03);
+    background: rgba(0, 0, 0, 0.02);
+    border-top: 1px solid var(--imgpro-border);
     font-size: var(--imgpro-text-sm);
-    color: var(--imgpro-gray-500);
-    margin-top: 0;
+    color: var(--imgpro-text-muted);
 }
 
-.imgpro-account-card.imgpro-account-card--paid .imgpro-btn-link {
-    color: var(--imgpro-gray-600);
-    text-decoration: none;
-    font-size: var(--imgpro-text-sm);
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-}
-
-.imgpro-account-card.imgpro-account-card--paid .imgpro-btn-link:hover {
-    color: var(--imgpro-gray-800);
-    text-decoration: underline;
-}
-
-/* Responsive - Paid */
+/* Responsive */
 @media (max-width: 600px) {
-    .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__main {
+    .imgpro-account-card__main {
         flex-direction: column;
         align-items: stretch;
         text-align: center;
     }
 
-    .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__footer {
+    .imgpro-account-card__footer {
         justify-content: center;
     }
 
-    .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__limits {
+    .imgpro-account-card__limits {
         justify-content: center;
     }
 
-    .imgpro-account-card.imgpro-account-card--paid .imgpro-account-card__actions {
+    .imgpro-account-card__actions {
         align-self: center;
     }
 }
@@ -1870,6 +1962,12 @@
     color: var(--imgpro-text);
 }
 
+/* ==========================================================================
+   Badges - Unified component system
+
+   Base badge with semantic variants.
+   ========================================================================== */
+
 .imgpro-badge {
     display: inline-flex;
     align-items: center;
@@ -1878,24 +1976,57 @@
     border-radius: var(--imgpro-radius-sm);
     font-size: var(--imgpro-text-xs);
     font-weight: 500;
+    line-height: 1.4;
 }
 
+/* Badge variants */
+.imgpro-badge--success,
 .imgpro-badge-success {
     background: var(--imgpro-success-100);
     color: var(--imgpro-success-700);
 }
 
+.imgpro-badge--warning,
 .imgpro-badge-warning {
     background: var(--imgpro-warning-100);
     color: var(--imgpro-warning-600);
 }
 
-.imgpro-btn-danger {
-    color: var(--imgpro-error-500);
+.imgpro-badge--error {
+    background: var(--imgpro-error-50);
+    color: var(--imgpro-error-600);
 }
 
-.imgpro-btn-danger:hover {
-    color: var(--imgpro-error-600);
+.imgpro-badge--neutral {
+    background: var(--imgpro-gray-100);
+    color: var(--imgpro-gray-600);
+}
+
+.imgpro-badge--primary {
+    background: var(--imgpro-primary-100);
+    color: var(--imgpro-primary-700);
+}
+
+/* Pro badge - premium accent */
+.imgpro-badge--pro {
+    background: linear-gradient(135deg, var(--imgpro-primary-500) 0%, var(--imgpro-primary-600) 100%);
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Pill variant (rounded) */
+.imgpro-badge--pill {
+    border-radius: var(--imgpro-radius-full);
+    padding: var(--imgpro-space-1) var(--imgpro-space-3);
+}
+
+/* Status dot */
+.imgpro-badge__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
 }
 
 /* ==========================================================================
@@ -2336,25 +2467,6 @@
     color: var(--imgpro-warning-600);
 }
 
-.imgpro-btn-ghost {
-    background: transparent;
-    border: none;
-    padding: var(--imgpro-space-2);
-}
-
-.imgpro-btn-ghost:hover {
-    background: var(--imgpro-bg-subtle);
-}
-
-.imgpro-btn-danger {
-    color: var(--imgpro-error-500);
-}
-
-.imgpro-btn-danger:hover {
-    color: var(--imgpro-error-600);
-    background: var(--imgpro-error-50);
-}
-
 @media (max-width: 600px) {
     .imgpro-custom-domain-input-group {
         flex-direction: column;
@@ -2574,13 +2686,13 @@
     left: 50%;
     transform: translate(-50%, -50%);
     padding: 5px 12px;
-    font-size: 11px;
+    font-size: var(--imgpro-text-2xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     background: var(--imgpro-primary-600);
     color: white;
-    border-radius: 999px;
+    border-radius: var(--imgpro-radius-full);
     white-space: nowrap;
     box-shadow: 0 2px 4px rgba(0, 51, 255, 0.2);
 }
@@ -2934,21 +3046,21 @@ body.imgpro-modal-open {
 
 .imgpro-confirm-modal__badge {
     display: inline-block;
-    font-size: 11px;
+    font-size: var(--imgpro-text-2xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--imgpro-primary);
+    color: var(--imgpro-primary-600);
     background: var(--imgpro-primary-50);
     padding: var(--imgpro-space-1) var(--imgpro-space-3);
-    border-radius: 100px;
+    border-radius: var(--imgpro-radius-full);
     margin-bottom: var(--imgpro-space-3);
 }
 
 .imgpro-confirm-modal__title {
-    font-size: 32px;
+    font-size: var(--imgpro-text-4xl);
     font-weight: 700;
-    color: var(--imgpro-gray-900);
+    color: var(--imgpro-text);
     margin: 0 0 var(--imgpro-space-2) 0;
     letter-spacing: -0.02em;
 }
@@ -2961,9 +3073,9 @@ body.imgpro-modal-open {
 }
 
 .imgpro-confirm-modal__price-amount {
-    font-size: 40px;
+    font-size: var(--imgpro-text-5xl);
     font-weight: 700;
-    color: var(--imgpro-gray-900);
+    color: var(--imgpro-text);
     letter-spacing: -0.03em;
     line-height: 1;
 }
@@ -2990,9 +3102,9 @@ body.imgpro-modal-open {
 }
 
 .imgpro-confirm-modal__metric-value {
-    font-size: 24px;
+    font-size: var(--imgpro-text-2xl);
     font-weight: 700;
-    color: var(--imgpro-gray-900);
+    color: var(--imgpro-text);
     letter-spacing: -0.02em;
     margin-bottom: 2px;
 }
@@ -3043,7 +3155,7 @@ body.imgpro-modal-open {
 }
 
 .imgpro-confirm-modal__checklist svg {
-    color: #22c55e;
+    color: var(--imgpro-success-500);
     flex-shrink: 0;
 }
 

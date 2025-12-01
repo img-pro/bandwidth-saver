@@ -435,8 +435,15 @@
                 if (response.success) {
                     if (response.data.checkout_url) {
                         window.location.href = response.data.checkout_url;
-                    } else if (response.data.recovered) {
-                        window.location.reload();
+                    } else if (response.data.recovered || response.data.upgraded) {
+                        // Show success message if provided, then reload to reflect changes
+                        if (response.data.message) {
+                            showNotice('success', response.data.message);
+                        }
+                        // Brief delay to show the message before reload
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, response.data.message ? 1500 : 0);
                     }
                 } else {
                     $button.prop('disabled', false).text(originalText);

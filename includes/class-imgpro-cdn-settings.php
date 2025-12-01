@@ -340,7 +340,13 @@ class ImgPro_CDN_Settings {
 
         // Cloud-specific fields
         if (isset($settings['cloud_api_key'])) {
-            $validated['cloud_api_key'] = sanitize_text_field($settings['cloud_api_key']);
+            $api_key = sanitize_text_field($settings['cloud_api_key']);
+            // SECURITY: Encrypt API key before storage
+            // Skip encryption if already encrypted (prevents double-encryption)
+            if (!empty($api_key) && !ImgPro_CDN_Crypto::is_encrypted($api_key)) {
+                $api_key = ImgPro_CDN_Crypto::encrypt($api_key);
+            }
+            $validated['cloud_api_key'] = $api_key;
         }
         if (isset($settings['cloud_email'])) {
             $validated['cloud_email'] = sanitize_email($settings['cloud_email']);
@@ -397,7 +403,13 @@ class ImgPro_CDN_Settings {
 
         // CDN URL (domain only - single domain architecture)
         if (isset($settings['cdn_url'])) {
-            $validated['cdn_url'] = self::sanitize_domain($settings['cdn_url']);
+            $cdn_url = self::sanitize_domain($settings['cdn_url']);
+            // SECURITY: Validate CDN URL format
+            if (!empty($cdn_url) && !self::is_valid_cdn_url($cdn_url)) {
+                // Invalid CDN URL - clear it to prevent misconfiguration
+                $cdn_url = '';
+            }
+            $validated['cdn_url'] = $cdn_url;
         }
 
         // Allowed domains (array)
@@ -491,6 +503,95 @@ class ImgPro_CDN_Settings {
         }
 
         return $domain;
+    }
+
+    /**
+     * Validate CDN URL format
+     *
+     * SECURITY: Validates that a CDN URL is properly formatted and safe to use.
+     * Prevents misconfiguration that could break image loading or create security issues.
+     *
+     * @since 0.2.0
+     * @param string $cdn_url The CDN URL (domain only) to validate.
+     * @return bool True if valid.
+     */
+    public static function is_valid_cdn_url($cdn_url) {
+        // Must not be empty
+        if (empty($cdn_url)) {
+            return false;
+        }
+
+        // Must be a valid domain format (no protocol, path, or query)
+        if (preg_match('#[:/\?\#]#', $cdn_url)) {
+            return false;
+        }
+
+        // Must have at least one dot (TLD required)
+        if (strpos($cdn_url, '.') === false) {
+            return false;
+        }
+
+        // Must not be an IP address (prevents SSRF-like issues)
+        if (filter_var($cdn_url, FILTER_VALIDATE_IP)) {
+            return false;
+        }
+
+        // Must not be a reserved/internal domain
+        $reserved_patterns = [
+            '/^localhost$/i',
+            '/\.local$/i',
+            '/\.internal$/i',
+            '/\.test$/i',
+            '/\.example$/i',
+            '/\.invalid$/i',
+            '/^127\.\d+\.\d+\.\d+$/',
+            '/^10\.\d+\.\d+\.\d+$/',
+            '/^192\.168\.\d+\.\d+$/',
+            '/^172\.(1[6-9]|2[0-9]|3[01])\.\d+\.\d+$/',
+        ];
+
+        foreach ($reserved_patterns as $pattern) {
+            if (preg_match($pattern, $cdn_url)) {
+                return false;
+            }
+        }
+
+        // Basic DNS format validation
+        // Allows: letters, numbers, hyphens, dots
+        // Each label must start and end with alphanumeric
+        $labels = explode('.', $cdn_url);
+        foreach ($labels as $label) {
+            if (empty($label) || strlen($label) > 63) {
+                return false;
+            }
+            // Label must start and end with alphanumeric
+            if (!preg_match('/^[a-z0-9]([a-z0-9\-]*[a-z0-9])?$/i', $label)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Get decrypted API key
+     *
+     * SECURITY: API keys are stored encrypted. Use this method to get
+     * the plaintext key for API requests.
+     *
+     * @since 0.2.0
+     * @return string Decrypted API key or empty string.
+     */
+    public function get_api_key() {
+        $settings = $this->get_all();
+        $encrypted_key = $settings['cloud_api_key'] ?? '';
+
+        if (empty($encrypted_key)) {
+            return '';
+        }
+
+        // Decrypt if encrypted, otherwise return as-is (for backwards compatibility)
+        return ImgPro_CDN_Crypto::decrypt($encrypted_key);
     }
 
     /**

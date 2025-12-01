@@ -211,6 +211,10 @@ class ImgPro_CDN_Core {
      * @return void
      */
     private function upgrade($old_version) {
+        // SECURITY: Migrate plaintext API keys to encrypted storage
+        // This runs on every upgrade to ensure all keys are encrypted
+        $this->maybe_encrypt_api_key();
+
         /**
          * Fires after ImgPro CDN upgrade routines have completed
          *
@@ -219,6 +223,37 @@ class ImgPro_CDN_Core {
          * @param string       $new_version New version number.
          */
         do_action('imgpro_cdn_upgraded', $old_version, IMGPRO_CDN_VERSION);
+    }
+
+    /**
+     * Encrypt existing plaintext API key if needed
+     *
+     * SECURITY: Migrates plaintext API keys to encrypted storage.
+     * Safe to run multiple times - skips already encrypted keys.
+     *
+     * @since 0.2.0
+     * @return void
+     */
+    private function maybe_encrypt_api_key() {
+        $settings = get_option(ImgPro_CDN_Settings::OPTION_KEY, []);
+
+        if (empty($settings['cloud_api_key'])) {
+            return;
+        }
+
+        // Skip if already encrypted
+        if (ImgPro_CDN_Crypto::is_encrypted($settings['cloud_api_key'])) {
+            return;
+        }
+
+        // Encrypt the API key
+        $settings['cloud_api_key'] = ImgPro_CDN_Crypto::encrypt($settings['cloud_api_key']);
+
+        // Save without triggering validation (already sanitized)
+        update_option(ImgPro_CDN_Settings::OPTION_KEY, $settings);
+
+        // Clear settings cache
+        $this->settings->clear_cache();
     }
 
     /**
@@ -232,6 +267,9 @@ class ImgPro_CDN_Core {
         if (!current_user_can('activate_plugins')) {
             return;
         }
+
+        // SECURITY: Grant custom capability to administrators
+        ImgPro_CDN_Security::grant_capability_to_admins();
 
         // Store plugin version (autoload=false for performance)
         update_option('imgpro_cdn_version', IMGPRO_CDN_VERSION, false);

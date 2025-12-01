@@ -333,12 +333,18 @@ class ImgPro_CDN_Admin {
                 $tiers_by_id[$tier['id']] = $tier;
             }
 
+            // SECURITY: Get all nonces from the security class for granular action verification
+            $nonces = ImgPro_CDN_Security::get_all_nonces();
+
             // Localize script
             wp_localize_script('imgpro-cdn-admin', 'imgproCdnAdmin', [
-                'nonce' => wp_create_nonce('imgpro_cdn_toggle_enabled'),
-                'checkoutNonce' => wp_create_nonce('imgpro_cdn_checkout'),
-                'customDomainNonce' => wp_create_nonce('imgpro_cdn_custom_domain'),
-                'onboardingNonce' => wp_create_nonce('imgpro_cdn_onboarding'),
+                // Nonces - now granular per action
+                'nonces' => $nonces,
+                // Legacy nonce keys for backwards compatibility (will be removed in future version)
+                'nonce' => $nonces['toggle_enabled'],
+                'checkoutNonce' => $nonces['checkout'],
+                'customDomainNonce' => $nonces['custom_domain'],
+                'onboardingNonce' => $nonces['onboarding'],
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'settingsUrl' => admin_url('options-general.php?page=imgpro-cdn-settings'),
                 'tier' => $all_settings['cloud_tier'] ?? ImgPro_CDN_Settings::TIER_NONE,

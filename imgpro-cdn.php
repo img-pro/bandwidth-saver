@@ -62,6 +62,8 @@ if (!defined('IMGPRO_CDN_PLUGIN_BASENAME')) {
 }
 
 // Load required files
+require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-crypto.php';
+require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-security.php';
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-api.php';
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-settings.php';
 require_once IMGPRO_CDN_PLUGIN_DIR . 'includes/class-imgpro-cdn-rewriter.php';

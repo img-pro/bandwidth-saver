@@ -19,16 +19,25 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
  */
 do_action('imgpro_cdn_before_uninstall');
 
+// SECURITY: Remove custom capability from all roles
+// Load the security class if not already loaded
+require_once plugin_dir_path(__FILE__) . 'includes/class-imgpro-cdn-security.php';
+ImgPro_CDN_Security::remove_capability_from_all();
+
 // Delete plugin options
 delete_option('imgpro_cdn_settings');
 delete_option('imgpro_cdn_version');
 
-// Delete transients
+// Delete known transients
 delete_transient('imgpro_cdn_pricing');
 delete_transient('imgpro_cdn_pending_payment');
 delete_transient('imgpro_cdn_tiers');
 delete_transient('imgpro_cdn_site_data');
 delete_transient('imgpro_cdn_payment_pending_recovery');
+delete_transient('imgpro_cdn_last_sync');
+
+// Rate limit transients (imgpro_rl_*) have a 60-second TTL and will expire naturally.
+// No explicit cleanup needed - they'll be gone within a minute of uninstall.
 
 // For multisite installations
 if (is_multisite()) {
@@ -59,6 +68,9 @@ if (is_multisite()) {
             delete_transient('imgpro_cdn_tiers');
             delete_transient('imgpro_cdn_site_data');
             delete_transient('imgpro_cdn_payment_pending_recovery');
+            delete_transient('imgpro_cdn_last_sync');
+
+            // Rate limit transients expire naturally (60s TTL)
 
             restore_current_blog();
         }

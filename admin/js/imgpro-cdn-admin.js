@@ -50,6 +50,26 @@
         }, 4000);
     }
 
+    /**
+     * Update a progress bar element with percentage and warning/critical states
+     * @param {string} selector - jQuery selector for the progress bar element
+     * @param {number} percentage - The percentage to display (0-100)
+     */
+    function updateProgressBar(selector, percentage) {
+        const $bar = $(selector);
+        if (!$bar.length) return;
+
+        const pct = Math.min(100, percentage);
+        $bar.css('width', pct + '%');
+        $bar.removeClass('is-warning is-critical');
+
+        if (pct >= 90) {
+            $bar.addClass('is-critical');
+        } else if (pct >= 70) {
+            $bar.addClass('is-warning');
+        }
+    }
+
     // ===== Onboarding Wizard =====
 
     /**
@@ -713,21 +733,19 @@
                     }
 
                     $('#imgpro-stat-images').text((response.data.images_cached || 0).toLocaleString());
-                    $('#imgpro-stat-bandwidth').text(response.data.formatted.bandwidth_used || '0 B');
 
-                    // Update progress bar
-                    const $progressFill = $('.imgpro-progress-fill');
-                    if ($progressFill.length) {
-                        const percentage = Math.min(100, response.data.storage_percentage || 0);
-                        $progressFill.css('width', percentage + '%');
-
-                        $progressFill.removeClass('is-warning is-critical');
-                        if (percentage >= 90) {
-                            $progressFill.addClass('is-critical');
-                        } else if (percentage >= 70) {
-                            $progressFill.addClass('is-warning');
-                        }
+                    // Update bandwidth stat with limit
+                    const $bandwidthVal = $('#imgpro-stat-bandwidth');
+                    if ($bandwidthVal.length) {
+                        $bandwidthVal.html(escapeHtml(response.data.formatted.bandwidth_used || '0 B') +
+                            '<span class="imgpro-stat-limit">/ ' + escapeHtml(response.data.formatted.bandwidth_limit) + '</span>');
                     }
+
+                    // Update storage progress bar
+                    updateProgressBar('#imgpro-progress-storage', response.data.storage_percentage || 0);
+
+                    // Update bandwidth progress bar
+                    updateProgressBar('#imgpro-progress-bandwidth', response.data.bandwidth_percentage || 0);
                 }
             },
             complete: function() {

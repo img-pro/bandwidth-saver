@@ -195,14 +195,10 @@ class ImgPro_CDN_Admin {
             'bandwidth_used' => $usage['bandwidth_used'],
             'images_cached' => $usage['images_cached'],
             'stats_updated_at' => time(),
+            // Always set limits (use defaults for free tier when API returns 0)
+            'storage_limit' => $usage['storage_limit'] ?: ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
+            'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
         ];
-
-        if ($usage['storage_limit'] > 0) {
-            $update_data['storage_limit'] = $usage['storage_limit'];
-        }
-        if ($usage['bandwidth_limit'] > 0) {
-            $update_data['bandwidth_limit'] = $usage['bandwidth_limit'];
-        }
 
         if ($domain) {
             $update_data['custom_domain'] = $domain['domain'];
@@ -772,7 +768,7 @@ class ImgPro_CDN_Admin {
                     <span class="imgpro-stat-limit">/ <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($storage_limit, 0)); ?></span>
                 </div>
                 <div class="imgpro-progress-bar">
-                    <div class="imgpro-progress-fill <?php echo esc_attr( $storage_percentage >= 90 ? 'is-critical' : ( $storage_percentage >= 70 ? 'is-warning' : '' ) ); ?>" style="width: <?php echo esc_attr(min(100, $storage_percentage)); ?>%"></div>
+                    <div id="imgpro-progress-storage" class="imgpro-progress-fill <?php echo esc_attr( $storage_percentage >= 90 ? 'is-critical' : ( $storage_percentage >= 70 ? 'is-warning' : '' ) ); ?>" style="width: <?php echo esc_attr(min(100, $storage_percentage)); ?>%"></div>
                 </div>
             </div>
 
@@ -785,7 +781,7 @@ class ImgPro_CDN_Admin {
                     <span class="imgpro-stat-limit">/ <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0)); ?></span>
                 </div>
                 <div class="imgpro-progress-bar">
-                    <div class="imgpro-progress-fill <?php echo esc_attr( $bandwidth_percentage >= 90 ? 'is-critical' : ( $bandwidth_percentage >= 70 ? 'is-warning' : '' ) ); ?>" style="width: <?php echo esc_attr(min(100, $bandwidth_percentage)); ?>%"></div>
+                    <div id="imgpro-progress-bandwidth" class="imgpro-progress-fill <?php echo esc_attr( $bandwidth_percentage >= 90 ? 'is-critical' : ( $bandwidth_percentage >= 70 ? 'is-warning' : '' ) ); ?>" style="width: <?php echo esc_attr(min(100, $bandwidth_percentage)); ?>%"></div>
                 </div>
             </div>
 

@@ -186,6 +186,16 @@ class ImgPro_CDN_Admin {
         $usage = $this->api->get_usage($site);
         $domain = $this->api->get_custom_domain($site);
 
+        // Check if tier is changing - if so, invalidate cached data
+        $current_settings = $this->settings->get_all();
+        $old_tier = $current_settings['cloud_tier'] ?? '';
+        if ($old_tier !== $tier_id) {
+            // Tier changed - clear all cached data to ensure fresh limits are shown
+            delete_transient('imgpro_cdn_site_data');
+            delete_transient('imgpro_cdn_pricing');
+            delete_transient('imgpro_cdn_tiers');
+        }
+
         $update_data = [
             'cloud_api_key' => $site['api_key'] ?? '',
             'cloud_email' => $site['email'] ?? '',

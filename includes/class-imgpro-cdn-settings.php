@@ -464,9 +464,27 @@ class ImgPro_CDN_Settings {
         // Convert to lowercase
         $domain = strtolower($domain);
 
+        // SECURITY: Handle IDN/punycode domains
+        // Convert internationalized domain names to ASCII punycode to prevent homograph attacks
+        // Example: "exаmple.com" (with Cyrillic 'а') -> "xn--exmple-4uf.com"
+        if (function_exists('idn_to_ascii') && !empty($domain)) {
+            // Check if domain contains non-ASCII characters
+            if (preg_match('/[^\x20-\x7E]/', $domain)) {
+                // Convert to punycode (ASCII-compatible encoding)
+                $ascii_domain = idn_to_ascii($domain, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
+                if ($ascii_domain !== false) {
+                    $domain = $ascii_domain;
+                } else {
+                    // IDN conversion failed - reject the domain
+                    return '';
+                }
+            }
+        }
+
         // Validate domain format (basic validation)
         // Allows: letters, numbers, hyphens, dots
         // Doesn't allow: spaces, special chars, etc.
+        // Note: After IDN conversion, domain should be ASCII-only
         if (!empty($domain) && !preg_match('/^[a-z0-9]([a-z0-9\-\.]*[a-z0-9])?$/i', $domain)) {
             // Invalid domain format
             return '';

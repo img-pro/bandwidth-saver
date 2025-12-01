@@ -19,9 +19,10 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
  */
 do_action('imgpro_cdn_before_uninstall');
 
-// SECURITY: Remove custom capability from all roles
-// Load the security class if not already loaded
+// Load the security class for capability removal
 require_once plugin_dir_path(__FILE__) . 'includes/class-imgpro-cdn-security.php';
+
+// SECURITY: Remove custom capability from all roles on main site
 ImgPro_CDN_Security::remove_capability_from_all();
 
 // Delete plugin options
@@ -57,6 +58,9 @@ if (is_multisite()) {
 
         foreach ($imgpro_sites as $imgpro_site) {
             switch_to_blog($imgpro_site->blog_id);
+
+            // SECURITY: Remove custom capability from all roles on this site
+            ImgPro_CDN_Security::remove_capability_from_all();
 
             // Delete options for this site
             delete_option('imgpro_cdn_settings');

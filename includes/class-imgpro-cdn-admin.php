@@ -338,13 +338,8 @@ class ImgPro_CDN_Admin {
 
             // Localize script
             wp_localize_script('imgpro-cdn-admin', 'imgproCdnAdmin', [
-                // Nonces - now granular per action
+                // Nonces - granular per action
                 'nonces' => $nonces,
-                // Legacy nonce keys for backwards compatibility (will be removed in future version)
-                'nonce' => $nonces['toggle_enabled'],
-                'checkoutNonce' => $nonces['checkout'],
-                'customDomainNonce' => $nonces['custom_domain'],
-                'onboardingNonce' => $nonces['onboarding'],
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'settingsUrl' => admin_url('options-general.php?page=imgpro-cdn-settings'),
                 'tier' => $all_settings['cloud_tier'] ?? ImgPro_CDN_Settings::TIER_NONE,

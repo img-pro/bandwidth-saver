@@ -6,7 +6,7 @@
  * Handles requests, responses, errors, and caching.
  *
  * @package ImgPro_CDN
- * @since   0.2.0
+ * @since   0.1.7
  */
 
 if (!defined('ABSPATH')) {
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 /**
  * API Client class
  *
- * @since 0.2.0
+ * @since 0.1.7
  */
 class ImgPro_CDN_API {
 
@@ -114,18 +114,45 @@ class ImgPro_CDN_API {
     }
 
     /**
-     * Find site by URL (for account recovery)
+     * Request account recovery (step 1)
      *
+     * Sends a verification code to the registered email address.
+     *
+     * @since 0.1.9
      * @param string $site_url WordPress site URL.
-     * @return array|WP_Error Site data array or error.
+     * @return array|WP_Error Response with email_hint or error.
      */
-    public function find_site($site_url) {
+    public function request_recovery($site_url) {
         if (empty($site_url)) {
             return new WP_Error('missing_site_url', __('Site URL is required', 'bandwidth-saver'));
         }
 
-        $response = $this->request('GET', '/api/sites', [
+        return $this->request('POST', '/api/recovery/request', [
             'site_url' => $site_url,
+        ]);
+    }
+
+    /**
+     * Verify recovery code (step 2)
+     *
+     * Verifies the code sent to email and returns site data if valid.
+     *
+     * @since 0.1.9
+     * @param string $site_url WordPress site URL.
+     * @param string $code     6-digit verification code from email.
+     * @return array|WP_Error Site data array or error.
+     */
+    public function verify_recovery($site_url, $code) {
+        if (empty($site_url)) {
+            return new WP_Error('missing_site_url', __('Site URL is required', 'bandwidth-saver'));
+        }
+        if (empty($code)) {
+            return new WP_Error('missing_code', __('Verification code is required', 'bandwidth-saver'));
+        }
+
+        $response = $this->request('POST', '/api/recovery/verify', [
+            'site_url' => $site_url,
+            'code'     => $code,
         ]);
 
         if (is_wp_error($response)) {
@@ -531,7 +558,28 @@ class ImgPro_CDN_API {
         }
 
         $status_code = wp_remote_retrieve_response_code($response);
-        $body = json_decode(wp_remote_retrieve_body($response), true);
+        $raw_body = wp_remote_retrieve_body($response);
+        $body = json_decode($raw_body, true);
+
+        // Handle JSON decode errors
+        if (null === $body && '' !== $raw_body) {
+            $json_error = json_last_error_msg();
+            do_action('imgpro_cdn_api_error', [
+                'status'   => $status_code,
+                'message'  => 'Invalid JSON response: ' . $json_error,
+                'endpoint' => $endpoint,
+            ], $endpoint);
+
+            return new WP_Error(
+                'json_error',
+                __('Invalid response from server. Please try again.', 'bandwidth-saver'),
+                [
+                    'status'    => $status_code,
+                    'raw_body'  => substr($raw_body, 0, 500), // Truncate for debugging
+                    'json_error' => $json_error,
+                ]
+            );
+        }
 
         // Handle API errors
         if ($status_code >= 400) {

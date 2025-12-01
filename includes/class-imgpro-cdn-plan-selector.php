@@ -5,7 +5,7 @@
  * Unified plan selection UI used throughout the plugin.
  *
  * @package ImgPro_CDN
- * @since   0.2.0
+ * @since   0.1.7
  */
 
 if (!defined('ABSPATH')) {
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 /**
  * Plan Selector class
  *
- * @since 0.2.0
+ * @since 0.1.7
  */
 class ImgPro_CDN_Plan_Selector {
 
@@ -234,7 +234,7 @@ class ImgPro_CDN_Plan_Selector {
                         <?php esc_html_e('Downgrade', 'bandwidth-saver'); ?>
                     </button>
                 <?php else: ?>
-                    <button type="button" class="imgpro-btn <?php echo $is_highlighted ? 'imgpro-btn-primary' : 'imgpro-btn-secondary'; ?> imgpro-plan-card__select" data-tier="<?php echo esc_attr($tier['id']); ?>">
+                    <button type="button" class="imgpro-btn <?php echo esc_attr( $is_highlighted ? 'imgpro-btn-primary' : 'imgpro-btn-secondary' ); ?> imgpro-plan-card__select" data-tier="<?php echo esc_attr($tier['id']); ?>">
                         <?php esc_html_e('Select', 'bandwidth-saver'); ?>
                     </button>
                 <?php endif; ?>

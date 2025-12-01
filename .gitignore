@@ -37,3 +37,4 @@ node_modules/
 *.zip
 .svnignore
 .svn-credentials
+/screens

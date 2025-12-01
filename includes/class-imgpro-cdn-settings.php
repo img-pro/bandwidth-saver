@@ -54,7 +54,7 @@ class ImgPro_CDN_Settings {
     /**
      * Subscription tier: Free
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var string
      */
     const TIER_FREE = 'free';
@@ -62,7 +62,7 @@ class ImgPro_CDN_Settings {
     /**
      * Subscription tier: Lite (paid)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var string
      */
     const TIER_LITE = 'lite';
@@ -70,7 +70,7 @@ class ImgPro_CDN_Settings {
     /**
      * Subscription tier: Pro (paid)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var string
      */
     const TIER_PRO = 'pro';
@@ -78,7 +78,7 @@ class ImgPro_CDN_Settings {
     /**
      * Subscription tier: Business (paid)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var string
      */
     const TIER_BUSINESS = 'business';
@@ -102,7 +102,7 @@ class ImgPro_CDN_Settings {
     /**
      * Subscription tier: Past due (payment failed, grace period)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var string
      */
     const TIER_PAST_DUE = 'past_due';
@@ -110,7 +110,7 @@ class ImgPro_CDN_Settings {
     /**
      * Subscription tier: Suspended (no access)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var string
      */
     const TIER_SUSPENDED = 'suspended';
@@ -118,7 +118,7 @@ class ImgPro_CDN_Settings {
     /**
      * Free tier storage limit in bytes (10 GB)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var int
      */
     const FREE_STORAGE_LIMIT = 10737418240;
@@ -126,7 +126,7 @@ class ImgPro_CDN_Settings {
     /**
      * Pro tier storage limit in bytes (120 GB)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var int
      */
     const PRO_STORAGE_LIMIT = 128849018880;
@@ -134,7 +134,7 @@ class ImgPro_CDN_Settings {
     /**
      * Free tier bandwidth limit in bytes (50 GB)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var int
      */
     const FREE_BANDWIDTH_LIMIT = 53687091200;
@@ -142,7 +142,7 @@ class ImgPro_CDN_Settings {
     /**
      * Pro tier bandwidth limit in bytes (2 TB)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var int
      */
     const PRO_BANDWIDTH_LIMIT = 2199023255552;
@@ -568,7 +568,7 @@ class ImgPro_CDN_Settings {
      *
      * Each mode has its own independent enabled state.
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param string $mode     The mode to check ('cloud' or 'cloudflare').
      * @param array  $settings The settings array to check against.
      * @return bool True if the mode is enabled.
@@ -588,7 +588,7 @@ class ImgPro_CDN_Settings {
      * CDN is active when: current mode is valid AND that mode is enabled.
      * This determines whether image rewriting actually happens.
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings The settings array to check against.
      * @return bool True if CDN is currently active.
      */
@@ -603,7 +603,7 @@ class ImgPro_CDN_Settings {
     /**
      * Check if user has any paid subscription (lite, pro, or business)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings The settings array to check against.
      * @return bool True if user has a paid subscription.
      */
@@ -616,7 +616,7 @@ class ImgPro_CDN_Settings {
     /**
      * Check if user has a paid subscription (alias for is_paid for backwards compatibility)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings The settings array to check against.
      * @return bool True if user has a paid subscription.
      */
@@ -627,7 +627,7 @@ class ImgPro_CDN_Settings {
     /**
      * Check if tier has custom domain feature
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings The settings array to check against.
      * @return bool True if custom domain is available.
      */
@@ -640,7 +640,7 @@ class ImgPro_CDN_Settings {
     /**
      * Check if user is on free tier
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings The settings array to check against.
      * @return bool True if user is on free tier.
      */
@@ -651,7 +651,7 @@ class ImgPro_CDN_Settings {
     /**
      * Check if subscription is cancelled or suspended
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings The settings array to check against.
      * @return bool True if subscription is cancelled or suspended.
      */
@@ -663,7 +663,7 @@ class ImgPro_CDN_Settings {
     /**
      * Check if subscription needs attention (past due)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings The settings array to check against.
      * @return bool True if subscription is past due.
      */
@@ -674,7 +674,7 @@ class ImgPro_CDN_Settings {
     /**
      * Get storage limit for current tier
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings The settings array to check against.
      * @return int Storage limit in bytes.
      */
@@ -691,7 +691,7 @@ class ImgPro_CDN_Settings {
     /**
      * Get storage usage percentage
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings The settings array to check against.
      * @return float Percentage of storage used (0-100).
      */
@@ -707,7 +707,7 @@ class ImgPro_CDN_Settings {
     /**
      * Get bandwidth limit for current tier
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings The settings array to check against.
      * @return int Bandwidth limit in bytes.
      */
@@ -724,7 +724,7 @@ class ImgPro_CDN_Settings {
     /**
      * Get bandwidth usage percentage
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings The settings array to check against.
      * @return float Percentage of bandwidth used (0-100).
      */
@@ -761,7 +761,7 @@ class ImgPro_CDN_Settings {
     /**
      * Format bytes to human readable string
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param int $bytes Bytes to format.
      * @param int $precision Decimal precision.
      * @return string Formatted string (e.g., "1.5 GB").

@@ -31,7 +31,7 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * API client instance
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var ImgPro_CDN_API
      */
     private $api;
@@ -57,7 +57,10 @@ class ImgPro_CDN_Admin_Ajax {
         add_action('wp_ajax_imgpro_cdn_toggle_enabled', [$this, 'ajax_toggle_enabled']);
         add_action('wp_ajax_imgpro_cdn_checkout', [$this, 'ajax_checkout']);
         add_action('wp_ajax_imgpro_cdn_manage_subscription', [$this, 'ajax_manage_subscription']);
-        add_action('wp_ajax_imgpro_cdn_recover_account', [$this, 'ajax_recover_account']);
+        // REMOVED: imgpro_cdn_recover_account - deprecated since v0.1.9
+        // Use imgpro_cdn_request_recovery + imgpro_cdn_verify_recovery instead
+        add_action('wp_ajax_imgpro_cdn_request_recovery', [$this, 'ajax_request_recovery']);
+        add_action('wp_ajax_imgpro_cdn_verify_recovery', [$this, 'ajax_verify_recovery']);
         add_action('wp_ajax_imgpro_cdn_add_custom_domain', [$this, 'ajax_add_custom_domain']);
         add_action('wp_ajax_imgpro_cdn_check_custom_domain', [$this, 'ajax_check_custom_domain']);
         add_action('wp_ajax_imgpro_cdn_remove_custom_domain', [$this, 'ajax_remove_custom_domain']);
@@ -141,7 +144,7 @@ class ImgPro_CDN_Admin_Ajax {
 
         if (false !== $result) {
             $message = $enabled
-                ? __('Image CDN enabled. Images now load from Cloudflare.', 'bandwidth-saver')
+                ? __('Image CDN enabled. Images now load from the global network.', 'bandwidth-saver')
                 : __('Image CDN disabled. Images now load from your server.', 'bandwidth-saver');
 
             wp_send_json_success(['message' => $message]);
@@ -153,7 +156,7 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * AJAX handler for free tier registration
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     public function ajax_free_register() {
@@ -181,23 +184,26 @@ class ImgPro_CDN_Admin_Ajax {
         if (is_wp_error($result)) {
             $error_code = $result->get_error_code();
 
-            // Handle existing account - try to recover
+            // Handle existing account - trigger secure recovery flow
             if ('conflict' === $error_code) {
-                $recovery = $this->api->find_site($site_url);
-                if (!is_wp_error($recovery)) {
-                    $this->save_site_to_settings($recovery, $email, $marketing_opt_in);
-                    wp_send_json_success([
-                        'message' => __('Found your existing account. It has been activated.', 'bandwidth-saver'),
-                        'recovered' => true,
-                        'next_step' => 3
+                // Automatically request recovery code
+                $recovery_result = $this->api->request_recovery($site_url);
+
+                if (!is_wp_error($recovery_result)) {
+                    // Recovery email sent - tell JS to show verification modal
+                    wp_send_json_error([
+                        'message'       => __('We found an existing account for this site.', 'bandwidth-saver'),
+                        'show_recovery' => true,
+                        'email_hint'    => $recovery_result['email_hint'] ?? null,
+                        'code'          => 'account_exists',
                     ]);
                     return;
                 }
 
+                // Recovery request failed
                 wp_send_json_error([
-                    'message' => __('This email is already registered. Try recovering your account.', 'bandwidth-saver'),
-                    'existing' => true,
-                    'code' => 'account_exists'
+                    'message' => __('An account exists but recovery failed. Please try again.', 'bandwidth-saver'),
+                    'code'    => 'recovery_failed',
                 ]);
                 return;
             }
@@ -240,38 +246,78 @@ class ImgPro_CDN_Admin_Ajax {
     }
 
     /**
-     * Save site data from API response to local settings
+     * Extract common site data for settings update
      *
-     * @since 0.2.0
-     * @param array  $site           Site data from API.
-     * @param string $email          User email.
-     * @param bool   $marketing_opt_in Marketing consent.
-     * @return void
+     * Consolidates site data extraction used by both save_site_to_settings()
+     * and update_settings_from_site() to ensure consistent handling.
+     *
+     * @since 0.1.9
+     * @param array $site Site data from API.
+     * @return array Settings data to update.
      */
-    private function save_site_to_settings($site, $email, $marketing_opt_in = false) {
+    private function extract_site_settings($site) {
         $tier_id = $this->api->get_tier_id($site);
         $usage = $this->api->get_usage($site);
+        $domain = $this->api->get_custom_domain($site);
 
-        $this->settings->update([
-            'cloud_api_key' => $site['api_key'] ?? '',
-            'cloud_email' => $email,
+        $data = [
             'cloud_tier' => $tier_id,
-            'setup_mode' => ImgPro_CDN_Settings::MODE_CLOUD,
-            'onboarding_step' => 3,
-            'marketing_opt_in' => $marketing_opt_in,
             'storage_used' => $usage['storage_used'],
-            'storage_limit' => $usage['storage_limit'] ?: ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
             'bandwidth_used' => $usage['bandwidth_used'],
-            'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
             'images_cached' => $usage['images_cached'],
             'stats_updated_at' => time(),
-        ]);
+            // Always set limits (use defaults for free tier)
+            'storage_limit' => $usage['storage_limit'] ?: ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
+            'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
+        ];
+
+        // Update custom domain if present
+        if ($domain) {
+            $data['custom_domain'] = $domain['domain'];
+            $data['custom_domain_status'] = $domain['status'];
+        }
+
+        // Disable if subscription is inactive
+        if (ImgPro_CDN_Settings::is_subscription_inactive(['cloud_tier' => $tier_id])) {
+            $data['cloud_enabled'] = false;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Save site data from API response to local settings
+     *
+     * Used after account creation or recovery to store all account details.
+     *
+     * @since 0.1.7
+     * @param array     $site             Site data from API.
+     * @param string    $email            User email.
+     * @param bool|null $marketing_opt_in Marketing consent. Pass null to preserve existing value.
+     * @return void
+     */
+    private function save_site_to_settings($site, $email, $marketing_opt_in = null) {
+        $data = $this->extract_site_settings($site);
+
+        // Add registration-specific fields
+        $data['cloud_api_key'] = $site['api_key'] ?? '';
+        $data['cloud_email'] = $email;
+        $data['setup_mode'] = ImgPro_CDN_Settings::MODE_CLOUD;
+        $data['onboarding_step'] = 3;
+
+        // Only update marketing_opt_in if explicitly provided (not null)
+        // This preserves the user's existing consent during recovery/upgrades
+        if (null !== $marketing_opt_in) {
+            $data['marketing_opt_in'] = $marketing_opt_in;
+        }
+
+        $this->settings->update($data);
     }
 
     /**
      * AJAX handler for updating onboarding step
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     public function ajax_update_onboarding_step() {
@@ -294,7 +340,7 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * AJAX handler for completing onboarding
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     public function ajax_complete_onboarding() {
@@ -309,7 +355,7 @@ class ImgPro_CDN_Admin_Ajax {
         $this->settings->update([
             'onboarding_completed' => true,
             'onboarding_step' => 4,
-            'enabled' => true,
+            'cloud_enabled' => true,
         ]);
 
         wp_send_json_success([
@@ -323,7 +369,7 @@ class ImgPro_CDN_Admin_Ajax {
      *
      * Uses the API client to fetch fresh site data.
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     public function ajax_sync_stats() {
@@ -382,43 +428,14 @@ class ImgPro_CDN_Admin_Ajax {
     /**
      * Update local settings from site API response
      *
-     * @since 0.2.0
+     * Used for syncing stats and refreshing site data.
+     *
+     * @since 0.1.7
      * @param array $site Site data from API.
      * @return void
      */
     private function update_settings_from_site($site) {
-        $tier_id = $this->api->get_tier_id($site);
-        $usage = $this->api->get_usage($site);
-        $domain = $this->api->get_custom_domain($site);
-
-        $update_data = [
-            'cloud_tier' => $tier_id,
-            'storage_used' => $usage['storage_used'],
-            'bandwidth_used' => $usage['bandwidth_used'],
-            'images_cached' => $usage['images_cached'],
-            'stats_updated_at' => time(),
-        ];
-
-        // Update storage/bandwidth limits if provided
-        if ($usage['storage_limit'] > 0) {
-            $update_data['storage_limit'] = $usage['storage_limit'];
-        }
-        if ($usage['bandwidth_limit'] > 0) {
-            $update_data['bandwidth_limit'] = $usage['bandwidth_limit'];
-        }
-
-        // Update custom domain if present
-        if ($domain) {
-            $update_data['custom_domain'] = $domain['domain'];
-            $update_data['custom_domain_status'] = $domain['status'];
-        }
-
-        // Disable if subscription is inactive
-        if (ImgPro_CDN_Settings::is_subscription_inactive(['cloud_tier' => $tier_id])) {
-            $update_data['enabled'] = false;
-        }
-
-        $this->settings->update($update_data);
+        $this->settings->update($this->extract_site_settings($site));
     }
 
     /**
@@ -461,16 +478,25 @@ class ImgPro_CDN_Admin_Ajax {
             if (is_wp_error($site)) {
                 $error_code = $site->get_error_code();
 
-                // Account already exists - try to recover it
+                // Account already exists - trigger secure recovery flow
                 if ('conflict' === $error_code) {
-                    $site = $this->api->find_site($site_url);
-                    if (is_wp_error($site)) {
+                    $recovery_result = $this->api->request_recovery($site_url);
+
+                    if (!is_wp_error($recovery_result)) {
                         wp_send_json_error([
-                            'message' => __('Account exists but could not be recovered. Please try again.', 'bandwidth-saver'),
-                            'code' => 'recovery_failed'
+                            'message'       => __('We found an existing account for this site.', 'bandwidth-saver'),
+                            'show_recovery' => true,
+                            'email_hint'    => $recovery_result['email_hint'] ?? null,
+                            'code'          => 'account_exists',
                         ]);
                         return;
                     }
+
+                    wp_send_json_error([
+                        'message' => __('An account exists but recovery failed. Please try again.', 'bandwidth-saver'),
+                        'code'    => 'recovery_failed',
+                    ]);
+                    return;
                 } else {
                     wp_send_json_error([
                         'message' => __('Could not create account. Please try again.', 'bandwidth-saver'),
@@ -547,13 +573,21 @@ class ImgPro_CDN_Admin_Ajax {
         }
     }
 
+    // =========================================================================
+    // REMOVED (2024-11-30): ajax_recover_account() - deprecated since v0.1.9
+    // Was a shim that redirected to ajax_request_recovery()
+    // Clients should use ajax_request_recovery() + ajax_verify_recovery() directly
+    // =========================================================================
+
     /**
-     * AJAX handler for account recovery
+     * AJAX handler for requesting account recovery (step 1)
      *
-     * @since 0.1.2
+     * Sends a verification code to the registered email.
+     *
+     * @since 0.1.9
      * @return void
      */
-    public function ajax_recover_account() {
+    public function ajax_request_recovery() {
         $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
         if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout') && !wp_verify_nonce($nonce, 'imgpro_cdn_onboarding')) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
@@ -563,11 +597,56 @@ class ImgPro_CDN_Admin_Ajax {
         }
 
         $site_url = get_site_url();
-        $site = $this->api->find_site($site_url);
+        $result = $this->api->request_recovery($site_url);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error([
+                'message' => $result->get_error_message(),
+                'code'    => $result->get_error_code(),
+            ]);
+            return;
+        }
+
+        wp_send_json_success([
+            'message'    => $result['message'] ?? __('If an account exists, a verification code has been sent to the registered email.', 'bandwidth-saver'),
+            'email_hint' => $result['email_hint'] ?? null,
+            'step'       => 'verify',
+        ]);
+    }
+
+    /**
+     * AJAX handler for verifying recovery code (step 2)
+     *
+     * Verifies the code and restores account access.
+     *
+     * @since 0.1.9
+     * @return void
+     */
+    public function ajax_verify_recovery() {
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+        if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout') && !wp_verify_nonce($nonce, 'imgpro_cdn_onboarding')) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
+        }
+
+        $code = isset($_POST['code']) ? sanitize_text_field(wp_unslash($_POST['code'])) : '';
+        if (empty($code) || strlen($code) !== 6) {
+            wp_send_json_error([
+                'message' => __('Please enter a valid 6-digit verification code.', 'bandwidth-saver'),
+                'code'    => 'invalid_code',
+            ]);
+            return;
+        }
+
+        $site_url = get_site_url();
+        $site = $this->api->verify_recovery($site_url, $code);
 
         if (is_wp_error($site)) {
             wp_send_json_error([
-                'message' => __('No subscription found for this site. If you subscribed recently, please wait a moment and try again.', 'bandwidth-saver')
+                'message' => $site->get_error_message(),
+                'code'    => $site->get_error_code(),
             ]);
             return;
         }
@@ -577,16 +656,45 @@ class ImgPro_CDN_Admin_Ajax {
         $this->save_site_to_settings($site, $email);
 
         // Enable CDN if valid subscription
-        $tier_id = $this->api->get_tier_id($site);
-        if (in_array($tier_id, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
+        $current_tier_id = $this->api->get_tier_id($site);
+        if (in_array($current_tier_id, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
             $this->settings->update([
-                'enabled' => true,
+                'cloud_enabled' => true,
                 'onboarding_completed' => true,
+                'onboarding_step' => 4, // Mark as fully complete for consistency
             ]);
         }
 
+        // Check if user wanted to upgrade to a specific tier
+        $pending_tier_id = isset($_POST['pending_tier_id']) ? sanitize_text_field(wp_unslash($_POST['pending_tier_id'])) : '';
+
+        if (!empty($pending_tier_id)) {
+            // Tier priority order (higher = better)
+            $tier_priority = [
+                ImgPro_CDN_Settings::TIER_FREE     => 1,
+                ImgPro_CDN_Settings::TIER_LITE     => 2,
+                ImgPro_CDN_Settings::TIER_PRO      => 3,
+                ImgPro_CDN_Settings::TIER_BUSINESS => 4,
+            ];
+
+            $current_priority = $tier_priority[$current_tier_id] ?? 0;
+            $pending_priority = $tier_priority[$pending_tier_id] ?? 0;
+
+            // If upgrading to a higher tier, return flag so JS can show confirmation modal
+            if ($pending_priority > $current_priority) {
+                wp_send_json_success([
+                    'message'         => __('Account recovered! Please confirm your upgrade.', 'bandwidth-saver'),
+                    'recovered'       => true,
+                    'show_upgrade'    => true,
+                    'pending_tier_id' => $pending_tier_id,
+                ]);
+                return;
+            }
+        }
+
         wp_send_json_success([
-            'message' => __('Account recovered. Your subscription is now active.', 'bandwidth-saver')
+            'message'   => __('Account recovered successfully! Your subscription is now active.', 'bandwidth-saver'),
+            'recovered' => true,
         ]);
     }
 

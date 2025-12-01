@@ -5,7 +5,7 @@
  * Handles the 4-step onboarding experience for new users.
  *
  * @package ImgPro_CDN
- * @since   0.2.0
+ * @since   0.1.7
  */
 
 if (!defined('ABSPATH')) {
@@ -15,14 +15,14 @@ if (!defined('ABSPATH')) {
 /**
  * Onboarding wizard class
  *
- * @since 0.2.0
+ * @since 0.1.7
  */
 class ImgPro_CDN_Onboarding {
 
     /**
      * Settings instance
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var ImgPro_CDN_Settings
      */
     private $settings;
@@ -30,7 +30,7 @@ class ImgPro_CDN_Onboarding {
     /**
      * Plan selector instance
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var ImgPro_CDN_Plan_Selector
      */
     private $plan_selector;
@@ -38,7 +38,7 @@ class ImgPro_CDN_Onboarding {
     /**
      * Constructor
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param ImgPro_CDN_Settings $settings Settings instance.
      */
     public function __construct(ImgPro_CDN_Settings $settings) {
@@ -53,7 +53,7 @@ class ImgPro_CDN_Onboarding {
      * - Not completed AND
      * - Either in onboarding flow (step > 1) OR no existing subscription
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return bool
      */
     public function should_show_onboarding() {
@@ -87,7 +87,7 @@ class ImgPro_CDN_Onboarding {
     /**
      * Get current onboarding step
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return int Step number (1-4).
      */
     public function get_current_step() {
@@ -97,7 +97,7 @@ class ImgPro_CDN_Onboarding {
     /**
      * Render the onboarding wizard
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     public function render() {
@@ -138,7 +138,7 @@ class ImgPro_CDN_Onboarding {
     /**
      * Step 1: Welcome - Show value proposition
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     private function render_step_welcome() {
@@ -187,7 +187,7 @@ class ImgPro_CDN_Onboarding {
     /**
      * Step 2: Connect - Create free account
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     private function render_step_connect() {
@@ -260,12 +260,6 @@ class ImgPro_CDN_Onboarding {
                 </p>
             </form>
 
-            <div class="imgpro-onboarding-recovery">
-                <span><?php esc_html_e('Already have an account?', 'bandwidth-saver'); ?></span>
-                <button type="button" class="imgpro-btn-link" id="imgpro-onboarding-recover">
-                    <?php esc_html_e('Recover it', 'bandwidth-saver'); ?>
-                </button>
-            </div>
         </div>
         <?php
     }
@@ -273,7 +267,7 @@ class ImgPro_CDN_Onboarding {
     /**
      * Step 3: Activate - Enable the CDN
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     private function render_step_activate() {
@@ -330,7 +324,7 @@ class ImgPro_CDN_Onboarding {
     /**
      * Step 4: Success - Show confirmation
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     private function render_step_success() {
@@ -367,7 +361,7 @@ class ImgPro_CDN_Onboarding {
     /**
      * Render progress dots
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param int $current_step Current step number.
      * @return void
      */
@@ -379,7 +373,7 @@ class ImgPro_CDN_Onboarding {
                 /* translators: %d: step number */
                 $step_label = sprintf(esc_attr__('Step %d', 'bandwidth-saver'), $i);
                 ?>
-                <span class="imgpro-progress-dot <?php echo $i < $current_step ? 'completed' : ''; ?> <?php echo $i === $current_step ? 'active' : ''; ?>" aria-label="<?php echo esc_attr($step_label); ?>"></span>
+                <span class="imgpro-progress-dot <?php echo esc_attr( $i < $current_step ? 'completed' : '' ); ?> <?php echo esc_attr( $i === $current_step ? 'active' : '' ); ?>" aria-label="<?php echo esc_attr($step_label); ?>"></span>
             <?php endfor; ?>
         </div>
         <?php
@@ -388,7 +382,7 @@ class ImgPro_CDN_Onboarding {
     /**
      * Render skip link for users who want self-hosted
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     private function render_skip_link() {

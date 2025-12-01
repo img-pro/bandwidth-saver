@@ -11,7 +11,21 @@
 (function($) {
     'use strict';
 
+    // ===== Constants =====
+
+    var AJAX_TIMEOUT = 30000; // 30 seconds for API-dependent operations
+
     // ===== Utility Functions =====
+
+    /**
+     * Escape HTML special characters to prevent XSS
+     */
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
     /**
      * Show admin notice
@@ -36,6 +50,26 @@
         }, 4000);
     }
 
+    /**
+     * Update a progress bar element with percentage and warning/critical states
+     * @param {string} selector - jQuery selector for the progress bar element
+     * @param {number} percentage - The percentage to display (0-100)
+     */
+    function updateProgressBar(selector, percentage) {
+        const $bar = $(selector);
+        if (!$bar.length) return;
+
+        const pct = Math.min(100, percentage);
+        $bar.css('width', pct + '%');
+        $bar.removeClass('is-warning is-critical');
+
+        if (pct >= 90) {
+            $bar.addClass('is-critical');
+        } else if (pct >= 70) {
+            $bar.addClass('is-warning');
+        }
+    }
+
     // ===== Onboarding Wizard =====
 
     /**
@@ -54,11 +88,6 @@
         $('#imgpro-onboarding-connect-form').on('submit', function(e) {
             e.preventDefault();
             handleFreeRegistration($(this));
-        });
-
-        // Step 2: Recover Account
-        $('#imgpro-onboarding-recover').on('click', function() {
-            handleRecoverAccount($(this));
         });
 
         // Step 3: Activate Toggle
@@ -84,6 +113,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_update_onboarding_step',
                 step: step,
@@ -94,6 +124,10 @@
                     // Reload to show new step
                     window.location.reload();
                 }
+            },
+            error: function(xhr, status) {
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -112,6 +146,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_free_register',
                 email: email,
@@ -127,12 +162,18 @@
                     }
                 } else {
                     $button.removeClass('is-loading').prop('disabled', false);
-                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.registrationError);
+                    // Account exists - show verification modal (email already sent)
+                    if (response.data.show_recovery) {
+                        showRecoveryVerificationModal(response.data.email_hint);
+                    } else {
+                        showNotice('error', response.data.message || imgproCdnAdmin.i18n.registrationError);
+                    }
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.removeClass('is-loading').prop('disabled', false);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message || imgproCdnAdmin.i18n.genericError);
             }
         });
     }
@@ -147,6 +188,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_toggle_enabled',
                 enabled: 1,
@@ -166,10 +208,11 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.settingsError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $card.removeClass('is-loading');
                 $('#imgpro-activate-toggle').prop('checked', false);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -181,6 +224,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_complete_onboarding',
                 nonce: imgproCdnAdmin.onboardingNonce
@@ -260,9 +304,12 @@
         if ($('#imgpro-stats-grid').length && imgproCdnAdmin.tier !== 'none') {
             // Sync stats every 5 minutes while page is open
             syncStats();
-            setInterval(syncStats, 5 * 60 * 1000);
+            setInterval(syncStats, 5 * 60 * 1000); // 5 minutes
         }
     }
+
+    // Track if stats sync is in progress to prevent race conditions
+    var statsSyncInProgress = false;
 
     /**
      * Handle main toggle
@@ -286,6 +333,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_toggle_enabled',
                 enabled: isEnabled ? 1 : 0,
@@ -310,9 +358,10 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.settingsError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $toggle.prop('checked', !isEnabled);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             },
             complete: function() {
                 $card.removeClass('is-loading');
@@ -355,6 +404,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_free_register',
                 nonce: imgproCdnAdmin.checkoutNonce
@@ -367,12 +417,18 @@
                     }, 1000);
                 } else {
                     $button.prop('disabled', false).text(originalText);
-                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.registrationError);
+                    // Account exists - show verification modal (email already sent)
+                    if (response.data.show_recovery) {
+                        showRecoveryVerificationModal(response.data.email_hint);
+                    } else {
+                        showNotice('error', response.data.message || imgproCdnAdmin.i18n.registrationError);
+                    }
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -380,43 +436,62 @@
     /**
      * Handle checkout (Pro upgrade)
      */
-    function handleCheckout($button) {
+    function handleCheckout($button, tierId) {
         const originalText = $button.text();
+        // Get tier from parameter, button data attribute, or default to 'pro'
+        const tier = tierId || $button.data('tier') || 'pro';
         $button.prop('disabled', true).text(imgproCdnAdmin.i18n.creatingCheckout);
 
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_checkout',
+                tier_id: tier,
                 nonce: imgproCdnAdmin.checkoutNonce
             },
             success: function(response) {
                 if (response.success) {
                     if (response.data.checkout_url) {
                         window.location.href = response.data.checkout_url;
-                    } else if (response.data.recovered) {
-                        window.location.reload();
+                    } else if (response.data.recovered || response.data.upgraded) {
+                        // Show success message if provided, then reload to reflect changes
+                        if (response.data.message) {
+                            showNotice('success', response.data.message);
+                        }
+                        // Brief delay to show the message before reload
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, response.data.message ? 1500 : 0);
                     }
                 } else {
                     $button.prop('disabled', false).text(originalText);
-                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.checkoutError);
+                    // Account exists - show verification modal (email already sent)
+                    if (response.data.show_recovery) {
+                        showRecoveryVerificationModal(response.data.email_hint, tier);
+                    } else {
+                        showNotice('error', response.data.message || imgproCdnAdmin.i18n.checkoutError);
+                    }
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
 
     /**
-     * Handle recover account
+     * Handle recover account - Step 1: Request verification code
+     * @param {jQuery} $button - The button element
+     * @param {boolean} skipConfirm - Skip confirmation dialog (for auto-triggered recovery)
      */
-    function handleRecoverAccount($button) {
+    function handleRecoverAccount($button, skipConfirm) {
         const originalText = $button.text();
 
-        if (!confirm(imgproCdnAdmin.i18n.recoverConfirm)) {
+        if (!skipConfirm && !confirm(imgproCdnAdmin.i18n.recoverConfirm)) {
             return;
         }
 
@@ -425,24 +500,175 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
-                action: 'imgpro_cdn_recover_account',
+                action: 'imgpro_cdn_request_recovery',
+                nonce: imgproCdnAdmin.onboardingNonce || imgproCdnAdmin.checkoutNonce
+            },
+            success: function(response) {
+                $button.prop('disabled', false).text(originalText);
+
+                if (response.success && response.data.step === 'verify') {
+                    // Show verification code modal
+                    showRecoveryVerificationModal(response.data.email_hint);
+                } else if (response.success) {
+                    showNotice('success', response.data.message);
+                } else {
+                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.recoverError);
+                }
+            },
+            error: function(xhr, status) {
+                $button.prop('disabled', false).text(originalText);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
+            }
+        });
+    }
+
+    /**
+     * Show recovery verification code modal
+     * @param {string} emailHint - Masked email hint (e.g., "i•••••@domain.com")
+     * @param {string|null} pendingTierId - Tier ID to checkout after verification (null = just recover)
+     */
+    function showRecoveryVerificationModal(emailHint, pendingTierId) {
+        // Remove existing modal if any
+        $('#imgpro-recovery-modal').remove();
+
+        const descText = imgproCdnAdmin.i18n.accountFoundDesc || 'We found an existing account for this site. To restore access, enter the verification code sent to:';
+        const emailDisplay = escapeHtml(emailHint || imgproCdnAdmin.i18n.yourEmail || 'your registered email');
+
+        const modalHtml = `
+            <div id="imgpro-recovery-modal" class="imgpro-modal-overlay">
+                <div class="imgpro-modal">
+                    <button type="button" class="imgpro-modal-close">&times;</button>
+                    <div class="imgpro-modal-header">
+                        <h2>${imgproCdnAdmin.i18n.accountFound || 'Welcome Back'}</h2>
+                    </div>
+                    <div class="imgpro-modal-body">
+                        <p>${descText} <strong>${emailDisplay}</strong></p>
+                        <div class="imgpro-verification-input">
+                            <input type="text"
+                                   id="imgpro-recovery-code"
+                                   maxlength="6"
+                                   pattern="[0-9]*"
+                                   inputmode="numeric"
+                                   placeholder="000000"
+                                   autocomplete="off"
+                                   data-1p-ignore="true"
+                                   data-lpignore="true">
+                        </div>
+                        <p class="imgpro-hint">${imgproCdnAdmin.i18n.codeExpires}</p>
+                    </div>
+                    <div class="imgpro-modal-footer">
+                        <button type="button" class="imgpro-btn imgpro-btn-secondary" id="imgpro-recovery-cancel">
+                            ${imgproCdnAdmin.i18n.cancel}
+                        </button>
+                        <button type="button" class="imgpro-btn imgpro-btn-primary" id="imgpro-recovery-verify">
+                            ${imgproCdnAdmin.i18n.verify}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        $('body').append(modalHtml);
+
+        const $modal = $('#imgpro-recovery-modal');
+        const $input = $('#imgpro-recovery-code');
+
+        // Focus input
+        setTimeout(function() {
+            $input.focus();
+        }, 100);
+
+        // Handle close
+        $modal.find('.imgpro-modal-close, #imgpro-recovery-cancel').on('click', function() {
+            $modal.remove();
+        });
+
+        // Handle verify
+        $('#imgpro-recovery-verify').on('click', function() {
+            handleRecoveryVerification($input.val(), pendingTierId);
+        });
+
+        // Handle enter key
+        $input.on('keypress', function(e) {
+            if (e.which === 13) {
+                handleRecoveryVerification($input.val(), pendingTierId);
+            }
+        });
+
+        // Only allow numbers
+        $input.on('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    }
+
+    /**
+     * Handle recovery verification - Step 2: Verify code
+     * @param {string} code - 6-digit verification code
+     * @param {string|null} pendingTierId - Tier to checkout after verification
+     */
+    function handleRecoveryVerification(code, pendingTierId) {
+        const $modal = $('#imgpro-recovery-modal');
+        const $button = $('#imgpro-recovery-verify');
+        const $input = $('#imgpro-recovery-code');
+
+        if (!code || code.length !== 6) {
+            $input.addClass('error').focus();
+            showNotice('error', imgproCdnAdmin.i18n.invalidCode);
+            return;
+        }
+
+        $button.prop('disabled', true).text(imgproCdnAdmin.i18n.verifying);
+        $input.prop('disabled', true);
+
+        $.ajax({
+            url: imgproCdnAdmin.ajaxUrl,
+            type: 'POST',
+            timeout: AJAX_TIMEOUT,
+            data: {
+                action: 'imgpro_cdn_verify_recovery',
+                code: code,
+                pending_tier_id: pendingTierId || '',
                 nonce: imgproCdnAdmin.onboardingNonce || imgproCdnAdmin.checkoutNonce
             },
             success: function(response) {
                 if (response.success) {
+                    $modal.remove();
+
+                    // If upgrade confirmation needed, reload page and show modal
+                    if (response.data.show_upgrade && response.data.pending_tier_id) {
+                        // Reload page with parameter to trigger upgrade modal
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('show_upgrade', response.data.pending_tier_id);
+                        url.searchParams.delete('payment_status'); // Clean up any old params
+                        window.location.href = url.toString();
+                        return;
+                    }
+
+                    // If there's a checkout URL, go there (upgrade needed)
+                    if (response.data.checkout_url) {
+                        window.location.href = response.data.checkout_url;
+                        return;
+                    }
+
+                    // Otherwise just reload (already on same/higher plan)
                     showNotice('success', response.data.message);
                     setTimeout(function() {
                         window.location.reload();
                     }, 1000);
                 } else {
-                    $button.prop('disabled', false).text(originalText);
-                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.recoverError);
+                    $button.prop('disabled', false).text(imgproCdnAdmin.i18n.verify);
+                    $input.prop('disabled', false).addClass('error').val('').focus();
+                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.verificationFailed);
                 }
             },
-            error: function() {
-                $button.prop('disabled', false).text(originalText);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+            error: function(xhr, status) {
+                $button.prop('disabled', false).text(imgproCdnAdmin.i18n.verify);
+                $input.prop('disabled', false);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -457,6 +683,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_manage_subscription',
                 nonce: imgproCdnAdmin.checkoutNonce
@@ -469,20 +696,29 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.portalError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
 
     /**
      * Sync stats from API
+     * Includes debouncing to prevent race conditions from concurrent calls
      */
     function syncStats() {
+        // Prevent concurrent requests
+        if (statsSyncInProgress) {
+            return;
+        }
+        statsSyncInProgress = true;
+
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_sync_stats',
                 nonce: imgproCdnAdmin.nonce
@@ -492,27 +728,28 @@
                     // Update stats display
                     const $storageVal = $('#imgpro-stat-storage');
                     if ($storageVal.length) {
-                        $storageVal.html(response.data.formatted.storage_used +
-                            '<span class="imgpro-stat-limit">/ ' + response.data.formatted.storage_limit + '</span>');
+                        $storageVal.html(escapeHtml(response.data.formatted.storage_used) +
+                            '<span class="imgpro-stat-limit">/ ' + escapeHtml(response.data.formatted.storage_limit) + '</span>');
                     }
 
-                    $('#imgpro-stat-images').text(response.data.images_cached.toLocaleString());
-                    $('#imgpro-stat-bandwidth').text(response.data.formatted.bandwidth_saved);
+                    $('#imgpro-stat-images').text((response.data.images_cached || 0).toLocaleString());
 
-                    // Update progress bar
-                    const $progressFill = $('.imgpro-progress-fill');
-                    if ($progressFill.length) {
-                        const percentage = Math.min(100, response.data.storage_percentage);
-                        $progressFill.css('width', percentage + '%');
-
-                        $progressFill.removeClass('is-warning is-critical');
-                        if (percentage >= 90) {
-                            $progressFill.addClass('is-critical');
-                        } else if (percentage >= 70) {
-                            $progressFill.addClass('is-warning');
-                        }
+                    // Update bandwidth stat with limit
+                    const $bandwidthVal = $('#imgpro-stat-bandwidth');
+                    if ($bandwidthVal.length) {
+                        $bandwidthVal.html(escapeHtml(response.data.formatted.bandwidth_used || '0 B') +
+                            '<span class="imgpro-stat-limit">/ ' + escapeHtml(response.data.formatted.bandwidth_limit) + '</span>');
                     }
+
+                    // Update storage progress bar
+                    updateProgressBar('#imgpro-progress-storage', response.data.storage_percentage || 0);
+
+                    // Update bandwidth progress bar
+                    updateProgressBar('#imgpro-progress-bandwidth', response.data.bandwidth_percentage || 0);
                 }
+            },
+            complete: function() {
+                statsSyncInProgress = false;
             }
         });
     }
@@ -586,6 +823,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_add_custom_domain',
                 domain: domain,
@@ -604,11 +842,12 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.genericError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
                 $input.prop('disabled', false);
                 $section.removeClass('is-loading');
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -623,6 +862,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_check_custom_domain',
                 nonce: imgproCdnAdmin.customDomainNonce
@@ -647,9 +887,10 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.genericError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -671,6 +912,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_remove_custom_domain',
                 nonce: imgproCdnAdmin.customDomainNonce
@@ -687,10 +929,11 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.genericError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.prop('disabled', false).text(originalText);
                 $section.removeClass('is-loading');
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -711,7 +954,7 @@
      * Handle remove CDN domain (self-hosted)
      */
     function handleRemoveCdnDomain($button) {
-        if (!confirm(imgproCdnAdmin.i18n.confirmRemoveCdnDomain || 'Remove this CDN domain? The Image CDN will be disabled.')) {
+        if (!confirm(imgproCdnAdmin.i18n.confirmRemoveCdnDomain)) {
             return;
         }
 
@@ -719,17 +962,17 @@
         $section.addClass('is-loading');
         $button.prop('disabled', true);
 
-        // Use AJAX to clear the CDN URL
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_remove_cdn_domain',
                 nonce: imgproCdnAdmin.nonce
             },
             success: function(response) {
                 if (response.success) {
-                    showNotice('success', response.data.message || 'CDN domain removed.');
+                    showNotice('success', response.data.message || imgproCdnAdmin.i18n.cdnDomainRemoved);
                     setTimeout(function() {
                         window.location.reload();
                     }, 1000);
@@ -739,10 +982,11 @@
                     showNotice('error', response.data.message || imgproCdnAdmin.i18n.genericError);
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $section.removeClass('is-loading');
                 $button.prop('disabled', false);
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -980,14 +1224,14 @@
 
         if (tier.limits?.storage?.formatted) {
             html += '<div class="imgpro-confirm-modal__metric">' +
-                        '<div class="imgpro-confirm-modal__metric-value">' + tier.limits.storage.formatted + '</div>' +
+                        '<div class="imgpro-confirm-modal__metric-value">' + escapeHtml(tier.limits.storage.formatted) + '</div>' +
                         '<div class="imgpro-confirm-modal__metric-label">Storage</div>' +
                     '</div>';
         }
 
         if (tier.limits?.bandwidth?.formatted) {
             html += '<div class="imgpro-confirm-modal__metric">' +
-                        '<div class="imgpro-confirm-modal__metric-value">' + tier.limits.bandwidth.formatted + '</div>' +
+                        '<div class="imgpro-confirm-modal__metric-value">' + escapeHtml(tier.limits.bandwidth.formatted) + '</div>' +
                         '<div class="imgpro-confirm-modal__metric-label">Bandwidth/mo</div>' +
                     '</div>';
         }
@@ -1114,6 +1358,7 @@
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
+            timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_checkout',
                 tier_id: tierId,
@@ -1127,7 +1372,7 @@
                         // Subscription upgraded directly - show success and reload
                         closePlanModal();
                         closeUpgradeConfirmModal();
-                        showNotice('success', response.data.message || 'Subscription upgraded!');
+                        showNotice('success', response.data.message || imgproCdnAdmin.i18n.subscriptionUpgraded);
                         setTimeout(function() {
                             window.location.reload();
                         }, 1500);
@@ -1138,14 +1383,20 @@
                     $button.removeClass('is-loading').prop('disabled', false);
                     closePlanModal();
                     closeUpgradeConfirmModal();
-                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.checkoutError);
+                    // Account exists - show verification modal with pending tier
+                    if (response.data.show_recovery) {
+                        showRecoveryVerificationModal(response.data.email_hint, tierId);
+                    } else {
+                        showNotice('error', response.data.message || imgproCdnAdmin.i18n.checkoutError);
+                    }
                 }
             },
-            error: function() {
+            error: function(xhr, status) {
                 $button.removeClass('is-loading').prop('disabled', false);
                 closePlanModal();
                 closeUpgradeConfirmModal();
-                showNotice('error', imgproCdnAdmin.i18n.genericError);
+                var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
+                showNotice('error', message);
             }
         });
     }
@@ -1160,10 +1411,32 @@
             // Dashboard & settings
             initDashboard();
             handlePaymentStatus();
+            handleShowUpgrade();
         }
 
         // Plan selector (available on both onboarding and dashboard)
         initPlanSelector();
     });
+
+    /**
+     * Handle show_upgrade URL parameter (after account recovery)
+     */
+    function handleShowUpgrade() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const upgradeTier = urlParams.get('show_upgrade');
+
+        if (upgradeTier) {
+            // Clean up URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete('show_upgrade');
+            window.history.replaceState({}, '', url.toString());
+
+            // Show success notice and upgrade modal
+            showNotice('success', imgproCdnAdmin.i18n.accountRecovered || 'Account recovered!');
+            setTimeout(function() {
+                showUpgradeConfirmModal(upgradeTier, null);
+            }, 300);
+        }
+    }
 
 })(jQuery);

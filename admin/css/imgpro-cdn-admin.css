@@ -5,7 +5,7 @@
  * ImgPro brand - electric blue accent.
  *
  * @package ImgPro_CDN
- * @since   0.2.0
+ * @since   0.1.7
  */
 
 /* ==========================================================================
@@ -804,19 +804,6 @@
 
 .imgpro-onboarding-terms a:hover {
     text-decoration: underline;
-}
-
-/* Recovery Link */
-.imgpro-onboarding-recovery {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--imgpro-space-2);
-    margin-top: var(--imgpro-space-6);
-    padding-top: var(--imgpro-space-6);
-    border-top: 1px solid var(--imgpro-border);
-    font-size: var(--imgpro-text-sm);
-    color: var(--imgpro-text-muted);
 }
 
 /* Progress Dots */
@@ -3096,4 +3083,145 @@ body.imgpro-modal-open {
     display: flex;
     align-items: center;
     gap: var(--imgpro-space-2);
+}
+
+/* ==========================================================================
+   Recovery Verification Modal
+   ========================================================================== */
+
+.imgpro-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--imgpro-space-6);
+    background: rgba(9, 9, 11, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.imgpro-modal {
+    position: relative;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 400px;
+    width: 100%;
+    animation: imgpro-modal-in 0.2s ease-out;
+}
+
+@keyframes imgpro-modal-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.imgpro-modal-close {
+    position: absolute;
+    top: var(--imgpro-space-4);
+    right: var(--imgpro-space-4);
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--imgpro-gray-400);
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--imgpro-radius-md);
+    transition: all 0.15s ease;
+}
+
+.imgpro-modal-close:hover {
+    background: var(--imgpro-gray-100);
+    color: var(--imgpro-gray-600);
+}
+
+.imgpro-modal-header {
+    padding: var(--imgpro-space-6) var(--imgpro-space-6) 0;
+    text-align: center;
+}
+
+.imgpro-modal-header h2 {
+    margin: 0;
+    font-size: var(--imgpro-text-xl);
+    font-weight: 600;
+    color: var(--imgpro-text);
+}
+
+.imgpro-modal-body {
+    padding: var(--imgpro-space-6);
+    text-align: center;
+}
+
+.imgpro-modal-body p {
+    margin: 0 0 var(--imgpro-space-4) 0;
+    color: var(--imgpro-gray-600);
+}
+
+.imgpro-modal-body .imgpro-hint {
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-gray-400);
+    margin-top: var(--imgpro-space-3);
+}
+
+.imgpro-verification-input {
+    margin: var(--imgpro-space-4) 0;
+    display: flex;
+    justify-content: center;
+}
+
+.imgpro-verification-input input {
+    width: 240px;
+    padding: var(--imgpro-space-4);
+    font-size: 32px;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 0.25em;
+    border: 2px solid var(--imgpro-gray-200);
+    border-radius: var(--imgpro-radius-lg);
+    background: var(--imgpro-gray-50);
+    color: var(--imgpro-text);
+    transition: all 0.15s ease;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.imgpro-verification-input input:focus {
+    outline: none;
+    border-color: var(--imgpro-primary);
+    background: var(--imgpro-white);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.imgpro-verification-input input.error {
+    border-color: var(--imgpro-red-500, #ef4444);
+    background: #fef2f2;
+}
+
+.imgpro-verification-input input::placeholder {
+    color: var(--imgpro-gray-300);
+    font-weight: 400;
+}
+
+.imgpro-modal-footer {
+    padding: 0 var(--imgpro-space-6) var(--imgpro-space-6);
+    display: flex;
+    gap: var(--imgpro-space-3);
+    justify-content: center;
+}
+
+.imgpro-modal-footer .imgpro-btn {
+    min-width: 100px;
 }

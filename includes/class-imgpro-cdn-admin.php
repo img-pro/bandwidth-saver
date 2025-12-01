@@ -31,7 +31,7 @@ class ImgPro_CDN_Admin {
     /**
      * Onboarding instance
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var ImgPro_CDN_Onboarding
      */
     private $onboarding;
@@ -39,7 +39,7 @@ class ImgPro_CDN_Admin {
     /**
      * API client instance
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var ImgPro_CDN_API
      */
     private $api;
@@ -47,7 +47,7 @@ class ImgPro_CDN_Admin {
     /**
      * Plan selector instance
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @var ImgPro_CDN_Plan_Selector
      */
     private $plan_selector;
@@ -82,7 +82,7 @@ class ImgPro_CDN_Admin {
     /**
      * Handle skip onboarding request
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     public function handle_skip_onboarding() {
@@ -134,36 +134,50 @@ class ImgPro_CDN_Admin {
             return;
         }
 
-        // Try to recover/sync account from cloud
-        $site_url = get_site_url();
-        $site = $this->api->find_site($site_url);
+        // Sync account from cloud using stored API key
+        $settings = $this->settings->get_all();
+        $api_key = $settings['cloud_api_key'] ?? '';
+
+        if (empty($api_key)) {
+            // No API key - can't sync, set transient to retry
+            set_transient('imgpro_cdn_payment_pending_recovery', true, 60);
+            return;
+        }
+
+        $site = $this->api->get_site($api_key, true); // Force refresh
 
         if (!is_wp_error($site)) {
-            // Save site data to settings
+            // Save refreshed site data
             $this->save_site_to_settings($site);
 
             // Enable if subscription is valid
             $tier_id = $this->api->get_tier_id($site);
-            if (in_array($tier_id, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
+            $valid_tiers = [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE];
+
+            if (in_array($tier_id, $valid_tiers, true)) {
                 $this->settings->update([
-                    'enabled' => true,
+                    'cloud_enabled' => true,
                     'onboarding_completed' => true,
                 ]);
+                delete_transient('imgpro_cdn_pending_payment');
+                wp_safe_redirect(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&activated=1'));
+                exit;
             }
 
+            // Site found but tier not ready yet (webhook may be pending)
             delete_transient('imgpro_cdn_pending_payment');
-            wp_safe_redirect(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&activated=1'));
+            wp_safe_redirect(admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&subscription_pending=1'));
             exit;
         }
 
-        // If recovery fails, set a transient to show a notice and try again later
+        // If sync fails, set a transient to show a notice and try again later
         set_transient('imgpro_cdn_payment_pending_recovery', true, 60);
     }
 
     /**
      * Save site data from API response to local settings
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $site Site data from API.
      * @return void
      */
@@ -181,14 +195,10 @@ class ImgPro_CDN_Admin {
             'bandwidth_used' => $usage['bandwidth_used'],
             'images_cached' => $usage['images_cached'],
             'stats_updated_at' => time(),
+            // Always set limits (use defaults for free tier when API returns 0)
+            'storage_limit' => $usage['storage_limit'] ?: ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
+            'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
         ];
-
-        if ($usage['storage_limit'] > 0) {
-            $update_data['storage_limit'] = $usage['storage_limit'];
-        }
-        if ($usage['bandwidth_limit'] > 0) {
-            $update_data['bandwidth_limit'] = $usage['bandwidth_limit'];
-        }
 
         if ($domain) {
             $update_data['custom_domain'] = $domain['domain'];
@@ -204,7 +214,7 @@ class ImgPro_CDN_Admin {
      * Uses cached data if available and fresh, otherwise fetches from API.
      * Updates local settings with any changes from the cloud.
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     private function sync_site_data() {
@@ -236,7 +246,7 @@ class ImgPro_CDN_Admin {
 
             // Disable if subscription is inactive
             if (ImgPro_CDN_Settings::is_subscription_inactive(['cloud_tier' => $tier_id])) {
-                $update_data['enabled'] = false;
+                $update_data['cloud_enabled'] = false;
             }
         }
 
@@ -330,13 +340,13 @@ class ImgPro_CDN_Admin {
                     'inactiveLabel' => __('CDN Inactive', 'bandwidth-saver'),
                     'activeMessage' => sprintf(
                         /* translators: 1: opening span tag, 2: closing span tag, 3: opening span tag, 4: closing span tag */
-                        __('%1$sImages are loading from Cloudflare.%2$s %3$sYour server handles less traffic.%4$s', 'bandwidth-saver'),
+                        __('%1$sImages are loading from the global network.%2$s %3$sYour server handles less traffic.%4$s', 'bandwidth-saver'),
                         '<span class="imgpro-cdn-nowrap imgpro-cdn-hide-mobile">',
                         '</span>',
                         '<span class="imgpro-cdn-nowrap">',
                         '</span>'
                     ),
-                    'disabledMessage' => __('Enable to serve images from Cloudflare instead of your server', 'bandwidth-saver'),
+                    'disabledMessage' => __('Enable to serve images from the global edge network', 'bandwidth-saver'),
                     // Button states
                     'creatingCheckout' => __('Creating checkout...', 'bandwidth-saver'),
                     'creatingAccount' => __('Creating account...', 'bandwidth-saver'),
@@ -349,18 +359,30 @@ class ImgPro_CDN_Admin {
                     'recoverError' => __('Could not recover account. Please try again.', 'bandwidth-saver'),
                     'portalError' => __('Could not open subscription portal. Please try again.', 'bandwidth-saver'),
                     'genericError' => __('Something went wrong. Please try again.', 'bandwidth-saver'),
+                    'timeoutError' => __('Request timed out. Please check your connection and try again.', 'bandwidth-saver'),
                     'settingsError' => __('Could not save settings. Please try again.', 'bandwidth-saver'),
                     // Confirm dialogs
-                    'recoverConfirm' => __('This will look up your existing subscription. Continue?', 'bandwidth-saver'),
+                    'recoverConfirm' => __('This will send a verification code to your registered email. Continue?', 'bandwidth-saver'),
+                    // Recovery verification
+                    'accountFound' => __('Welcome Back', 'bandwidth-saver'),
+                    'accountFoundDesc' => __('We found an existing account for this site. To restore access, enter the verification code sent to:', 'bandwidth-saver'),
+                    'codeExpires' => __('The code expires in 15 minutes.', 'bandwidth-saver'),
+                    'verify' => __('Verify', 'bandwidth-saver'),
+                    'verifying' => __('Verifying...', 'bandwidth-saver'),
+                    'cancel' => __('Cancel', 'bandwidth-saver'),
+                    'invalidCode' => __('Please enter a valid 6-digit code.', 'bandwidth-saver'),
+                    'verificationFailed' => __('Verification failed. Please check your code and try again.', 'bandwidth-saver'),
+                    'accountRecovered' => __('Account recovered!', 'bandwidth-saver'),
                     // Success messages
-                    'subscriptionActivated' => __('Subscription activated. Images now load from Cloudflare.', 'bandwidth-saver'),
+                    'subscriptionActivated' => __('Subscription activated. Your images now load from the global edge network.', 'bandwidth-saver'),
+                    'subscriptionUpgraded' => __('Subscription upgraded successfully!', 'bandwidth-saver'),
                     'accountCreated' => __('Account created! Let\'s activate your CDN.', 'bandwidth-saver'),
                     'checkoutCancelled' => __('Checkout cancelled. You can try again anytime.', 'bandwidth-saver'),
                     // Toggle UI text
                     'cdnActiveHeading' => __('Image CDN is Active', 'bandwidth-saver'),
                     'cdnInactiveHeading' => __('Image CDN is Inactive', 'bandwidth-saver'),
-                    'cdnActiveDesc' => __('Images are being delivered from Cloudflare edge locations worldwide.', 'bandwidth-saver'),
-                    'cdnInactiveDesc' => __('Enable to serve images from Cloudflare instead of your server.', 'bandwidth-saver'),
+                    'cdnActiveDesc' => __('Images are being delivered from the global edge network.', 'bandwidth-saver'),
+                    'cdnInactiveDesc' => __('Enable to serve images from the global edge network.', 'bandwidth-saver'),
                     // Custom domain
                     'addingDomain' => __('Adding domain...', 'bandwidth-saver'),
                     'checkingStatus' => __('Checking...', 'bandwidth-saver'),
@@ -370,6 +392,7 @@ class ImgPro_CDN_Admin {
                     'domainActive' => __('Custom domain is active.', 'bandwidth-saver'),
                     'confirmRemoveDomain' => __('Remove this custom domain? Images will be served from the default domain.', 'bandwidth-saver'),
                     'confirmRemoveCdnDomain' => __('Remove this CDN domain? The Image CDN will be disabled.', 'bandwidth-saver'),
+                    'cdnDomainRemoved' => __('CDN domain removed.', 'bandwidth-saver'),
                     // Upgrade prompts
                     'upgradeTitle' => __('Need more capacity?', 'bandwidth-saver'),
                     'upgradeSubtitle' => __('Upgrade to Pro for 120 GB storage + 2 TB bandwidth', 'bandwidth-saver'),
@@ -471,7 +494,19 @@ class ImgPro_CDN_Admin {
             ?>
             <div class="imgpro-notice imgpro-notice-success">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M6 10l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <p><strong><?php esc_html_e('Subscription activated. Images now load from Cloudflare.', 'bandwidth-saver'); ?></strong></p>
+                <p><strong><?php esc_html_e('Subscription activated. Your images now load from the global edge network.', 'bandwidth-saver'); ?></strong></p>
+            </div>
+            <?php
+        }
+
+        if (filter_input(INPUT_GET, 'subscription_pending', FILTER_VALIDATE_BOOLEAN)) {
+            ?>
+            <div class="imgpro-notice imgpro-notice-info">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M10 6v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <div>
+                    <strong><?php esc_html_e('Subscription received! Activating your account...', 'bandwidth-saver'); ?></strong>
+                    <p><?php esc_html_e('Enable the CDN toggle below to start serving images faster.', 'bandwidth-saver'); ?></p>
+                </div>
             </div>
             <?php
         }
@@ -580,7 +615,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render onboarding page wrapper
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     private function render_onboarding_page() {
@@ -596,7 +631,7 @@ class ImgPro_CDN_Admin {
      *
      * Status badge reflects the current tab's mode-specific enabled state.
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array  $settings    Plugin settings.
      * @param string $current_tab Current tab/mode being viewed.
      * @return void
@@ -611,12 +646,12 @@ class ImgPro_CDN_Admin {
             <div class="imgpro-header-brand">
                 <div>
                     <h1><?php esc_html_e('Bandwidth Saver', 'bandwidth-saver'); ?></h1>
-                    <p class="imgpro-tagline"><?php esc_html_e('Image CDN powered by Cloudflare', 'bandwidth-saver'); ?></p>
+                    <p class="imgpro-tagline"><?php esc_html_e('Image CDN for WordPress', 'bandwidth-saver'); ?></p>
                 </div>
             </div>
             <div class="imgpro-header-meta">
                 <?php if ($is_mode_configured): ?>
-                    <span class="imgpro-status-badge <?php echo $is_active ? 'imgpro-status-active' : 'imgpro-status-inactive'; ?>" id="imgpro-status-badge" data-mode="<?php echo esc_attr($mode); ?>">
+                    <span class="imgpro-status-badge <?php echo esc_attr( $is_active ? 'imgpro-status-active' : 'imgpro-status-inactive' ); ?>" id="imgpro-status-badge" data-mode="<?php echo esc_attr($mode); ?>">
                         <span class="imgpro-status-dot"></span>
                         <span class="imgpro-status-text"><?php echo $is_active ? esc_html__('CDN Active', 'bandwidth-saver') : esc_html__('CDN Inactive', 'bandwidth-saver'); ?></span>
                     </span>
@@ -632,7 +667,7 @@ class ImgPro_CDN_Admin {
      *
      * Each mode has its own independent enabled state.
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array  $settings   Plugin settings.
      * @param string $setup_mode Current setup mode.
      * @return void
@@ -646,7 +681,7 @@ class ImgPro_CDN_Admin {
             ? 'imgpro_cdn_settings[cloud_enabled]'
             : 'imgpro_cdn_settings[cloudflare_enabled]';
         ?>
-        <div class="imgpro-toggle-card <?php echo $is_enabled ? 'is-active' : 'is-inactive'; ?>" id="imgpro-toggle-card" data-mode="<?php echo esc_attr($mode); ?>">
+        <div class="imgpro-toggle-card <?php echo esc_attr( $is_enabled ? 'is-active' : 'is-inactive' ); ?>" id="imgpro-toggle-card" data-mode="<?php echo esc_attr($mode); ?>">
             <form method="post" action="options.php" class="imgpro-toggle-form">
                 <?php settings_fields('imgpro_cdn_settings_group'); ?>
                 <input type="hidden" name="imgpro_cdn_settings[setup_mode]" value="<?php echo esc_attr($mode); ?>">
@@ -664,8 +699,8 @@ class ImgPro_CDN_Admin {
                             </h2>
                             <p id="imgpro-toggle-description">
                                 <?php echo $is_enabled
-                                    ? esc_html__('Images are being delivered from Cloudflare edge locations worldwide.', 'bandwidth-saver')
-                                    : esc_html__('Enable to serve images from Cloudflare instead of your server.', 'bandwidth-saver'); ?>
+                                    ? esc_html__('Images are being delivered from the global edge network.', 'bandwidth-saver')
+                                    : esc_html__('Enable to serve images from the global edge network.', 'bandwidth-saver'); ?>
                             </p>
                         </div>
                     </div>
@@ -678,7 +713,7 @@ class ImgPro_CDN_Admin {
                             value="1"
                             <?php checked($is_enabled, true); ?>
                             role="switch"
-                            aria-checked="<?php echo $is_enabled ? 'true' : 'false'; ?>"
+                            aria-checked="<?php echo esc_attr( $is_enabled ? 'true' : 'false' ); ?>"
                         >
                         <span class="imgpro-toggle-slider"></span>
                         <span class="screen-reader-text"><?php esc_html_e('Toggle Image CDN', 'bandwidth-saver'); ?></span>
@@ -692,7 +727,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render subscription alerts (cancelled, past_due)
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings Plugin settings.
      * @return void
      */
@@ -710,7 +745,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render stats grid
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings Plugin settings.
      * @return void
      */
@@ -733,7 +768,7 @@ class ImgPro_CDN_Admin {
                     <span class="imgpro-stat-limit">/ <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($storage_limit, 0)); ?></span>
                 </div>
                 <div class="imgpro-progress-bar">
-                    <div class="imgpro-progress-fill <?php echo $storage_percentage >= 90 ? 'is-critical' : ($storage_percentage >= 70 ? 'is-warning' : ''); ?>" style="width: <?php echo esc_attr(min(100, $storage_percentage)); ?>%"></div>
+                    <div id="imgpro-progress-storage" class="imgpro-progress-fill <?php echo esc_attr( $storage_percentage >= 90 ? 'is-critical' : ( $storage_percentage >= 70 ? 'is-warning' : '' ) ); ?>" style="width: <?php echo esc_attr(min(100, $storage_percentage)); ?>%"></div>
                 </div>
             </div>
 
@@ -746,7 +781,7 @@ class ImgPro_CDN_Admin {
                     <span class="imgpro-stat-limit">/ <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0)); ?></span>
                 </div>
                 <div class="imgpro-progress-bar">
-                    <div class="imgpro-progress-fill <?php echo $bandwidth_percentage >= 90 ? 'is-critical' : ($bandwidth_percentage >= 70 ? 'is-warning' : ''); ?>" style="width: <?php echo esc_attr(min(100, $bandwidth_percentage)); ?>%"></div>
+                    <div id="imgpro-progress-bandwidth" class="imgpro-progress-fill <?php echo esc_attr( $bandwidth_percentage >= 90 ? 'is-critical' : ( $bandwidth_percentage >= 70 ? 'is-warning' : '' ) ); ?>" style="width: <?php echo esc_attr(min(100, $bandwidth_percentage)); ?>%"></div>
                 </div>
             </div>
 
@@ -766,7 +801,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render subscription alert banner
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param string $type     Alert type ('cancelled', 'past_due', 'suspended').
      * @param array  $settings Plugin settings.
      * @return void
@@ -893,7 +928,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render Cloud signup CTA
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $pricing Pricing information.
      * @return void
      */
@@ -902,7 +937,7 @@ class ImgPro_CDN_Admin {
         <div class="imgpro-cta-card">
             <div class="imgpro-cta-content">
                 <h2><?php esc_html_e('Skip the Setup. We Handle Everything.', 'bandwidth-saver'); ?></h2>
-                <p><?php esc_html_e('Images load from Cloudflare with zero configuration. Takes less than a minute.', 'bandwidth-saver'); ?></p>
+                <p><?php esc_html_e('Images load from a global edge network with zero configuration. Takes less than a minute.', 'bandwidth-saver'); ?></p>
 
                 <ul class="imgpro-feature-list">
                     <li>
@@ -961,7 +996,7 @@ class ImgPro_CDN_Admin {
      * 4. Custom Domain
      * 5. Advanced Settings
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @param array $settings Plugin settings.
      * @return void
      */
@@ -1483,7 +1518,7 @@ class ImgPro_CDN_Admin {
                             value="1"
                             <?php checked($settings['debug_mode'], true); ?>
                         >
-                        <span><?php esc_html_e('Enable debug mode', 'bandwidth-saver'); ?></span>
+                        <span class="imgpro-checkbox-text"><?php esc_html_e('Enable debug mode', 'bandwidth-saver'); ?></span>
                     </label>
                     <p class="imgpro-input-hint"><?php esc_html_e('Adds debug info to image elements (visible in dev tools).', 'bandwidth-saver'); ?></p>
                 </div>
@@ -1495,7 +1530,7 @@ class ImgPro_CDN_Admin {
     /**
      * Render page footer
      *
-     * @since 0.2.0
+     * @since 0.1.7
      * @return void
      */
     private function render_footer() {

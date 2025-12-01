@@ -291,12 +291,12 @@ class ImgPro_CDN_Admin_Ajax {
      * Used after account creation or recovery to store all account details.
      *
      * @since 0.1.7
-     * @param array  $site           Site data from API.
-     * @param string $email          User email.
-     * @param bool   $marketing_opt_in Marketing consent.
+     * @param array     $site             Site data from API.
+     * @param string    $email            User email.
+     * @param bool|null $marketing_opt_in Marketing consent. Pass null to preserve existing value.
      * @return void
      */
-    private function save_site_to_settings($site, $email, $marketing_opt_in = false) {
+    private function save_site_to_settings($site, $email, $marketing_opt_in = null) {
         $data = $this->extract_site_settings($site);
 
         // Add registration-specific fields
@@ -304,7 +304,12 @@ class ImgPro_CDN_Admin_Ajax {
         $data['cloud_email'] = $email;
         $data['setup_mode'] = ImgPro_CDN_Settings::MODE_CLOUD;
         $data['onboarding_step'] = 3;
-        $data['marketing_opt_in'] = $marketing_opt_in;
+
+        // Only update marketing_opt_in if explicitly provided (not null)
+        // This preserves the user's existing consent during recovery/upgrades
+        if (null !== $marketing_opt_in) {
+            $data['marketing_opt_in'] = $marketing_opt_in;
+        }
 
         $this->settings->update($data);
     }

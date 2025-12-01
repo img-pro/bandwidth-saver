@@ -661,6 +661,7 @@ class ImgPro_CDN_Admin_Ajax {
             $this->settings->update([
                 'cloud_enabled' => true,
                 'onboarding_completed' => true,
+                'onboarding_step' => 4, // Mark as fully complete for consistency
             ]);
         }
 

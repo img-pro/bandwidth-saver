@@ -604,10 +604,25 @@ class ImgPro_CDN_API {
     /**
      * Get API base URL
      *
+     * SECURITY: Only HTTPS URLs are allowed to prevent credential leakage.
+     *
      * @return string Base URL.
      */
     private function get_base_url() {
-        return apply_filters('imgpro_cdn_api_base_url', self::BASE_URL);
+        $url = apply_filters('imgpro_cdn_api_base_url', self::BASE_URL);
+
+        // SECURITY: Enforce HTTPS to prevent credential leakage via downgrade attacks
+        if (strpos($url, 'https://') !== 0) {
+            // Log the attempt and fall back to default
+            do_action('imgpro_cdn_api_error', [
+                'message' => 'Non-HTTPS API URL rejected',
+                'attempted_url' => $url,
+            ], 'base_url_validation');
+
+            return self::BASE_URL;
+        }
+
+        return $url;
     }
 
     /**

@@ -4,7 +4,7 @@ Tags: cdn, images, cloudflare, performance, speed
 Requires at least: 6.2
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.1.9
+Stable tag: 0.2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -240,6 +240,17 @@ You are responsible for the images served through your account.
 
 == Changelog ==
 
+= 0.2.0 =
+* Security: API keys are now encrypted at rest in the database
+* Security: Added rate limiting to prevent brute-force attacks on admin actions
+* Security: Stricter validation of CDN domains (blocks IPs, localhost, reserved domains)
+* Security: Protection against IDN homograph attacks on custom domains
+* Security: HTTPS enforcement for all API communications
+* Security: Granular permission system with dedicated capability
+* Improved: Usage stats now update in real-time after plan changes
+* Improved: Both storage and bandwidth progress bars update dynamically
+* Fixed: Plan limits now display correctly immediately after upgrade
+
 = 0.1.9 =
 * Fixed: CDN now activates reliably after payment or account recovery
 * Fixed: CDN properly disables when subscription becomes inactive
@@ -301,6 +312,9 @@ You are responsible for the images served through your account.
 * Initial release
 
 == Upgrade Notice ==
+
+= 0.2.0 =
+Security hardening release. API keys are now encrypted, rate limiting added, and stricter domain validation. Recommended for all users.
 
 = 0.1.9 =
 Critical fix for CDN activation. Prevents CDN from silently failing to enable after payment or recovery.

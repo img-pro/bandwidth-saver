@@ -117,7 +117,7 @@
             data: {
                 action: 'imgpro_cdn_update_onboarding_step',
                 step: step,
-                nonce: imgproCdnAdmin.onboardingNonce
+                nonce: imgproCdnAdmin.nonces.onboarding
             },
             success: function(response) {
                 if (response.success) {
@@ -151,7 +151,7 @@
                 action: 'imgpro_cdn_free_register',
                 email: email,
                 marketing_opt_in: marketingOptIn,
-                nonce: imgproCdnAdmin.onboardingNonce
+                nonce: imgproCdnAdmin.nonces.free_register
             },
             success: function(response) {
                 if (response.success) {
@@ -193,7 +193,7 @@
                 action: 'imgpro_cdn_toggle_enabled',
                 enabled: 1,
                 mode: 'cloud',
-                nonce: imgproCdnAdmin.nonce
+                nonce: imgproCdnAdmin.nonces.toggle_enabled
             },
             success: function(response) {
                 if (response.success) {
@@ -227,7 +227,7 @@
             timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_complete_onboarding',
-                nonce: imgproCdnAdmin.onboardingNonce
+                nonce: imgproCdnAdmin.nonces.onboarding
             },
             success: function(response) {
                 if (response.success && response.data.redirect) {
@@ -338,7 +338,7 @@
                 action: 'imgpro_cdn_toggle_enabled',
                 enabled: isEnabled ? 1 : 0,
                 mode: mode,
-                nonce: imgproCdnAdmin.nonce
+                nonce: imgproCdnAdmin.nonces.toggle_enabled
             },
             success: function(response) {
                 if (response.success) {
@@ -407,7 +407,7 @@
             timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_free_register',
-                nonce: imgproCdnAdmin.checkoutNonce
+                nonce: imgproCdnAdmin.nonces.free_register
             },
             success: function(response) {
                 if (response.success) {
@@ -449,7 +449,7 @@
             data: {
                 action: 'imgpro_cdn_checkout',
                 tier_id: tier,
-                nonce: imgproCdnAdmin.checkoutNonce
+                nonce: imgproCdnAdmin.nonces.checkout
             },
             success: function(response) {
                 if (response.success) {
@@ -503,7 +503,7 @@
             timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_request_recovery',
-                nonce: imgproCdnAdmin.onboardingNonce || imgproCdnAdmin.checkoutNonce
+                nonce: imgproCdnAdmin.nonces.recovery
             },
             success: function(response) {
                 $button.prop('disabled', false).text(originalText);
@@ -631,7 +631,7 @@
                 action: 'imgpro_cdn_verify_recovery',
                 code: code,
                 pending_tier_id: pendingTierId || '',
-                nonce: imgproCdnAdmin.onboardingNonce || imgproCdnAdmin.checkoutNonce
+                nonce: imgproCdnAdmin.nonces.recovery
             },
             success: function(response) {
                 if (response.success) {
@@ -686,7 +686,7 @@
             timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_manage_subscription',
-                nonce: imgproCdnAdmin.checkoutNonce
+                nonce: imgproCdnAdmin.nonces.manage_subscription
             },
             success: function(response) {
                 if (response.success && response.data.portal_url) {
@@ -721,7 +721,7 @@
             timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_sync_stats',
-                nonce: imgproCdnAdmin.nonce
+                nonce: imgproCdnAdmin.nonces.sync_stats
             },
             success: function(response) {
                 if (response.success && response.data.formatted) {
@@ -827,7 +827,7 @@
             data: {
                 action: 'imgpro_cdn_add_custom_domain',
                 domain: domain,
-                nonce: imgproCdnAdmin.customDomainNonce
+                nonce: imgproCdnAdmin.nonces.custom_domain
             },
             success: function(response) {
                 if (response.success) {
@@ -865,7 +865,7 @@
             timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_check_custom_domain',
-                nonce: imgproCdnAdmin.customDomainNonce
+                nonce: imgproCdnAdmin.nonces.custom_domain
             },
             success: function(response) {
                 if (response.success) {
@@ -915,7 +915,7 @@
             timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_remove_custom_domain',
-                nonce: imgproCdnAdmin.customDomainNonce
+                nonce: imgproCdnAdmin.nonces.custom_domain
             },
             success: function(response) {
                 if (response.success) {
@@ -968,7 +968,7 @@
             timeout: AJAX_TIMEOUT,
             data: {
                 action: 'imgpro_cdn_remove_cdn_domain',
-                nonce: imgproCdnAdmin.nonce
+                nonce: imgproCdnAdmin.nonces.remove_cdn_domain
             },
             success: function(response) {
                 if (response.success) {
@@ -1362,7 +1362,7 @@
             data: {
                 action: 'imgpro_cdn_checkout',
                 tier_id: tierId,
-                nonce: imgproCdnAdmin.checkoutNonce
+                nonce: imgproCdnAdmin.nonces.checkout
             },
             success: function(response) {
                 if (response.success) {

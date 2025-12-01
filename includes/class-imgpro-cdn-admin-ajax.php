@@ -71,6 +71,7 @@ class ImgPro_CDN_Admin_Ajax {
         add_action('wp_ajax_imgpro_cdn_update_onboarding_step', [$this, 'ajax_update_onboarding_step']);
         add_action('wp_ajax_imgpro_cdn_complete_onboarding', [$this, 'ajax_complete_onboarding']);
         add_action('wp_ajax_imgpro_cdn_sync_stats', [$this, 'ajax_sync_stats']);
+        add_action('wp_ajax_imgpro_cdn_health_check', [$this, 'ajax_health_check']);
     }
 
     /**
@@ -92,13 +93,12 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_toggle_enabled() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_toggle_enabled')) {
+        // SECURITY: Verify nonce inline so WordPress recognizes the check
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_toggle_enabled'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('toggle_enabled');
 
         $enabled = isset($_POST['enabled']) && '1' === $_POST['enabled'];
         $mode = isset($_POST['mode']) ? sanitize_text_field(wp_unslash($_POST['mode'])) : '';
@@ -160,15 +160,12 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_free_register() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_onboarding') && !wp_verify_nonce($nonce, 'imgpro_cdn_checkout')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_free_register'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('free_register');
 
-        // Get email from request or use admin email
         $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : get_option('admin_email');
         $site_url = get_site_url();
         $marketing_opt_in = isset($_POST['marketing_opt_in']) && '1' === $_POST['marketing_opt_in'];
@@ -321,13 +318,10 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_update_onboarding_step() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_onboarding')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_update_onboarding_step'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
 
         $step = isset($_POST['step']) ? absint($_POST['step']) : 1;
         $step = max(1, min(4, $step)); // Clamp to 1-4
@@ -344,13 +338,10 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_complete_onboarding() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_onboarding')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_complete_onboarding'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
 
         $this->settings->update([
             'onboarding_completed' => true,
@@ -373,16 +364,14 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_sync_stats() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_toggle_enabled') && !wp_verify_nonce($nonce, 'imgpro_cdn_onboarding')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_sync_stats'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('sync_stats');
 
-        $settings = $this->settings->get_all();
-        $api_key = $settings['cloud_api_key'] ?? '';
+        // SECURITY: Use get_api_key() to decrypt the stored API key
+        $api_key = $this->settings->get_api_key();
 
         if (empty($api_key)) {
             wp_send_json_error(['message' => __('No subscription found.', 'bandwidth-saver')]);
@@ -445,15 +434,12 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_checkout() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_checkout'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('checkout');
 
-        // Get requested tier (default to 'pro' for backwards compatibility)
         $tier_id = isset($_POST['tier_id']) ? sanitize_text_field(wp_unslash($_POST['tier_id'])) : 'pro';
 
         // Validate tier_id is a paid tier
@@ -466,8 +452,8 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
-        $settings = $this->settings->get_all();
-        $api_key = $settings['cloud_api_key'] ?? '';
+        // SECURITY: Use get_api_key() to decrypt the stored API key
+        $api_key = $this->settings->get_api_key();
         $email = get_option('admin_email');
         $site_url = get_site_url();
 
@@ -588,13 +574,11 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_request_recovery() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout') && !wp_verify_nonce($nonce, 'imgpro_cdn_onboarding')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_request_recovery'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('recovery');
 
         $site_url = get_site_url();
         $result = $this->api->request_recovery($site_url);
@@ -623,13 +607,11 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_verify_recovery() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout') && !wp_verify_nonce($nonce, 'imgpro_cdn_onboarding')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_verify_recovery'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('recovery');
 
         $code = isset($_POST['code']) ? sanitize_text_field(wp_unslash($_POST['code'])) : '';
         if (empty($code) || strlen($code) !== 6) {
@@ -705,16 +687,13 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_manage_subscription() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_manage_subscription'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
 
-        $settings = $this->settings->get_all();
-        $api_key = $settings['cloud_api_key'] ?? '';
+        // SECURITY: Use get_api_key() to decrypt the stored API key
+        $api_key = $this->settings->get_api_key();
 
         if (empty($api_key)) {
             wp_send_json_error([
@@ -768,13 +747,11 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_add_custom_domain() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_custom_domain')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_add_custom_domain'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('custom_domain');
 
         $raw_domain = isset($_POST['domain']) ? sanitize_text_field(wp_unslash($_POST['domain'])) : '';
         $domain = ImgPro_CDN_Settings::sanitize_domain($raw_domain);
@@ -783,8 +760,8 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
-        $settings = $this->settings->get_all();
-        $api_key = $settings['cloud_api_key'] ?? '';
+        // SECURITY: Use get_api_key() to decrypt the stored API key
+        $api_key = $this->settings->get_api_key();
 
         if (empty($api_key)) {
             wp_send_json_error([
@@ -837,16 +814,14 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_check_custom_domain() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_custom_domain')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_check_custom_domain'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('custom_domain');
 
-        $settings = $this->settings->get_all();
-        $api_key = $settings['cloud_api_key'] ?? '';
+        // SECURITY: Use get_api_key() to decrypt the stored API key
+        $api_key = $this->settings->get_api_key();
 
         if (empty($api_key)) {
             wp_send_json_error([
@@ -882,16 +857,13 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_remove_custom_domain() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_custom_domain')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_remove_custom_domain'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
 
-        $settings = $this->settings->get_all();
-        $api_key = $settings['cloud_api_key'] ?? '';
+        // SECURITY: Use get_api_key() to decrypt the stored API key
+        $api_key = $this->settings->get_api_key();
 
         if (empty($api_key)) {
             wp_send_json_error([
@@ -927,13 +899,10 @@ class ImgPro_CDN_Admin_Ajax {
      * @return void
      */
     public function ajax_remove_cdn_domain() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_toggle_enabled')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_remove_cdn_domain'))) {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
+        ImgPro_CDN_Security::check_permission();
 
         // Clear the CDN URL and disable the CDN
         $this->settings->update([
@@ -944,5 +913,105 @@ class ImgPro_CDN_Admin_Ajax {
         wp_send_json_success([
             'message' => __('CDN domain removed. The Image CDN has been disabled.', 'bandwidth-saver')
         ]);
+    }
+
+    /**
+     * AJAX handler for health check
+     *
+     * Checks CDN connectivity and configuration status.
+     * Useful for diagnosing issues without exposing sensitive data.
+     *
+     * @since 0.2.0
+     * @return void
+     */
+    public function ajax_health_check() {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_health_check'))) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('health_check');
+
+        $settings = $this->settings->get_all();
+        $health = [
+            'plugin_version' => IMGPRO_CDN_VERSION,
+            'php_version' => PHP_VERSION,
+            'wp_version' => get_bloginfo('version'),
+            'setup_mode' => $settings['setup_mode'] ?? 'none',
+            'cdn_active' => ImgPro_CDN_Settings::is_cdn_active($settings),
+            'checks' => [],
+        ];
+
+        // Check OpenSSL availability (required for encryption)
+        $health['checks']['openssl'] = [
+            'status' => function_exists('openssl_encrypt') ? 'ok' : 'warning',
+            'message' => function_exists('openssl_encrypt')
+                ? __('OpenSSL available', 'bandwidth-saver')
+                : __('OpenSSL not available - API keys stored in plaintext', 'bandwidth-saver'),
+        ];
+
+        // Check AUTH_KEY configuration
+        $auth_key_ok = defined('AUTH_KEY') && AUTH_KEY !== 'put your unique phrase here';
+        $health['checks']['auth_key'] = [
+            'status' => $auth_key_ok ? 'ok' : 'warning',
+            'message' => $auth_key_ok
+                ? __('AUTH_KEY properly configured', 'bandwidth-saver')
+                : __('AUTH_KEY not properly configured - API key encryption disabled', 'bandwidth-saver'),
+        ];
+
+        // Check mode-specific configuration
+        if (ImgPro_CDN_Settings::MODE_CLOUD === $settings['setup_mode']) {
+            // Cloud mode checks
+            $has_api_key = !empty($this->settings->get_api_key());
+            $health['checks']['api_key'] = [
+                'status' => $has_api_key ? 'ok' : 'error',
+                'message' => $has_api_key
+                    ? __('API key configured', 'bandwidth-saver')
+                    : __('API key missing', 'bandwidth-saver'),
+            ];
+
+            $tier = $settings['cloud_tier'] ?? '';
+            $tier_valid = in_array($tier, [
+                ImgPro_CDN_Settings::TIER_FREE,
+                ImgPro_CDN_Settings::TIER_LITE,
+                ImgPro_CDN_Settings::TIER_PRO,
+                ImgPro_CDN_Settings::TIER_BUSINESS,
+                ImgPro_CDN_Settings::TIER_ACTIVE,
+            ], true);
+            $health['checks']['subscription'] = [
+                'status' => $tier_valid ? 'ok' : 'error',
+                'message' => $tier_valid
+                    /* translators: %s: subscription tier name (e.g., "free", "pro", "business") */
+                    ? sprintf(__('Subscription active (%s)', 'bandwidth-saver'), $tier)
+                    : __('No active subscription', 'bandwidth-saver'),
+            ];
+
+        } elseif (ImgPro_CDN_Settings::MODE_CLOUDFLARE === $settings['setup_mode']) {
+            // Self-hosted mode checks
+            $cdn_url = $settings['cdn_url'] ?? '';
+            $cdn_valid = !empty($cdn_url) && ImgPro_CDN_Settings::is_valid_cdn_url($cdn_url);
+            $health['checks']['cdn_url'] = [
+                'status' => $cdn_valid ? 'ok' : 'error',
+                'message' => $cdn_valid
+                    /* translators: %s: CDN domain URL (e.g., "cdn.example.com") */
+                    ? sprintf(__('CDN URL configured: %s', 'bandwidth-saver'), $cdn_url)
+                    : __('CDN URL not configured or invalid', 'bandwidth-saver'),
+            ];
+        }
+
+        // Overall status
+        $has_errors = false;
+        $has_warnings = false;
+        foreach ($health['checks'] as $check) {
+            if ($check['status'] === 'error') {
+                $has_errors = true;
+            }
+            if ($check['status'] === 'warning') {
+                $has_warnings = true;
+            }
+        }
+
+        $health['overall_status'] = $has_errors ? 'error' : ($has_warnings ? 'warning' : 'ok');
+
+        wp_send_json_success($health);
     }
 }

@@ -57,7 +57,8 @@ class ImgPro_CDN_Admin_Ajax {
         add_action('wp_ajax_imgpro_cdn_toggle_enabled', [$this, 'ajax_toggle_enabled']);
         add_action('wp_ajax_imgpro_cdn_checkout', [$this, 'ajax_checkout']);
         add_action('wp_ajax_imgpro_cdn_manage_subscription', [$this, 'ajax_manage_subscription']);
-        add_action('wp_ajax_imgpro_cdn_recover_account', [$this, 'ajax_recover_account']);
+        // REMOVED: imgpro_cdn_recover_account - deprecated since v0.1.9
+        // Use imgpro_cdn_request_recovery + imgpro_cdn_verify_recovery instead
         add_action('wp_ajax_imgpro_cdn_request_recovery', [$this, 'ajax_request_recovery']);
         add_action('wp_ajax_imgpro_cdn_verify_recovery', [$this, 'ajax_verify_recovery']);
         add_action('wp_ajax_imgpro_cdn_add_custom_domain', [$this, 'ajax_add_custom_domain']);
@@ -567,25 +568,11 @@ class ImgPro_CDN_Admin_Ajax {
         }
     }
 
-    /**
-     * AJAX handler for account recovery (legacy - redirects to new flow)
-     *
-     * @since 0.1.2
-     * @deprecated 0.1.9 Use ajax_request_recovery() and ajax_verify_recovery() instead.
-     * @return void
-     */
-    public function ajax_recover_account() {
-        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
-        if (!wp_verify_nonce($nonce, 'imgpro_cdn_checkout') && !wp_verify_nonce($nonce, 'imgpro_cdn_onboarding')) {
-            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
-        }
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('You do not have permission to perform this action', 'bandwidth-saver')]);
-        }
-
-        // Redirect to new recovery flow - request verification code
-        $this->ajax_request_recovery();
-    }
+    // =========================================================================
+    // REMOVED (2024-11-30): ajax_recover_account() - deprecated since v0.1.9
+    // Was a shim that redirected to ajax_request_recovery()
+    // Clients should use ajax_request_recovery() + ajax_verify_recovery() directly
+    // =========================================================================
 
     /**
      * AJAX handler for requesting account recovery (step 1)

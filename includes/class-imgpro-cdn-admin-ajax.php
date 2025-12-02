@@ -322,6 +322,7 @@ class ImgPro_CDN_Admin_Ajax {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
         ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('onboarding');
 
         $step = isset($_POST['step']) ? absint($_POST['step']) : 1;
         $step = max(1, min(4, $step)); // Clamp to 1-4
@@ -342,6 +343,7 @@ class ImgPro_CDN_Admin_Ajax {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
         ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('onboarding');
 
         $this->settings->update([
             'onboarding_completed' => true,
@@ -691,6 +693,7 @@ class ImgPro_CDN_Admin_Ajax {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
         ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('subscription');
 
         // SECURITY: Use get_api_key() to decrypt the stored API key
         $api_key = $this->settings->get_api_key();
@@ -841,6 +844,7 @@ class ImgPro_CDN_Admin_Ajax {
         }
 
         // Update local status if changed
+        $settings = $this->settings->get_all();
         if (!empty($result['status']) && $result['status'] !== $settings['custom_domain_status']) {
             $this->settings->update([
                 'custom_domain_status' => $result['status'],
@@ -861,6 +865,7 @@ class ImgPro_CDN_Admin_Ajax {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
         ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('custom_domain');
 
         // SECURITY: Use get_api_key() to decrypt the stored API key
         $api_key = $this->settings->get_api_key();
@@ -903,6 +908,7 @@ class ImgPro_CDN_Admin_Ajax {
             wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
         }
         ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('settings');
 
         // Clear the CDN URL and disable the CDN
         $this->settings->update([

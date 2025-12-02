@@ -49,6 +49,9 @@ class ImgPro_CDN_Crypto {
     /**
      * Encrypt a value
      *
+     * Falls back to plaintext storage if encryption is unavailable.
+     * This is acceptable as encryption is defense-in-depth, not primary security.
+     *
      * @param string $value Plaintext value to encrypt.
      * @return string Encrypted value (base64 encoded with prefix) or original on failure.
      */
@@ -64,8 +67,6 @@ class ImgPro_CDN_Crypto {
 
         // Check if OpenSSL is available
         if (!function_exists('openssl_encrypt')) {
-            // Fall back to storing plaintext if OpenSSL unavailable
-            // This is acceptable as the security benefit is defense-in-depth
             return $value;
         }
 

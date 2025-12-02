@@ -315,13 +315,38 @@ class ImgPro_CDN_API {
         }
 
         $tiers = $response['tiers'] ?? [];
+
+        // Normalize tiers: map 'storage' to 'cache' for backwards compatibility
+        $tiers = array_map([$this, 'normalize_tier'], $tiers);
+
         set_transient('imgpro_cdn_tiers', $tiers, self::CACHE_TTL);
 
         return $tiers;
     }
 
     /**
+     * Normalize tier data for backwards compatibility
+     *
+     * Maps 'storage' to 'cache' in limits for API responses
+     * that haven't been updated yet.
+     *
+     * @param array $tier Raw tier data.
+     * @return array Normalized tier data.
+     */
+    private function normalize_tier($tier) {
+        // Map storage -> cache if cache doesn't exist
+        if (isset($tier['limits']['storage']) && !isset($tier['limits']['cache'])) {
+            $tier['limits']['cache'] = $tier['limits']['storage'];
+            unset($tier['limits']['storage']);
+        }
+        return $tier;
+    }
+
+    /**
      * Get fallback tiers when API is unavailable
+     *
+     * Bandwidth is the primary metric (resets monthly).
+     * Cache is secondary (LRU-managed, auto-regulated).
      *
      * @return array Fallback tiers.
      */
@@ -334,8 +359,8 @@ class ImgPro_CDN_API {
                 'highlight' => false,
                 'price' => ['cents' => 0, 'formatted' => 'Free', 'period' => null],
                 'limits' => [
-                    'storage' => ['bytes' => 10737418240, 'formatted' => '10 GB'],
-                    'bandwidth' => ['bytes' => 53687091200, 'formatted' => '50 GB', 'unlimited' => false],
+                    'bandwidth' => ['bytes' => 107374182400, 'formatted' => '100 GB', 'unlimited' => false],
+                    'cache' => ['bytes' => 5368709120, 'formatted' => '5 GB'],
                 ],
                 'features' => ['custom_domain' => false, 'priority_support' => false],
             ],
@@ -346,20 +371,20 @@ class ImgPro_CDN_API {
                 'highlight' => false,
                 'price' => ['cents' => 499, 'formatted' => '$4.99', 'period' => '/mo'],
                 'limits' => [
-                    'storage' => ['bytes' => 26843545600, 'formatted' => '25 GB'],
-                    'bandwidth' => ['bytes' => 214748364800, 'formatted' => '200 GB', 'unlimited' => false],
+                    'bandwidth' => ['bytes' => 268435456000, 'formatted' => '250 GB', 'unlimited' => false],
+                    'cache' => ['bytes' => 26843545600, 'formatted' => '25 GB'],
                 ],
-                'features' => ['custom_domain' => false, 'priority_support' => false],
+                'features' => ['custom_domain' => true, 'priority_support' => false],
             ],
             [
                 'id' => 'pro',
                 'name' => 'Pro',
-                'description' => 'Most popular',
+                'description' => 'Best for most sites',
                 'highlight' => true,
                 'price' => ['cents' => 1499, 'formatted' => '$14.99', 'period' => '/mo'],
                 'limits' => [
-                    'storage' => ['bytes' => 128849018880, 'formatted' => '120 GB'],
                     'bandwidth' => ['bytes' => 2199023255552, 'formatted' => '2 TB', 'unlimited' => false],
+                    'cache' => ['bytes' => 161061273600, 'formatted' => '150 GB'],
                 ],
                 'features' => ['custom_domain' => true, 'priority_support' => false],
             ],
@@ -370,8 +395,8 @@ class ImgPro_CDN_API {
                 'highlight' => false,
                 'price' => ['cents' => 4900, 'formatted' => '$49', 'period' => '/mo'],
                 'limits' => [
-                    'storage' => ['bytes' => 536870912000, 'formatted' => '500 GB'],
                     'bandwidth' => ['bytes' => 10995116277760, 'formatted' => '10 TB', 'unlimited' => false],
+                    'cache' => ['bytes' => 1099511627776, 'formatted' => '1 TB'],
                 ],
                 'features' => ['custom_domain' => true, 'priority_support' => true],
             ],
@@ -432,6 +457,9 @@ class ImgPro_CDN_API {
     /**
      * Extract usage data from site
      *
+     * Bandwidth is the primary metric (resets monthly).
+     * Cache is secondary (LRU-managed, auto-regulated).
+     *
      * @param array $site Site data.
      * @return array Normalized usage data.
      */
@@ -439,10 +467,10 @@ class ImgPro_CDN_API {
         $usage = $site['usage'] ?? [];
 
         return [
-            'storage_used'     => $usage['storage']['used_bytes'] ?? 0,
-            'storage_limit'    => $usage['storage']['limit_bytes'] ?? 0,
             'bandwidth_used'   => $usage['bandwidth']['used_bytes'] ?? 0,
             'bandwidth_limit'  => $usage['bandwidth']['limit_bytes'] ?? 0,
+            'cache_used'       => $usage['cache']['used_bytes'] ?? 0,
+            'cache_limit'      => $usage['cache']['limit_bytes'] ?? 0,
             'images_cached'    => $usage['images_cached'] ?? 0,
         ];
     }

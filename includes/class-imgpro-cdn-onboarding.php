@@ -144,28 +144,24 @@ class ImgPro_CDN_Onboarding {
     private function render_step_welcome() {
         ?>
         <div class="imgpro-onboarding-content imgpro-onboarding-step-1">
-            <h1><?php esc_html_e('Your images are about to get faster', 'bandwidth-saver'); ?></h1>
+            <h1><?php esc_html_e('Speed up your images instantly', 'bandwidth-saver'); ?></h1>
 
             <p class="imgpro-onboarding-description">
-                <?php esc_html_e('Deliver WordPress images through Cloudflare\'s global edge network. No DNS changes, no configuration needed.', 'bandwidth-saver'); ?>
+                <?php esc_html_e('Your WordPress images, delivered from the nearest edge server to each visitor. No DNS changes, no configuration.', 'bandwidth-saver'); ?>
             </p>
 
             <ul class="imgpro-onboarding-benefits">
                 <li>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span><strong><?php esc_html_e('10 GB storage', 'bandwidth-saver'); ?></strong>, <?php esc_html_e('free forever', 'bandwidth-saver'); ?></span>
+                    <span><strong><?php esc_html_e('Free forever', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('100 GB/month, no credit card', 'bandwidth-saver'); ?></span>
                 </li>
                 <li>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span><strong><?php esc_html_e('50 GB/mo bandwidth', 'bandwidth-saver'); ?></strong>, <?php esc_html_e('soft limit', 'bandwidth-saver'); ?></span>
+                    <span><strong><?php esc_html_e('Faster for everyone', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('300+ global edge locations', 'bandwidth-saver'); ?></span>
                 </li>
                 <li>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span><?php esc_html_e('300+ edge locations worldwide', 'bandwidth-saver'); ?></span>
-                </li>
-                <li>
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span><?php esc_html_e('Automatic fallback if CDN is ever down', 'bandwidth-saver'); ?></span>
+                    <span><strong><?php esc_html_e('Safe to try', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('deactivate and your site returns to normal', 'bandwidth-saver'); ?></span>
                 </li>
             </ul>
 
@@ -177,8 +173,8 @@ class ImgPro_CDN_Onboarding {
             </div>
 
             <p class="imgpro-onboarding-hint">
-                <?php esc_html_e('Need more storage?', 'bandwidth-saver'); ?>
-                <button type="button" class="imgpro-btn-link imgpro-open-plan-selector"><?php esc_html_e('See upgrade options', 'bandwidth-saver'); ?></button>
+                <?php esc_html_e('Need more?', 'bandwidth-saver'); ?>
+                <button type="button" class="imgpro-btn-link imgpro-open-plan-selector"><?php esc_html_e('See paid plans', 'bandwidth-saver'); ?></button>
             </p>
         </div>
         <?php

@@ -116,36 +116,72 @@ class ImgPro_CDN_Settings {
     const TIER_SUSPENDED = 'suspended';
 
     /**
-     * Free tier storage limit in bytes (10 GB)
+     * Free tier cache limit in bytes (5 GB)
      *
-     * @since 0.1.7
+     * Cache is auto-managed via LRU eviction.
+     *
+     * @since 0.2.0
      * @var int
      */
-    const FREE_STORAGE_LIMIT = 10737418240;
+    const FREE_CACHE_LIMIT = 5368709120;
 
     /**
-     * Pro tier storage limit in bytes (120 GB)
+     * Lite tier cache limit in bytes (25 GB)
      *
-     * @since 0.1.7
+     * @since 0.2.0
      * @var int
      */
-    const PRO_STORAGE_LIMIT = 128849018880;
+    const LITE_CACHE_LIMIT = 26843545600;
 
     /**
-     * Free tier bandwidth limit in bytes (50 GB)
+     * Pro tier cache limit in bytes (150 GB)
      *
-     * @since 0.1.7
+     * @since 0.2.0
      * @var int
      */
-    const FREE_BANDWIDTH_LIMIT = 53687091200;
+    const PRO_CACHE_LIMIT = 161061273600;
+
+    /**
+     * Business tier cache limit in bytes (1 TB)
+     *
+     * @since 0.2.0
+     * @var int
+     */
+    const BUSINESS_CACHE_LIMIT = 1099511627776;
+
+    /**
+     * Free tier bandwidth limit in bytes (100 GB)
+     *
+     * Bandwidth is the primary metric, resets monthly.
+     *
+     * @since 0.2.0
+     * @var int
+     */
+    const FREE_BANDWIDTH_LIMIT = 107374182400;
+
+    /**
+     * Lite tier bandwidth limit in bytes (250 GB)
+     *
+     * @since 0.2.0
+     * @var int
+     */
+    const LITE_BANDWIDTH_LIMIT = 268435456000;
 
     /**
      * Pro tier bandwidth limit in bytes (2 TB)
      *
-     * @since 0.1.7
+     * @since 0.2.0
      * @var int
      */
     const PRO_BANDWIDTH_LIMIT = 2199023255552;
+
+    /**
+     * Business tier bandwidth limit in bytes (10 TB)
+     *
+     * @since 0.2.0
+     * @var int
+     */
+    const BUSINESS_BANDWIDTH_LIMIT = 10995116277760;
 
     /**
      * API base URL for cloud services
@@ -201,10 +237,11 @@ class ImgPro_CDN_Settings {
         'custom_domain_status' => '', // pending_dns, pending_ssl, active, error
 
         // Usage stats (synced from Cloud API)
-        'storage_used'       => 0,
-        'storage_limit'      => 0,
+        // Bandwidth is primary metric (monthly), Cache is secondary (LRU-managed)
         'bandwidth_used'     => 0,
         'bandwidth_limit'    => 0,
+        'cache_used'         => 0,
+        'cache_limit'        => 0,
         'images_cached'      => 0,
         'stats_updated_at'   => 0,
 
@@ -359,17 +396,18 @@ class ImgPro_CDN_Settings {
         }
 
         // Usage stats (integers)
-        if (isset($settings['storage_used'])) {
-            $validated['storage_used'] = absint($settings['storage_used']);
-        }
-        if (isset($settings['storage_limit'])) {
-            $validated['storage_limit'] = absint($settings['storage_limit']);
-        }
+        // Bandwidth is primary metric (monthly), Cache is secondary (LRU-managed)
         if (isset($settings['bandwidth_used'])) {
             $validated['bandwidth_used'] = absint($settings['bandwidth_used']);
         }
         if (isset($settings['bandwidth_limit'])) {
             $validated['bandwidth_limit'] = absint($settings['bandwidth_limit']);
+        }
+        if (isset($settings['cache_used'])) {
+            $validated['cache_used'] = absint($settings['cache_used']);
+        }
+        if (isset($settings['cache_limit'])) {
+            $validated['cache_limit'] = absint($settings['cache_limit']);
         }
         if (isset($settings['images_cached'])) {
             $validated['images_cached'] = absint($settings['images_cached']);
@@ -752,8 +790,8 @@ class ImgPro_CDN_Settings {
      */
     public static function has_custom_domain($settings) {
         $tier = $settings['cloud_tier'] ?? '';
-        // Custom domain available on Pro and Business (not Lite)
-        return in_array($tier, [self::TIER_PRO, self::TIER_BUSINESS, self::TIER_ACTIVE, self::TIER_PAST_DUE], true);
+        // Custom domain available on all paid tiers (Lite, Pro, Business)
+        return in_array($tier, [self::TIER_LITE, self::TIER_PRO, self::TIER_BUSINESS, self::TIER_ACTIVE, self::TIER_PAST_DUE], true);
     }
 
     /**
@@ -791,59 +829,36 @@ class ImgPro_CDN_Settings {
     }
 
     /**
-     * Get storage limit for current tier
-     *
-     * @since 0.1.7
-     * @param array $settings The settings array to check against.
-     * @return int Storage limit in bytes.
-     */
-    public static function get_storage_limit($settings) {
-        if (self::is_pro($settings)) {
-            return self::PRO_STORAGE_LIMIT;
-        }
-        if (self::is_free($settings)) {
-            return self::FREE_STORAGE_LIMIT;
-        }
-        return 0;
-    }
-
-    /**
-     * Get storage usage percentage
-     *
-     * @since 0.1.7
-     * @param array $settings The settings array to check against.
-     * @return float Percentage of storage used (0-100).
-     */
-    public static function get_storage_percentage($settings) {
-        $limit = self::get_storage_limit($settings);
-        if ($limit <= 0) {
-            return 0;
-        }
-        $used = $settings['storage_used'] ?? 0;
-        return min(100, ($used / $limit) * 100);
-    }
-
-    /**
      * Get bandwidth limit for current tier
      *
-     * @since 0.1.7
+     * Bandwidth is the primary metric (resets monthly).
+     *
+     * @since 0.2.0
      * @param array $settings The settings array to check against.
      * @return int Bandwidth limit in bytes.
      */
     public static function get_bandwidth_limit($settings) {
-        if (self::is_pro($settings)) {
-            return self::PRO_BANDWIDTH_LIMIT;
+        $tier = $settings['cloud_tier'] ?? '';
+        switch ($tier) {
+            case self::TIER_BUSINESS:
+                return self::BUSINESS_BANDWIDTH_LIMIT;
+            case self::TIER_PRO:
+            case self::TIER_ACTIVE:
+            case self::TIER_PAST_DUE:
+                return self::PRO_BANDWIDTH_LIMIT;
+            case self::TIER_LITE:
+                return self::LITE_BANDWIDTH_LIMIT;
+            case self::TIER_FREE:
+                return self::FREE_BANDWIDTH_LIMIT;
+            default:
+                return 0;
         }
-        if (self::is_free($settings)) {
-            return self::FREE_BANDWIDTH_LIMIT;
-        }
-        return 0;
     }
 
     /**
      * Get bandwidth usage percentage
      *
-     * @since 0.1.7
+     * @since 0.2.0
      * @param array $settings The settings array to check against.
      * @return float Percentage of bandwidth used (0-100).
      */
@@ -853,6 +868,49 @@ class ImgPro_CDN_Settings {
             return 0;
         }
         $used = $settings['bandwidth_used'] ?? 0;
+        return min(100, ($used / $limit) * 100);
+    }
+
+    /**
+     * Get cache limit for current tier
+     *
+     * Cache is auto-managed via LRU eviction.
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return int Cache limit in bytes.
+     */
+    public static function get_cache_limit($settings) {
+        $tier = $settings['cloud_tier'] ?? '';
+        switch ($tier) {
+            case self::TIER_BUSINESS:
+                return self::BUSINESS_CACHE_LIMIT;
+            case self::TIER_PRO:
+            case self::TIER_ACTIVE:
+            case self::TIER_PAST_DUE:
+                return self::PRO_CACHE_LIMIT;
+            case self::TIER_LITE:
+                return self::LITE_CACHE_LIMIT;
+            case self::TIER_FREE:
+                return self::FREE_CACHE_LIMIT;
+            default:
+                return 0;
+        }
+    }
+
+    /**
+     * Get cache usage percentage
+     *
+     * @since 0.2.0
+     * @param array $settings The settings array to check against.
+     * @return float Percentage of cache used (0-100).
+     */
+    public static function get_cache_percentage($settings) {
+        $limit = self::get_cache_limit($settings);
+        if ($limit <= 0) {
+            return 0;
+        }
+        $used = $settings['cache_used'] ?? 0;
         return min(100, ($used / $limit) * 100);
     }
 

@@ -201,13 +201,13 @@ class ImgPro_CDN_Admin {
             'cloud_email' => $site['email'] ?? '',
             'cloud_tier' => $tier_id,
             'setup_mode' => ImgPro_CDN_Settings::MODE_CLOUD,
-            'storage_used' => $usage['storage_used'],
             'bandwidth_used' => $usage['bandwidth_used'],
+            'cache_used' => $usage['cache_used'],
             'images_cached' => $usage['images_cached'],
             'stats_updated_at' => time(),
             // Always set limits (use defaults for free tier when API returns 0)
-            'storage_limit' => $usage['storage_limit'] ?: ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
             'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
+            'cache_limit' => $usage['cache_limit'] ?: ImgPro_CDN_Settings::FREE_CACHE_LIMIT,
         ];
 
         if ($domain) {
@@ -261,12 +261,12 @@ class ImgPro_CDN_Admin {
         }
 
         // Update usage stats
-        if ($usage['storage_used'] !== ($settings['storage_used'] ?? 0)) {
-            $update_data['storage_used'] = $usage['storage_used'];
-            $settings_changed = true;
-        }
         if ($usage['bandwidth_used'] !== ($settings['bandwidth_used'] ?? 0)) {
             $update_data['bandwidth_used'] = $usage['bandwidth_used'];
+            $settings_changed = true;
+        }
+        if ($usage['cache_used'] !== ($settings['cache_used'] ?? 0)) {
+            $update_data['cache_used'] = $usage['cache_used'];
             $settings_changed = true;
         }
         if ($usage['images_cached'] !== ($settings['images_cached'] ?? 0)) {
@@ -343,7 +343,8 @@ class ImgPro_CDN_Admin {
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'settingsUrl' => admin_url('options-general.php?page=imgpro-cdn-settings'),
                 'tier' => $all_settings['cloud_tier'] ?? ImgPro_CDN_Settings::TIER_NONE,
-                'storageLimit' => ImgPro_CDN_Settings::get_storage_limit($all_settings),
+                'bandwidthLimit' => ImgPro_CDN_Settings::get_bandwidth_limit($all_settings),
+                'cacheLimit' => ImgPro_CDN_Settings::get_cache_limit($all_settings),
                 'pricing' => $pricing,
                 'tiers' => $tiers_by_id,
                 'i18n' => [
@@ -761,28 +762,15 @@ class ImgPro_CDN_Admin {
      * @return void
      */
     private function render_stats_grid($settings) {
-        $storage_used = $settings['storage_used'] ?? 0;
-        $storage_limit = ImgPro_CDN_Settings::get_storage_limit($settings);
-        $storage_percentage = ImgPro_CDN_Settings::get_storage_percentage($settings);
         $bandwidth_used = $settings['bandwidth_used'] ?? 0;
         $bandwidth_limit = ImgPro_CDN_Settings::get_bandwidth_limit($settings);
         $bandwidth_percentage = ImgPro_CDN_Settings::get_bandwidth_percentage($settings);
+        $cache_used = $settings['cache_used'] ?? 0;
+        $cache_limit = ImgPro_CDN_Settings::get_cache_limit($settings);
+        $cache_percentage = ImgPro_CDN_Settings::get_cache_percentage($settings);
         $images_cached = $settings['images_cached'] ?? 0;
         ?>
         <div class="imgpro-stats-grid" id="imgpro-stats-grid">
-            <div class="imgpro-stat-card">
-                <div class="imgpro-stat-header">
-                    <span class="imgpro-stat-label"><?php esc_html_e('Storage Used', 'bandwidth-saver'); ?></span>
-                </div>
-                <div class="imgpro-stat-value" id="imgpro-stat-storage">
-                    <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($storage_used)); ?>
-                    <span class="imgpro-stat-limit">/ <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($storage_limit, 0)); ?></span>
-                </div>
-                <div class="imgpro-progress-bar">
-                    <div id="imgpro-progress-storage" class="imgpro-progress-fill <?php echo esc_attr( $storage_percentage >= 90 ? 'is-critical' : ( $storage_percentage >= 70 ? 'is-warning' : '' ) ); ?>" style="width: <?php echo esc_attr(min(100, $storage_percentage)); ?>%"></div>
-                </div>
-            </div>
-
             <div class="imgpro-stat-card">
                 <div class="imgpro-stat-header">
                     <span class="imgpro-stat-label"><?php esc_html_e('Bandwidth Used', 'bandwidth-saver'); ?></span>
@@ -1086,15 +1074,15 @@ class ImgPro_CDN_Admin {
         $tier_name = $tier_names[$tier] ?? ucfirst($tier);
 
         // Get limits
-        $storage_limit = $settings['storage_limit'] ?? 0;
         $bandwidth_limit = $settings['bandwidth_limit'] ?? 0;
+        $cache_limit = $settings['cache_limit'] ?? 0;
 
         // Format limits for display
-        $storage_formatted = $storage_limit > 0 ? ImgPro_CDN_Settings::format_bytes($storage_limit, 0) : '10 GB';
-        $bandwidth_formatted = $bandwidth_limit > 0 ? ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0) : '50 GB';
+        $bandwidth_formatted = $bandwidth_limit > 0 ? ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0) : '100 GB';
+        $cache_formatted = $cache_limit > 0 ? ImgPro_CDN_Settings::format_bytes($cache_limit, 0) : '5 GB';
 
-        // Check for custom domain feature (available on Pro+)
-        $has_custom_domain_feature = in_array($tier, ['pro', 'business'], true);
+        // Check for custom domain feature (available on all paid tiers)
+        $has_custom_domain_feature = in_array($tier, ['lite', 'pro', 'business'], true);
         $has_priority_support = $tier === 'business';
 
         // Determine next tier for direct upgrade
@@ -1110,7 +1098,7 @@ class ImgPro_CDN_Admin {
                 <div class="imgpro-account-card__main">
                     <div class="imgpro-account-card__content">
                         <strong class="imgpro-account-card__headline"><?php esc_html_e('Need more capacity?', 'bandwidth-saver'); ?></strong>
-                        <span class="imgpro-account-card__description"><?php esc_html_e('Upgrade for more storage, bandwidth, and features like custom domains.', 'bandwidth-saver'); ?></span>
+                        <span class="imgpro-account-card__description"><?php esc_html_e('Upgrade for more bandwidth and features like custom domains.', 'bandwidth-saver'); ?></span>
                     </div>
                     <button type="button" class="imgpro-btn imgpro-btn-primary imgpro-open-plan-selector">
                         <?php esc_html_e('See upgrade options', 'bandwidth-saver'); ?>
@@ -1132,12 +1120,10 @@ class ImgPro_CDN_Admin {
                             <span class="imgpro-account-card__plan-label"><?php esc_html_e('Plan', 'bandwidth-saver'); ?></span>
                         </div>
                         <div class="imgpro-account-card__limits">
-                            <span class="imgpro-account-card__limit"><?php echo esc_html($storage_formatted); ?> <?php esc_html_e('storage', 'bandwidth-saver'); ?></span>
-                            <span class="imgpro-account-card__separator">·</span>
-                            <span class="imgpro-account-card__limit"><?php echo esc_html($bandwidth_formatted); ?> <?php esc_html_e('bandwidth', 'bandwidth-saver'); ?></span>
+                            <span class="imgpro-account-card__limit"><?php echo esc_html($bandwidth_formatted); ?> <?php esc_html_e('bandwidth/mo', 'bandwidth-saver'); ?></span>
                             <?php if ($has_custom_domain_feature): ?>
                                 <span class="imgpro-account-card__separator">·</span>
-                                <span class="imgpro-account-card__limit"><?php esc_html_e('Custom domains', 'bandwidth-saver'); ?></span>
+                                <span class="imgpro-account-card__limit"><?php esc_html_e('Custom domain', 'bandwidth-saver'); ?></span>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -1461,7 +1447,7 @@ class ImgPro_CDN_Admin {
                     <?php if (!$can_use_custom_domain): ?>
                         <p class="imgpro-custom-domain-upgrade-hint">
                             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1l1.5 3 3.5.5-2.5 2.5.5 3.5L7 9l-3 1.5.5-3.5L2 4.5l3.5-.5L7 1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <?php esc_html_e('Custom domains are available on Pro and Business plans.', 'bandwidth-saver'); ?>
+                            <?php esc_html_e('Custom domains are available on all paid plans.', 'bandwidth-saver'); ?>
                         </p>
                     <?php endif; ?>
                 </div>
@@ -1551,8 +1537,9 @@ class ImgPro_CDN_Admin {
                 <?php
                 echo wp_kses_post(
                     sprintf(
-                        /* translators: 1: ImgPro link, 2: Cloudflare link */
-                        __('Bandwidth Saver by %1$s, powered by %2$s', 'bandwidth-saver'),
+                        /* translators: 1: Plugin page link, 2: ImgPro link, 3: Cloudflare link */
+                        __('%1$s by %2$s, powered by %3$s', 'bandwidth-saver'),
+                        '<a href="https://wordpress.org/plugins/bandwidth-saver/" target="_blank">Bandwidth Saver</a>',
                         '<a href="https://img.pro" target="_blank">ImgPro</a>',
                         '<a href="https://cloudflare.com" target="_blank">Cloudflare</a>'
                     )

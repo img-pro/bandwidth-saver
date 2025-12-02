@@ -73,14 +73,14 @@ This is a delivery optimization, not an image optimization plugin. It works alon
 
 One-click activation. We operate the global edge infrastructure. No Cloudflare account required.
 
-* Free: 10 GB storage, 50 GB bandwidth/month — free forever
-* Lite ($4.99/mo): 25 GB storage, 200 GB bandwidth/month
-* Pro ($14.99/mo): 120 GB storage, 2 TB bandwidth/month, custom domain support
-* Business ($49/mo): 500 GB storage, 10 TB bandwidth/month, custom domain, priority support
+* Free: 100 GB bandwidth/month — free forever
+* Lite ($4.99/mo): 250 GB bandwidth/month, custom domain
+* Pro ($14.99/mo): 2 TB bandwidth/month, custom domain
+* Business ($49/mo): 10 TB bandwidth/month, custom domain, priority support
 
-Storage = total cached image weight (not monthly traffic). Bandwidth limits are soft — service continues, but we may suggest upgrading.
+Bandwidth resets monthly.
 
-Pro and Business plans support custom domains (cdn.yoursite.com) with automatic SSL.
+All paid plans support custom domains (cdn.yoursite.com) with automatic SSL.
 
 **Self-Hosted (Free)**
 
@@ -120,7 +120,7 @@ Self-Hosted: About 15 minutes if familiar with Cloudflare.
 
 = How much does it cost? =
 
-Managed: Free tier available (10 GB storage, 50 GB bandwidth). Paid plans start at $4.99/month.
+Managed: Free tier available (100 GB bandwidth/month). Paid plans start at $4.99/month.
 Self-Hosted: Free. You pay Cloudflare directly (often $0 on their free tier).
 
 = Will this break my site? =
@@ -138,7 +138,7 @@ No. This is one of the main benefits — you get CDN speed without DNS changes.
 
 = Can I use my own domain for image URLs? =
 
-Yes. Pro and Business plans support custom domains (e.g., cdn.yoursite.com) with automatic SSL provisioning.
+Yes. All paid plans (Lite, Pro, Business) support custom domains (e.g., cdn.yoursite.com) with automatic SSL provisioning.
 
 = Does this change my Media Library URLs? =
 
@@ -170,14 +170,14 @@ No. Your images stay on your WordPress server. This optimizes delivery, not stor
 
 = Can this handle large sites? =
 
-Yes. The infrastructure is built on Cloudflare's global network. Business plan supports 500 GB of cached images with 10 TB bandwidth. Self-hosted mode supports unlimited growth.
+Yes. The infrastructure is built on Cloudflare's global network. Business plan supports 10 TB bandwidth/month. Self-hosted mode supports unlimited growth.
 
 == Screenshots ==
 
 1. Get started in under a minute
 2. Your images are now loading from the edge
 3. Upgrade when you need more
-4. Use your own domain (Pro+)
+4. Use your own domain (paid plans)
 5. Or self-host on your Cloudflare account
 
 == Privacy ==
@@ -222,9 +222,9 @@ Self-hosted users connect only to their own Cloudflare account.
 
 == Fair Use Policy ==
 
-Managed mode includes storage and bandwidth limits per plan tier. Storage refers to total cached image weight in CDN storage — it does not include HTML, CSS, JavaScript, or non-image files.
+Managed mode includes bandwidth limits per plan tier. Bandwidth resets monthly.
 
-If usage exceeds plan limits, we will contact you to discuss options. The Self-Hosted option is recommended for sites needing unlimited growth.
+If bandwidth usage consistently exceeds plan limits, we will contact you to discuss options. The Self-Hosted option is recommended for sites needing unlimited growth.
 
 == Terms of Service ==
 
@@ -241,6 +241,9 @@ You are responsible for the images served through your account.
 == Changelog ==
 
 = 0.2.0 =
+* New: Updated pricing model — bandwidth is now the primary metric
+* New: All paid plans now include custom domain support
+* New: Free tier upgraded to 100 GB bandwidth/month
 * Security: API keys are now encrypted at rest in the database
 * Security: Added rate limiting to prevent brute-force attacks on admin actions
 * Security: Stricter validation of CDN domains (blocks IPs, localhost, reserved domains)
@@ -248,7 +251,7 @@ You are responsible for the images served through your account.
 * Security: HTTPS enforcement for all API communications
 * Security: Granular permission system with dedicated capability
 * Improved: Usage stats now update in real-time after plan changes
-* Improved: Both storage and bandwidth progress bars update dynamically
+* Improved: Simplified pricing display — bandwidth is the only limit shown
 * Fixed: Plan limits now display correctly immediately after upgrade
 
 = 0.1.9 =
@@ -314,7 +317,7 @@ You are responsible for the images served through your account.
 == Upgrade Notice ==
 
 = 0.2.0 =
-Security hardening release. API keys are now encrypted, rate limiting added, and stricter domain validation. Recommended for all users.
+New pricing model with more generous limits. Free tier now includes 100 GB bandwidth/month. All paid plans include custom domain. Security hardening with encrypted API keys and rate limiting. Recommended for all users.
 
 = 0.1.9 =
 Critical fix for CDN activation. Prevents CDN from silently failing to enable after payment or recovery.

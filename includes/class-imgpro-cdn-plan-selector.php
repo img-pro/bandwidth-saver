@@ -73,7 +73,7 @@ class ImgPro_CDN_Plan_Selector {
         <div class="<?php echo esc_attr($wrapper_class); ?>" data-current-tier="<?php echo esc_attr($current_tier); ?>">
             <?php if ('modal' === $context): ?>
             <div class="imgpro-plan-selector__header">
-                <h2><?php esc_html_e('Choose your plan', 'bandwidth-saver'); ?></h2>
+                <h2><?php esc_html_e('Upgrade your plan', 'bandwidth-saver'); ?></h2>
                 <button type="button" class="imgpro-plan-selector__close" aria-label="<?php esc_attr_e('Close', 'bandwidth-saver'); ?>">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -174,15 +174,6 @@ class ImgPro_CDN_Plan_Selector {
             </div>
 
             <ul class="imgpro-plan-card__features">
-                <li class="imgpro-plan-card__feature">
-                    <svg class="imgpro-plan-card__feature-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span>
-                        <strong><?php echo esc_html($tier['limits']['storage']['formatted']); ?></strong>
-                        <?php esc_html_e('storage', 'bandwidth-saver'); ?>
-                    </span>
-                </li>
                 <li class="imgpro-plan-card__feature">
                     <svg class="imgpro-plan-card__feature-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -290,7 +281,7 @@ class ImgPro_CDN_Plan_Selector {
             <div class="imgpro-confirm-modal__content">
                 <!-- Header -->
                 <div class="imgpro-confirm-modal__header">
-                    <div class="imgpro-confirm-modal__badge"><?php esc_html_e('Upgrade', 'bandwidth-saver'); ?></div>
+                    <div class="imgpro-confirm-modal__badge"><?php esc_html_e('Upgrade to', 'bandwidth-saver'); ?></div>
                     <h2 class="imgpro-confirm-modal__title" id="imgpro-confirm-tier-name"></h2>
                     <div class="imgpro-confirm-modal__price">
                         <span class="imgpro-confirm-modal__price-amount" id="imgpro-confirm-tier-price-amount"></span>
@@ -298,30 +289,26 @@ class ImgPro_CDN_Plan_Selector {
                     </div>
                 </div>
 
-                <!-- Metrics (storage + bandwidth) -->
-                <div class="imgpro-confirm-modal__metrics" id="imgpro-confirm-metrics"></div>
-
-                <!-- Current plan reference -->
-                <div class="imgpro-confirm-modal__current">
-                    <?php esc_html_e('Currently on', 'bandwidth-saver'); ?>
-                    <strong id="imgpro-confirm-current-name"></strong>
-                    <span id="imgpro-confirm-current-limits"></span>
+                <!-- Upgrade multiplier hero -->
+                <div class="imgpro-confirm-modal__hero" id="imgpro-confirm-hero">
+                    <div class="imgpro-confirm-modal__multiplier" id="imgpro-confirm-multiplier"></div>
+                    <div class="imgpro-confirm-modal__comparison" id="imgpro-confirm-comparison"></div>
                 </div>
 
-                <!-- Extra features (custom domain, priority support) -->
+                <!-- Features checklist -->
                 <ul class="imgpro-confirm-modal__checklist" id="imgpro-confirm-checklist"></ul>
 
                 <!-- Footer -->
                 <div class="imgpro-confirm-modal__footer">
                     <p class="imgpro-confirm-modal__note">
-                        <?php esc_html_e('Billed immediately, prorated for this period.', 'bandwidth-saver'); ?>
+                        <?php esc_html_e('Billed monthly. Cancel anytime.', 'bandwidth-saver'); ?>
                     </p>
                     <div class="imgpro-confirm-modal__actions">
                         <button type="button" class="imgpro-btn imgpro-btn-ghost" id="imgpro-upgrade-cancel">
                             <?php esc_html_e('Cancel', 'bandwidth-saver'); ?>
                         </button>
                         <button type="button" class="imgpro-btn imgpro-btn-primary" id="imgpro-upgrade-confirm">
-                            <span class="imgpro-btn-text"><?php esc_html_e('Confirm Upgrade', 'bandwidth-saver'); ?></span>
+                            <span class="imgpro-btn-text"><?php esc_html_e('Upgrade', 'bandwidth-saver'); ?> <span id="imgpro-confirm-btn-tier"></span> →</span>
                             <span class="imgpro-btn-loading">
                                 <svg class="imgpro-spinner" width="16" height="16" viewBox="0 0 20 20">
                                     <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="50" stroke-linecap="round"/>
@@ -365,7 +352,7 @@ class ImgPro_CDN_Plan_Selector {
                 </div>
                 <div class="imgpro-upgrade-cta__content">
                     <h4><?php esc_html_e('Need more capacity?', 'bandwidth-saver'); ?></h4>
-                    <p><?php esc_html_e('Upgrade for more storage, bandwidth, and features.', 'bandwidth-saver'); ?></p>
+                    <p><?php esc_html_e('Upgrade for more bandwidth and features.', 'bandwidth-saver'); ?></p>
                 </div>
             <?php endif; ?>
             <button type="button" class="imgpro-btn imgpro-btn-primary imgpro-open-plan-selector">

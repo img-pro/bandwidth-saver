@@ -1,6 +1,6 @@
 # Bandwidth Saver: Image CDN
 
-[![WordPress Plugin Version](https://img.shields.io/badge/version-0.1.5-blue.svg)](https://wordpress.org/plugins/bandwidth-saver/)
+[![WordPress Plugin Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://wordpress.org/plugins/bandwidth-saver/)
 [![Requires WordPress Version](https://img.shields.io/badge/wordpress-6.2%2B-blue.svg)](https://wordpress.org/download/)
 [![Requires PHP Version](https://img.shields.io/badge/php-7.4%2B-purple.svg)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-red.svg)](LICENSE)
@@ -54,7 +54,14 @@ The plugin simply delivers whatever WordPress outputs, including images processe
 
 One click setup. We handle the Cloudflare Worker and R2 storage. No Cloudflare account needed.
 
-The free tier includes 10 GB storage and 50 GB bandwidth. The Pro plan costs $14.99 per month and includes 120 GB of storage with 2 TB bandwidth. This comfortably supports everything from small blogs to large, image-heavy WordPress installations.
+| Plan | Bandwidth | Price | Features |
+|------|-----------|-------|----------|
+| Free | 100 GB/mo | $0 | — |
+| Lite | 250 GB/mo | $4.99/mo | Custom domain |
+| Pro | 2 TB/mo | $14.99/mo | Custom domain |
+| Business | 10 TB/mo | $49/mo | Custom domain, priority support |
+
+Bandwidth resets monthly.
 
 ### Self-Hosted (Free)
 

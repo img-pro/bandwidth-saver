@@ -725,27 +725,27 @@
             },
             success: function(response) {
                 if (response.success && response.data.formatted) {
-                    // Update stats display
-                    const $storageVal = $('#imgpro-stat-storage');
-                    if ($storageVal.length) {
-                        $storageVal.html(escapeHtml(response.data.formatted.storage_used) +
-                            '<span class="imgpro-stat-limit">/ ' + escapeHtml(response.data.formatted.storage_limit) + '</span>');
-                    }
-
-                    $('#imgpro-stat-images').text((response.data.images_cached || 0).toLocaleString());
-
-                    // Update bandwidth stat with limit
+                    // Update bandwidth stat with limit (primary metric)
                     const $bandwidthVal = $('#imgpro-stat-bandwidth');
                     if ($bandwidthVal.length) {
                         $bandwidthVal.html(escapeHtml(response.data.formatted.bandwidth_used || '0 B') +
                             '<span class="imgpro-stat-limit">/ ' + escapeHtml(response.data.formatted.bandwidth_limit) + '</span>');
                     }
 
-                    // Update storage progress bar
-                    updateProgressBar('#imgpro-progress-storage', response.data.storage_percentage || 0);
+                    // Update cache stat with limit (secondary metric)
+                    const $cacheVal = $('#imgpro-stat-cache');
+                    if ($cacheVal.length) {
+                        $cacheVal.html(escapeHtml(response.data.formatted.cache_used) +
+                            '<span class="imgpro-stat-limit">/ ' + escapeHtml(response.data.formatted.cache_limit) + '</span>');
+                    }
+
+                    $('#imgpro-stat-images').text((response.data.images_cached || 0).toLocaleString());
 
                     // Update bandwidth progress bar
                     updateProgressBar('#imgpro-progress-bandwidth', response.data.bandwidth_percentage || 0);
+
+                    // Update cache progress bar
+                    updateProgressBar('#imgpro-progress-cache', response.data.cache_percentage || 0);
                 }
             },
             complete: function() {
@@ -1078,31 +1078,34 @@
                 handlePlanCheckout($(this), selectedTierId);
             }
         });
-
-        // Pre-select first available card if none is current
-        initDefaultSelection();
     }
 
     /**
      * Initialize default plan selection
      */
     function initDefaultSelection() {
-        const $selector = $('.imgpro-plan-selector');
+        // Only target the modal selector to avoid conflicts
+        const $modal = $('#imgpro-plan-modal');
+        const $selector = $modal.find('.imgpro-plan-selector');
         if (!$selector.length) return;
 
         const currentTier = $selector.data('current-tier') || '';
 
-        // If user is on free tier or no tier, pre-select Pro (highlighted)
+        // If user is on free tier or no tier, pre-select Pro
         if (!currentTier || currentTier === 'free') {
-            const $highlighted = $selector.find('.imgpro-plan-card--highlight');
-            if ($highlighted.length) {
-                selectPlanCard($highlighted, false);
-            } else {
-                // Fall back to first non-current card
-                const $firstAvailable = $selector.find('.imgpro-plan-card:not(.imgpro-plan-card--current)').first();
-                if ($firstAvailable.length) {
-                    selectPlanCard($firstAvailable, false);
-                }
+            // Try highlighted card first, then Pro by ID, then first available
+            let $cardToSelect = $selector.find('.imgpro-plan-card--highlight').first();
+
+            if (!$cardToSelect.length) {
+                $cardToSelect = $selector.find('.imgpro-plan-card[data-tier-id="pro"]').first();
+            }
+
+            if (!$cardToSelect.length || $cardToSelect.hasClass('imgpro-plan-card--current')) {
+                $cardToSelect = $selector.find('.imgpro-plan-card:not(.imgpro-plan-card--current)').first();
+            }
+
+            if ($cardToSelect.length) {
+                selectPlanCard($cardToSelect, true);
             }
         }
     }
@@ -1114,11 +1117,14 @@
         const $modal = $('#imgpro-plan-modal');
         if (!$modal.length) return;
 
-        $modal.fadeIn(200);
+        $modal.fadeIn(200, function() {
+            // Pre-select Pro tier when modal opens
+            const $proCard = $modal.find('.imgpro-plan-card[data-tier-id="pro"]');
+            if ($proCard.length && !$proCard.hasClass('imgpro-plan-card--current')) {
+                selectPlanCard($proCard, true);
+            }
+        });
         $('body').addClass('imgpro-modal-open');
-
-        // Re-initialize default selection when opening
-        initDefaultSelection();
     }
 
     /**
@@ -1195,14 +1201,18 @@
         $('#imgpro-confirm-tier-name').text(tierName);
         $('#imgpro-confirm-tier-price-amount').text(tierPrice);
         $('#imgpro-confirm-tier-price-period').text(tierPeriod);
-        $('#imgpro-confirm-metrics').html(buildMetricsHtml(newTier));
-        $('#imgpro-confirm-checklist').html(buildChecklistHtml(newTier));
+        $('#imgpro-confirm-btn-tier').text(tierName);
 
-        // Populate current plan reference (compact inline format)
-        const currentName = currentTier?.name || (currentTierId ? currentTierId.charAt(0).toUpperCase() + currentTierId.slice(1) : 'Current');
-        const currentLimits = buildLimitsString(currentTier);
-        $('#imgpro-confirm-current-name').text(currentName);
-        $('#imgpro-confirm-current-limits').text(currentLimits ? '· ' + currentLimits : '');
+        // Build multiplier hero
+        const multiplier = calculateBandwidthMultiplier(currentTier, newTier);
+        const newBandwidth = newTier?.limits?.bandwidth?.formatted || '';
+        const currentBandwidth = currentTier?.limits?.bandwidth?.formatted || '100 GB';
+
+        $('#imgpro-confirm-multiplier').text(multiplier + ' more bandwidth');
+        $('#imgpro-confirm-comparison').text(newBandwidth + '/mo (vs ' + currentBandwidth + ')');
+
+        // Build checklist
+        $('#imgpro-confirm-checklist').html(buildChecklistHtml(newTier));
 
         // Reset button states
         const $confirmBtn = $('#imgpro-upgrade-confirm');
@@ -1215,28 +1225,18 @@
     }
 
     /**
-     * Build HTML for metrics (storage + bandwidth)
+     * Calculate bandwidth multiplier between tiers
      */
-    function buildMetricsHtml(tier) {
-        if (!tier) return '';
+    function calculateBandwidthMultiplier(currentTier, newTier) {
+        const currentBytes = currentTier?.limits?.bandwidth?.bytes || 107374182400; // 100 GB default
+        const newBytes = newTier?.limits?.bandwidth?.bytes || currentBytes;
 
-        let html = '';
-
-        if (tier.limits?.storage?.formatted) {
-            html += '<div class="imgpro-confirm-modal__metric">' +
-                        '<div class="imgpro-confirm-modal__metric-value">' + escapeHtml(tier.limits.storage.formatted) + '</div>' +
-                        '<div class="imgpro-confirm-modal__metric-label">Storage</div>' +
-                    '</div>';
+        if (newTier?.limits?.bandwidth?.unlimited) {
+            return 'Unlimited';
         }
 
-        if (tier.limits?.bandwidth?.formatted) {
-            html += '<div class="imgpro-confirm-modal__metric">' +
-                        '<div class="imgpro-confirm-modal__metric-value">' + escapeHtml(tier.limits.bandwidth.formatted) + '</div>' +
-                        '<div class="imgpro-confirm-modal__metric-label">Bandwidth/mo</div>' +
-                    '</div>';
-        }
-
-        return html;
+        const multiplier = Math.round(newBytes / currentBytes);
+        return multiplier + 'x';
     }
 
     /**
@@ -1245,46 +1245,18 @@
     function buildChecklistHtml(tier) {
         if (!tier) return '';
 
+        const checkIcon = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
         const items = [];
 
         if (tier.features?.custom_domain) {
-            items.push(
-                '<li>' +
-                    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-                    'Custom domain' +
-                '</li>'
-            );
+            items.push('<li>' + checkIcon + 'Custom CDN domain</li>');
         }
 
         if (tier.features?.priority_support) {
-            items.push(
-                '<li>' +
-                    '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
-                    'Priority support' +
-                '</li>'
-            );
+            items.push('<li>' + checkIcon + 'Priority support</li>');
         }
 
         return items.join('');
-    }
-
-    /**
-     * Build compact limits string for current plan reference
-     */
-    function buildLimitsString(tier) {
-        if (!tier) return '';
-
-        const parts = [];
-
-        if (tier.limits?.storage?.formatted) {
-            parts.push(tier.limits.storage.formatted);
-        }
-
-        if (tier.limits?.bandwidth?.formatted) {
-            parts.push(tier.limits.bandwidth.formatted + '/mo');
-        }
-
-        return parts.join(', ');
     }
 
     /**
@@ -1304,47 +1276,38 @@
      * Select a plan card
      */
     function selectPlanCard($card, enableCheckout = true) {
-        const $selector = $card.closest('.imgpro-plan-selector');
+        const $modal = $('#imgpro-plan-modal');
 
-        // Remove selection from all cards and reset their buttons
-        $selector.find('.imgpro-plan-card').each(function() {
-            const $thisCard = $(this);
-            $thisCard.removeClass('is-selected');
-
-            // Reset button to default state (secondary, "Select")
-            const $btn = $thisCard.find('.imgpro-plan-card__select');
-            if ($btn.length && !$thisCard.hasClass('imgpro-plan-card--current')) {
+        // Reset all cards in the modal
+        $modal.find('.imgpro-plan-card').each(function() {
+            $(this).removeClass('is-selected');
+            const $btn = $(this).find('.imgpro-plan-card__select');
+            if ($btn.length && !$(this).hasClass('imgpro-plan-card--current') && !$(this).hasClass('imgpro-plan-card--downgrade')) {
                 $btn.removeClass('imgpro-btn-primary').addClass('imgpro-btn-secondary');
-                // Only change text for upgrade buttons, not downgrade
-                if (!$thisCard.hasClass('imgpro-plan-card--downgrade')) {
-                    $btn.text(imgproCdnAdmin.i18n?.select || 'Select');
-                }
+                $btn.text('Select');
             }
         });
 
-        // Add selection to clicked card
+        // Select this card
         $card.addClass('is-selected');
 
-        // Update the selected card's button to active state
-        const $selectedBtn = $card.find('.imgpro-plan-card__select');
-        if ($selectedBtn.length && !$card.hasClass('imgpro-plan-card--downgrade')) {
-            $selectedBtn.removeClass('imgpro-btn-secondary').addClass('imgpro-btn-primary');
-            $selectedBtn.text(imgproCdnAdmin.i18n?.selected || 'Selected');
+        // Update this card's button
+        const $btn = $card.find('.imgpro-plan-card__select');
+        if ($btn.length && !$card.hasClass('imgpro-plan-card--downgrade')) {
+            $btn.removeClass('imgpro-btn-secondary').addClass('imgpro-btn-primary');
+            $btn.text('Selected');
         }
 
-        // Update selected tier
+        // Update state
         selectedTierId = $card.data('tier-id');
-        const tierName = $card.data('tier-name');
-        const tierPrice = $card.data('tier-price');
 
-        // Update footer selection display
-        $('#imgpro-selected-plan-name').text(tierName);
-        $('#imgpro-selected-plan-price').text(tierPrice);
+        // Update footer
+        $modal.find('#imgpro-selected-plan-name').text($card.data('tier-name'));
+        $modal.find('#imgpro-selected-plan-price').text($card.data('tier-price'));
 
-        // Enable/disable checkout button
-        const $checkoutBtn = $('#imgpro-plan-checkout');
+        // Enable checkout button
         if (enableCheckout && selectedTierId) {
-            $checkoutBtn.prop('disabled', false);
+            $modal.find('#imgpro-plan-checkout').prop('disabled', false);
         }
     }
 

@@ -215,8 +215,8 @@ class ImgPro_CDN_Admin_Ajax {
                     'setup_mode' => ImgPro_CDN_Settings::MODE_CLOUD,
                     'onboarding_step' => 3,
                     'marketing_opt_in' => $marketing_opt_in,
-                    'storage_limit' => ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
                     'bandwidth_limit' => ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
+                    'cache_limit' => ImgPro_CDN_Settings::FREE_CACHE_LIMIT,
                 ]);
 
                 wp_send_json_success([
@@ -259,13 +259,13 @@ class ImgPro_CDN_Admin_Ajax {
 
         $data = [
             'cloud_tier' => $tier_id,
-            'storage_used' => $usage['storage_used'],
             'bandwidth_used' => $usage['bandwidth_used'],
+            'cache_used' => $usage['cache_used'],
             'images_cached' => $usage['images_cached'],
             'stats_updated_at' => time(),
             // Always set limits (use defaults for free tier)
-            'storage_limit' => $usage['storage_limit'] ?: ImgPro_CDN_Settings::FREE_STORAGE_LIMIT,
             'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
+            'cache_limit' => $usage['cache_limit'] ?: ImgPro_CDN_Settings::FREE_CACHE_LIMIT,
         ];
 
         // Update custom domain if present
@@ -396,22 +396,22 @@ class ImgPro_CDN_Admin_Ajax {
 
         // Get updated settings for response
         $updated_settings = $this->settings->get_all();
-        $storage_limit = ImgPro_CDN_Settings::get_storage_limit($updated_settings);
         $bandwidth_limit = ImgPro_CDN_Settings::get_bandwidth_limit($updated_settings);
+        $cache_limit = ImgPro_CDN_Settings::get_cache_limit($updated_settings);
 
         wp_send_json_success([
-            'storage_used' => $updated_settings['storage_used'] ?? 0,
-            'storage_limit' => $storage_limit,
-            'storage_percentage' => ImgPro_CDN_Settings::get_storage_percentage($updated_settings),
             'bandwidth_used' => $updated_settings['bandwidth_used'] ?? 0,
             'bandwidth_limit' => $bandwidth_limit,
             'bandwidth_percentage' => ImgPro_CDN_Settings::get_bandwidth_percentage($updated_settings),
+            'cache_used' => $updated_settings['cache_used'] ?? 0,
+            'cache_limit' => $cache_limit,
+            'cache_percentage' => ImgPro_CDN_Settings::get_cache_percentage($updated_settings),
             'images_cached' => $updated_settings['images_cached'] ?? 0,
             'formatted' => [
-                'storage_used' => ImgPro_CDN_Settings::format_bytes($updated_settings['storage_used'] ?? 0),
-                'storage_limit' => ImgPro_CDN_Settings::format_bytes($storage_limit, 0),
                 'bandwidth_used' => ImgPro_CDN_Settings::format_bytes($updated_settings['bandwidth_used'] ?? 0),
                 'bandwidth_limit' => ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0),
+                'cache_used' => ImgPro_CDN_Settings::format_bytes($updated_settings['cache_used'] ?? 0),
+                'cache_limit' => ImgPro_CDN_Settings::format_bytes($cache_limit, 0),
             ]
         ]);
     }

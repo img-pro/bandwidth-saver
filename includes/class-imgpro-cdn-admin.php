@@ -94,11 +94,11 @@ class ImgPro_CDN_Admin {
         // Verify nonce
         $nonce = sanitize_text_field(wp_unslash($_GET['_wpnonce']));
         if (!wp_verify_nonce($nonce, 'imgpro_skip_onboarding')) {
-            return;
+            wp_die(esc_html__('Security check failed.', 'bandwidth-saver'), '', ['response' => 403]);
         }
 
-        if (!current_user_can('manage_options')) {
-            return;
+        if (!ImgPro_CDN_Security::current_user_can()) {
+            wp_die(esc_html__('You do not have permission to perform this action.', 'bandwidth-saver'), '', ['response' => 403]);
         }
 
         // Mark onboarding as completed (skipped)
@@ -130,7 +130,7 @@ class ImgPro_CDN_Admin {
             return;
         }
 
-        if (!current_user_can('manage_options')) {
+        if (!ImgPro_CDN_Security::current_user_can()) {
             return;
         }
 

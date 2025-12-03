@@ -355,7 +355,7 @@ class ImgPro_CDN_API {
      * @param string $api_key Site API key.
      * @return array|WP_Error Array of source URLs or error.
      */
-    public function get_source_urls($api_key) {
+    public function get_source_urls($api_key, $full_response = false) {
         if (empty($api_key)) {
             return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
         }
@@ -366,6 +366,11 @@ class ImgPro_CDN_API {
         $response = $this->request('GET', '/api/source-urls');
 
         if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Return full response if requested (includes count, max_domains, tier_name)
+        if ($full_response) {
             return $response;
         }
 

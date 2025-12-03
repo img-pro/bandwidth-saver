@@ -145,7 +145,7 @@ class ImgPro_CDN_Admin_Ajax {
         ImgPro_CDN_Security::check_permission();
         ImgPro_CDN_Security::check_rate_limit('toggle_enabled');
 
-        $enabled = isset($_POST['enabled']) && '1' === $_POST['enabled'];
+        $enabled = isset($_POST['enabled']) && '1' === sanitize_text_field(wp_unslash($_POST['enabled']));
         $mode = isset($_POST['mode']) ? sanitize_text_field(wp_unslash($_POST['mode'])) : '';
 
         // Validate mode
@@ -213,7 +213,7 @@ class ImgPro_CDN_Admin_Ajax {
 
         $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : get_option('admin_email');
         $site_url = get_site_url();
-        $marketing_opt_in = isset($_POST['marketing_opt_in']) && '1' === $_POST['marketing_opt_in'];
+        $marketing_opt_in = isset($_POST['marketing_opt_in']) && '1' === sanitize_text_field(wp_unslash($_POST['marketing_opt_in']));
 
         if (empty($email) || !is_email($email)) {
             wp_send_json_error(['message' => __('Please enter a valid email address.', 'bandwidth-saver')]);
@@ -1194,9 +1194,10 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
-        $source_urls = $this->api->get_source_urls($api_key);
+        // Get full response from API (includes count, max_domains, tier_name)
+        $full_response = $this->api->get_source_urls($api_key, true);
 
-        if (is_wp_error($source_urls)) {
+        if (is_wp_error($full_response)) {
             wp_send_json_error([
                 'message' => __('Could not fetch source URLs. Please try again.', 'bandwidth-saver'),
                 'code' => 'source_urls_error'
@@ -1204,13 +1205,20 @@ class ImgPro_CDN_Admin_Ajax {
             return;
         }
 
+        $source_urls = $full_response['domains'] ?? [];
+
         // Sync to local settings for use by rewriter (no API calls on page load)
         $domain_list = array_map(function($item) {
             return is_array($item) && isset($item['domain']) ? $item['domain'] : $item;
         }, $source_urls);
         $this->settings->update(['source_urls' => $domain_list]);
 
-        wp_send_json_success(['source_urls' => $source_urls]);
+        wp_send_json_success([
+            'source_urls' => $source_urls,
+            'count' => $full_response['count'] ?? count($source_urls),
+            'max_domains' => $full_response['max_domains'] ?? 1,
+            'tier_name' => $full_response['tier_name'] ?? 'Free'
+        ]);
     }
 
     /**

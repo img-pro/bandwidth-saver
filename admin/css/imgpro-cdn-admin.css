@@ -3678,7 +3678,13 @@ body.imgpro-modal-open {
     color: var(--imgpro-text);
 }
 
-#imgpro-source-urls-count {
+.imgpro-upgrade-link {
     color: var(--imgpro-primary-600);
-    font-weight: 600;
+    text-decoration: none;
+    margin-left: var(--imgpro-space-2);
+}
+
+.imgpro-upgrade-link:hover {
+    color: var(--imgpro-primary-700);
+    text-decoration: none;
 }

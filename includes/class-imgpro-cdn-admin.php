@@ -312,10 +312,10 @@ class ImgPro_CDN_Admin {
             );
         }
 
-        // Enqueue Chart.js from CDN for analytics
+        // Enqueue Chart.js for analytics
         wp_enqueue_script(
             'chartjs',
-            'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
+            plugin_dir_url(dirname(__FILE__)) . 'admin/js/chart.umd.min.js',
             [],
             '4.4.1',
             true
@@ -1154,7 +1154,7 @@ class ImgPro_CDN_Admin {
                     <?php settings_fields('imgpro_cdn_settings_group'); ?>
                     <input type="hidden" name="imgpro_cdn_settings[_has_enabled_field]" value="1">
                     <input type="hidden" name="imgpro_cdn_settings[setup_mode]" value="<?php echo esc_attr(ImgPro_CDN_Settings::MODE_CLOUD); ?>">
-                    <input type="hidden" name="imgpro_cdn_settings[enabled]" value="<?php echo $settings['enabled'] ? '1' : '0'; ?>">
+                    <input type="hidden" name="imgpro_cdn_settings[enabled]" value="<?php echo esc_attr( $settings['enabled'] ? '1' : '0' ); ?>">
                     <input type="hidden" name="imgpro_cdn_settings[cdn_url]" value="<?php echo esc_attr($settings['cdn_url']); ?>">
 
                     <div class="imgpro-card-header">
@@ -1409,7 +1409,7 @@ class ImgPro_CDN_Admin {
                             <?php settings_fields('imgpro_cdn_settings_group'); ?>
                             <input type="hidden" name="imgpro_cdn_settings[_has_enabled_field]" value="1">
                             <input type="hidden" name="imgpro_cdn_settings[setup_mode]" value="<?php echo esc_attr(ImgPro_CDN_Settings::MODE_CLOUDFLARE); ?>">
-                            <input type="hidden" name="imgpro_cdn_settings[enabled]" value="<?php echo $settings['enabled'] ? '1' : '0'; ?>">
+                            <input type="hidden" name="imgpro_cdn_settings[enabled]" value="<?php echo esc_attr( $settings['enabled'] ? '1' : '0' ); ?>">
                             <input type="hidden" name="imgpro_cdn_settings[cdn_url]" value="<?php echo esc_attr($settings['cdn_url']); ?>">
 
                             <div class="imgpro-card-header">
@@ -1589,7 +1589,7 @@ class ImgPro_CDN_Admin {
 
             <!-- Add Source URL Form -->
             <div class="imgpro-source-urls-form">
-                <div class="imgpro-source-urls-input-group">
+                <div class="imgpro-source-urls-input-group" id="imgpro-source-urls-input-wrapper">
                     <input
                         type="text"
                         id="imgpro-source-url-input"
@@ -1604,13 +1604,15 @@ class ImgPro_CDN_Admin {
                 <p class="imgpro-source-urls-limit">
                     <?php
                     printf(
-                        /* translators: %s: domain limit for current tier */
-                        esc_html__('Your %s plan allows up to %d domain(s).', 'bandwidth-saver'),
+                        /* translators: 1: plan name, 2: domain limit */
+                        esc_html__('Your %1$s plan allows up to %2$d domain(s).', 'bandwidth-saver'),
                         '<strong>' . esc_html(ucfirst($tier)) . '</strong>',
                         esc_html($domain_limit)
                     );
                     ?>
-                    <span id="imgpro-source-urls-count"></span>
+                    <a href="#" class="imgpro-upgrade-link" id="imgpro-source-urls-upgrade" style="display: none;">
+                        <strong><?php esc_html_e('Upgrade plan', 'bandwidth-saver'); ?></strong>
+                    </a>
                 </p>
             </div>
         </div>

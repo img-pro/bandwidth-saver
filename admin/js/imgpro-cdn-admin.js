@@ -1059,6 +1059,12 @@
                 handleAddSourceUrl();
             }
         });
+
+        // Upgrade link - open plan selector modal
+        $('#imgpro-source-urls-upgrade').off('click').on('click', function(e) {
+            e.preventDefault();
+            openPlanModal();
+        });
     }
 
     /**
@@ -1077,7 +1083,11 @@
             },
             success: function(response) {
                 if (response.success && response.data.source_urls) {
-                    renderSourceUrls(response.data.source_urls);
+                    renderSourceUrls(
+                        response.data.source_urls,
+                        response.data.count || 0,
+                        response.data.max_domains || 1
+                    );
                 } else {
                     $list.html('<p class="imgpro-source-urls-error">' +
                         escapeHtml(response.data?.message || 'Failed to load source URLs') + '</p>');
@@ -1092,38 +1102,51 @@
     /**
      * Render source URLs list
      */
-    function renderSourceUrls(urls) {
+    function renderSourceUrls(urls, count, maxDomains) {
         var $list = $('#imgpro-source-urls-list');
-        var $count = $('#imgpro-source-urls-count');
+        var $inputWrapper = $('#imgpro-source-urls-input-wrapper');
+        var $upgradeLink = $('#imgpro-source-urls-upgrade');
+
+        count = count || (urls ? urls.length : 0);
+        maxDomains = maxDomains || 1;
 
         if (!urls || !urls.length) {
             $list.html('<p class="imgpro-source-urls-empty">No source URLs configured yet.</p>');
-            $count.text(' (0 configured)');
-            return;
+        } else {
+            var html = '<div class="imgpro-source-urls-items">';
+            urls.forEach(function(item) {
+                var isPrimary = item.is_primary === 1 || item.is_primary === true;
+                html += '<div class="imgpro-source-url-item' + (isPrimary ? ' is-primary' : '') + '">';
+                html += '<code>' + escapeHtml(item.domain) + '</code>';
+                if (isPrimary) {
+                    html += '<span class="imgpro-source-url-badge">Primary</span>';
+                } else {
+                    html += '<button type="button" class="imgpro-source-url-remove" data-domain="' +
+                        escapeHtml(item.domain) + '" title="Remove domain">&times;</button>';
+                }
+                html += '</div>';
+            });
+            html += '</div>';
+
+            $list.html(html);
+
+            // Attach remove handlers
+            $('.imgpro-source-url-remove').off('click').on('click', function() {
+                handleRemoveSourceUrl($(this).data('domain'));
+            });
         }
 
-        var html = '<div class="imgpro-source-urls-items">';
-        urls.forEach(function(item) {
-            var isPrimary = item.is_primary === 1 || item.is_primary === true;
-            html += '<div class="imgpro-source-url-item' + (isPrimary ? ' is-primary' : '') + '">';
-            html += '<code>' + escapeHtml(item.domain) + '</code>';
-            if (isPrimary) {
-                html += '<span class="imgpro-source-url-badge">Primary</span>';
-            } else {
-                html += '<button type="button" class="imgpro-source-url-remove" data-domain="' +
-                    escapeHtml(item.domain) + '" title="Remove domain">&times;</button>';
-            }
-            html += '</div>';
-        });
-        html += '</div>';
+        // Check if at limit
+        var atLimit = count >= maxDomains;
 
-        $list.html(html);
-        $count.text(' (' + urls.length + ' configured)');
-
-        // Attach remove handlers
-        $('.imgpro-source-url-remove').off('click').on('click', function() {
-            handleRemoveSourceUrl($(this).data('domain'));
-        });
+        // Show/hide input based on limit
+        if (atLimit) {
+            $inputWrapper.hide();
+            $upgradeLink.show();
+        } else {
+            $inputWrapper.show();
+            $upgradeLink.hide();
+        }
     }
 
     /**

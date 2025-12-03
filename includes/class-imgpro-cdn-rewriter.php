@@ -95,16 +95,20 @@ class ImgPro_CDN_Rewriter {
         $is_unsafe = false;
 
         // Admin area - plugins need original URLs for Media Library, etc.
+        // BUT: Allow AJAX requests from frontend (infinite scroll, load more, etc.)
         if (is_admin() && !apply_filters('imgpro_admin_allow_rewrite', false)) {
-            $is_unsafe = true;
+            // Check if this is a frontend AJAX request (e.g., infinite scroll)
+            // Frontend AJAX should have CDN URLs for images
+            if (defined('DOING_AJAX') && DOING_AJAX && $this->is_frontend_ajax()) {
+                // Allow frontend AJAX - don't mark as unsafe
+                $is_unsafe = false;
+            } else {
+                $is_unsafe = true;
+            }
         }
         // REST API requests - plugins/services need original URLs
         // This includes Jetpack, backup plugins, mobile apps, etc.
         elseif (defined('REST_REQUEST') && REST_REQUEST) {
-            $is_unsafe = true;
-        }
-        // AJAX requests - could be from any plugin needing original URLs
-        elseif (defined('DOING_AJAX') && DOING_AJAX) {
             $is_unsafe = true;
         }
         // Cron jobs - background tasks need original URLs
@@ -136,6 +140,49 @@ class ImgPro_CDN_Rewriter {
         $this->is_unsafe_context_cache = $is_unsafe;
 
         return $is_unsafe;
+    }
+
+    /**
+     * Check if current AJAX request is from frontend
+     *
+     * Frontend AJAX requests (infinite scroll, load more, etc.) should have
+     * CDN URLs, unlike admin AJAX which needs original URLs.
+     *
+     * Detection strategy uses login state as the differentiator:
+     * - Logged-in users in AJAX = admin context (editing, media library, etc.)
+     * - Non-logged-in users in AJAX = frontend context (infinite scroll, etc.)
+     *
+     * This is more reliable than referer checking because:
+     * 1. Referers can be missing or spoofed
+     * 2. User login state directly correlates with intent:
+     *    - Logged-in = likely managing content (needs original URLs)
+     *    - Not logged-in = visitor browsing (needs CDN URLs)
+     *
+     * @since 0.1.0
+     * @return bool True if this appears to be a frontend AJAX request.
+     */
+    private function is_frontend_ajax() {
+        // Allow plugins/themes to force frontend AJAX detection
+        if (apply_filters('imgpro_is_frontend_ajax', false)) {
+            return true;
+        }
+
+        // Must be an AJAX request
+        if (!function_exists('wp_doing_ajax') || !wp_doing_ajax()) {
+            return false;
+        }
+
+        // Key insight: Logged-in users making AJAX requests are typically
+        // in admin context (media library, page builders, etc.)
+        // Non-logged-in users are visitors (infinite scroll, load more, etc.)
+        if (function_exists('is_user_logged_in') && is_user_logged_in()) {
+            // Logged-in user - treat as admin AJAX (needs original URLs)
+            // Unless explicitly overridden by filter
+            return apply_filters('imgpro_logged_in_ajax_allow_cdn', false);
+        }
+
+        // Non-logged-in AJAX = frontend visitor (infinite scroll, etc.)
+        return true;
     }
 
     /**

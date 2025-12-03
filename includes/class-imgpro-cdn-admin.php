@@ -1567,8 +1567,24 @@ class ImgPro_CDN_Admin {
 
         $domain_limit = $domain_limits[$tier] ?? 1;
 
+        // Next tier logic (same as account card)
+        $next_tier_map = [
+            'free' => 'lite',
+            'lite' => 'pro',
+            'pro' => 'business',
+        ];
+        $tier_names = [
+            'free' => __('Free', 'bandwidth-saver'),
+            'lite' => __('Lite', 'bandwidth-saver'),
+            'pro' => __('Pro', 'bandwidth-saver'),
+            'business' => __('Business', 'bandwidth-saver'),
+        ];
+        $next_tier = $next_tier_map[$tier] ?? null;
+        $next_tier_name = $next_tier ? ($tier_names[$next_tier] ?? ucfirst($next_tier)) : null;
+        $is_business = ($tier === 'business');
+
         ?>
-        <div class="imgpro-source-urls-card" id="imgpro-source-urls-section">
+        <div class="imgpro-source-urls-card" id="imgpro-source-urls-section" data-tier="<?php echo esc_attr($tier); ?>" data-next-tier="<?php echo esc_attr($next_tier ?? ''); ?>" data-next-tier-name="<?php echo esc_attr($next_tier_name ?? ''); ?>">
             <div class="imgpro-source-urls-header">
                 <h4><?php esc_html_e('Source URLs', 'bandwidth-saver'); ?></h4>
                 <p class="imgpro-source-urls-description">
@@ -1610,8 +1626,8 @@ class ImgPro_CDN_Admin {
                         esc_html($domain_limit)
                     );
                     ?>
-                    <a href="#" class="imgpro-upgrade-link" id="imgpro-source-urls-upgrade" style="display: none;">
-                        <strong><?php esc_html_e('Upgrade plan', 'bandwidth-saver'); ?></strong>
+                    <a href="#" class="imgpro-upgrade-link" id="imgpro-source-urls-upgrade" style="display: none;" data-action="">
+                        <strong></strong>
                     </a>
                 </p>
             </div>

@@ -1060,10 +1060,24 @@
             }
         });
 
-        // Upgrade link - open plan selector modal
-        $('#imgpro-source-urls-upgrade').off('click').on('click', function(e) {
+        // Upgrade link - handle based on action type
+        $(document).off('click', '#imgpro-source-urls-upgrade').on('click', '#imgpro-source-urls-upgrade', function(e) {
             e.preventDefault();
-            openPlanModal();
+            var action = $(this).data('action');
+
+            if (action === 'see-options') {
+                // Free tier: open plan selector modal
+                openPlanModal();
+            } else if (action === 'upgrade-to-next') {
+                // Paid tier: direct upgrade to next tier
+                var nextTier = $(this).data('next-tier');
+                if (nextTier) {
+                    showUpgradeConfirmModal(nextTier, $(this));
+                }
+            } else if (action === 'manage') {
+                // Business tier: open manage subscription
+                window.open(imgproCdnAdmin.manageUrl, '_blank');
+            }
         });
     }
 
@@ -1142,6 +1156,30 @@
         // Show/hide input based on limit
         if (atLimit) {
             $inputWrapper.hide();
+
+            // Get tier info from section data attributes
+            var $section = $('#imgpro-source-urls-section');
+            var tier = $section.data('tier');
+            var nextTier = $section.data('next-tier');
+            var nextTierName = $section.data('next-tier-name');
+
+            // Set link text and action based on tier
+            var linkText = '';
+            var action = '';
+
+            if (tier === 'free') {
+                linkText = 'See upgrade options';
+                action = 'see-options';
+            } else if (tier === 'business') {
+                linkText = 'Manage Subscription';
+                action = 'manage';
+            } else if (nextTier) {
+                linkText = 'Upgrade to ' + nextTierName;
+                action = 'upgrade-to-next';
+                $upgradeLink.attr('data-next-tier', nextTier);
+            }
+
+            $upgradeLink.attr('data-action', action).find('strong').text(linkText);
             $upgradeLink.show();
         } else {
             $inputWrapper.show();

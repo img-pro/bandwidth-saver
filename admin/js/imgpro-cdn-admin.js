@@ -1782,9 +1782,12 @@
             success: function(response) {
                 if (response.success && response.data && response.data.length > 0) {
                     // We have data - render chart
-                    renderChart(response.data);
+                    var chartRendered = renderChart(response.data);
                     $chartLoading.hide();
-                    $chartCanvas.show();
+                    if (chartRendered) {
+                        $chartCanvas.show();
+                    }
+                    // If chart failed to render, renderChart already shows empty state
                 } else {
                     // No data yet - show empty state
                     $chartLoading.hide();
@@ -1801,10 +1804,18 @@
 
     /**
      * Render Chart.js bandwidth usage chart
+     * @returns {boolean} True if chart rendered successfully, false otherwise
      */
     function renderChart(dailyData) {
         const $canvas = $('#imgpro-usage-chart');
-        if (!$canvas.length) return;
+        if (!$canvas.length) return false;
+
+        // Check if Chart.js is loaded first (before any other work)
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js not loaded');
+            $('#imgpro-chart-empty').show();
+            return false;
+        }
 
         const ctx = $canvas[0].getContext('2d');
 
@@ -1830,13 +1841,6 @@
 
             requestsData.push(day.requests || 0);
         });
-
-        // Check if Chart.js is loaded
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js not loaded');
-            $('#imgpro-chart-empty').show();
-            return;
-        }
 
         // Create chart
         usageChart = new Chart(ctx, {
@@ -1910,6 +1914,8 @@
                 }
             }
         });
+
+        return true;
     }
 
     /**

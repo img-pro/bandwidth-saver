@@ -72,6 +72,16 @@ class ImgPro_CDN_Admin_Ajax {
         add_action('wp_ajax_imgpro_cdn_complete_onboarding', [$this, 'ajax_complete_onboarding']);
         add_action('wp_ajax_imgpro_cdn_sync_stats', [$this, 'ajax_sync_stats']);
         add_action('wp_ajax_imgpro_cdn_health_check', [$this, 'ajax_health_check']);
+
+        // Analytics endpoints
+        add_action('wp_ajax_imgpro_cdn_get_insights', [$this, 'ajax_get_insights']);
+        add_action('wp_ajax_imgpro_cdn_get_daily_usage', [$this, 'ajax_get_daily_usage']);
+        add_action('wp_ajax_imgpro_cdn_get_usage_periods', [$this, 'ajax_get_usage_periods']);
+
+        // Source URL management endpoints
+        add_action('wp_ajax_imgpro_cdn_get_source_urls', [$this, 'ajax_get_source_urls']);
+        add_action('wp_ajax_imgpro_cdn_add_source_url', [$this, 'ajax_add_source_url']);
+        add_action('wp_ajax_imgpro_cdn_remove_source_url', [$this, 'ajax_remove_source_url']);
     }
 
     /**
@@ -84,6 +94,41 @@ class ImgPro_CDN_Admin_Ajax {
         $random_bytes = random_bytes(32);
         $hex = bin2hex($random_bytes);
         return 'imgpro_' . $hex;
+    }
+
+    /**
+     * Handle account conflict - trigger secure recovery flow
+     *
+     * DRY helper to avoid duplicate code in ajax_free_register() and ajax_checkout()
+     *
+     * @since 0.1.10
+     * @param string $site_url The site URL
+     * @return void Sends JSON response and exits
+     */
+    private function handle_account_conflict($site_url) {
+        // Clear any stale API key from singleton before calling public endpoint
+        // This prevents Bearer tokens from previous authenticated calls being sent
+        $this->api->set_api_key(null);
+
+        // Automatically request recovery code
+        $recovery_result = $this->api->request_recovery($site_url);
+
+        if (!is_wp_error($recovery_result)) {
+            // Recovery email sent - tell JS to show verification modal
+            wp_send_json_error([
+                'message'       => __('We found an existing account for this site.', 'bandwidth-saver'),
+                'show_recovery' => true,
+                'email_hint'    => $recovery_result['email_hint'] ?? null,
+                'code'          => 'account_exists',
+            ]);
+            return;
+        }
+
+        // Recovery request failed
+        wp_send_json_error([
+            'message' => __('An account exists but recovery failed. Please try again.', 'bandwidth-saver'),
+            'code'    => 'recovery_failed',
+        ]);
     }
 
     /**
@@ -183,25 +228,7 @@ class ImgPro_CDN_Admin_Ajax {
 
             // Handle existing account - trigger secure recovery flow
             if ('conflict' === $error_code) {
-                // Automatically request recovery code
-                $recovery_result = $this->api->request_recovery($site_url);
-
-                if (!is_wp_error($recovery_result)) {
-                    // Recovery email sent - tell JS to show verification modal
-                    wp_send_json_error([
-                        'message'       => __('We found an existing account for this site.', 'bandwidth-saver'),
-                        'show_recovery' => true,
-                        'email_hint'    => $recovery_result['email_hint'] ?? null,
-                        'code'          => 'account_exists',
-                    ]);
-                    return;
-                }
-
-                // Recovery request failed
-                wp_send_json_error([
-                    'message' => __('An account exists but recovery failed. Please try again.', 'bandwidth-saver'),
-                    'code'    => 'recovery_failed',
-                ]);
+                $this->handle_account_conflict($site_url);
                 return;
             }
 
@@ -266,6 +293,9 @@ class ImgPro_CDN_Admin_Ajax {
             // Always set limits (use defaults for free tier)
             'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
             'cache_limit' => $usage['cache_limit'] ?: ImgPro_CDN_Settings::FREE_CACHE_LIMIT,
+            // Billing period timestamps (convert ISO strings to Unix timestamps)
+            'billing_period_start' => !empty($usage['period_start']) ? strtotime($usage['period_start']) : 0,
+            'billing_period_end' => !empty($usage['period_end']) ? strtotime($usage['period_end']) : 0,
         ];
 
         // Update custom domain if present
@@ -468,22 +498,7 @@ class ImgPro_CDN_Admin_Ajax {
 
                 // Account already exists - trigger secure recovery flow
                 if ('conflict' === $error_code) {
-                    $recovery_result = $this->api->request_recovery($site_url);
-
-                    if (!is_wp_error($recovery_result)) {
-                        wp_send_json_error([
-                            'message'       => __('We found an existing account for this site.', 'bandwidth-saver'),
-                            'show_recovery' => true,
-                            'email_hint'    => $recovery_result['email_hint'] ?? null,
-                            'code'          => 'account_exists',
-                        ]);
-                        return;
-                    }
-
-                    wp_send_json_error([
-                        'message' => __('An account exists but recovery failed. Please try again.', 'bandwidth-saver'),
-                        'code'    => 'recovery_failed',
-                    ]);
+                    $this->handle_account_conflict($site_url);
                     return;
                 } else {
                     wp_send_json_error([
@@ -581,6 +596,9 @@ class ImgPro_CDN_Admin_Ajax {
         }
         ImgPro_CDN_Security::check_permission();
         ImgPro_CDN_Security::check_rate_limit('recovery');
+
+        // Clear any stale API key from singleton before calling public endpoint
+        $this->api->set_api_key(null);
 
         $site_url = get_site_url();
         $result = $this->api->request_recovery($site_url);
@@ -1019,5 +1037,326 @@ class ImgPro_CDN_Admin_Ajax {
         $health['overall_status'] = $has_errors ? 'error' : ($has_warnings ? 'warning' : 'ok');
 
         wp_send_json_success($health);
+    }
+
+    /**
+     * AJAX handler for getting usage insights
+     *
+     * @since 0.2.0
+     * @return void
+     */
+    public function ajax_get_insights() {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_get_insights'))) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('analytics');
+
+        $api_key = $this->settings->get_api_key();
+
+        if (empty($api_key)) {
+            wp_send_json_error(['message' => __('No subscription found.', 'bandwidth-saver')]);
+            return;
+        }
+
+        $insights = $this->api->get_usage_insights($api_key);
+
+        if (is_wp_error($insights)) {
+            wp_send_json_error([
+                'message' => __('Could not fetch insights. Please try again.', 'bandwidth-saver'),
+                'code' => 'insights_error'
+            ]);
+            return;
+        }
+
+        // Transform API response to match frontend expectations
+        $transformed = [
+            'avg_daily_bandwidth' => isset($insights['bandwidth']['avg_daily'])
+                ? ImgPro_CDN_Settings::format_bytes($insights['bandwidth']['avg_daily'])
+                : null,
+            'projected_period_bandwidth' => isset($insights['bandwidth']['projected'])
+                ? ImgPro_CDN_Settings::format_bytes($insights['bandwidth']['projected'])
+                : null,
+            'cache_hit_rate' => isset($insights['recent']['cache_hit_rate'])
+                ? $insights['recent']['cache_hit_rate']
+                : null,
+            'cache_hits' => isset($insights['recent']['cache_hits'])
+                ? $insights['recent']['cache_hits']
+                : null,
+            'cache_misses' => isset($insights['recent']['cache_misses'])
+                ? $insights['recent']['cache_misses']
+                : null,
+            'days_remaining' => isset($insights['period']['days_remaining'])
+                ? $insights['period']['days_remaining']
+                : null,
+            'total_requests' => isset($insights['recent']['requests'])
+                ? $insights['recent']['requests']
+                : null,
+        ];
+
+        wp_send_json_success($transformed);
+    }
+
+    /**
+     * AJAX handler for getting daily usage data
+     *
+     * @since 0.2.0
+     * @return void
+     */
+    public function ajax_get_daily_usage() {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_get_daily_usage'))) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('analytics');
+
+        $api_key = $this->settings->get_api_key();
+
+        if (empty($api_key)) {
+            wp_send_json_error(['message' => __('No subscription found.', 'bandwidth-saver')]);
+            return;
+        }
+
+        // Get days parameter (default 30)
+        $days = isset($_POST['days']) ? intval($_POST['days']) : 30;
+        $days = min(90, max(1, $days));
+
+        $daily = $this->api->get_daily_usage($api_key, $days);
+
+        if (is_wp_error($daily)) {
+            wp_send_json_error([
+                'message' => __('Could not fetch daily usage. Please try again.', 'bandwidth-saver'),
+                'code' => 'daily_usage_error'
+            ]);
+            return;
+        }
+
+        // Extract just the daily array (frontend expects array, not object with metadata)
+        $daily_data = isset($daily['daily']) ? $daily['daily'] : [];
+
+        wp_send_json_success($daily_data);
+    }
+
+    /**
+     * AJAX handler for getting historical billing periods
+     *
+     * @since 0.2.0
+     * @return void
+     */
+    public function ajax_get_usage_periods() {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_get_usage_periods'))) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('analytics');
+
+        $api_key = $this->settings->get_api_key();
+
+        if (empty($api_key)) {
+            wp_send_json_error(['message' => __('No subscription found.', 'bandwidth-saver')]);
+            return;
+        }
+
+        // Get limit parameter (default 12)
+        $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 12;
+        $limit = min(100, max(1, $limit));
+
+        $periods = $this->api->get_usage_periods($api_key, $limit);
+
+        if (is_wp_error($periods)) {
+            wp_send_json_error([
+                'message' => __('Could not fetch usage periods. Please try again.', 'bandwidth-saver'),
+                'code' => 'periods_error'
+            ]);
+            return;
+        }
+
+        wp_send_json_success($periods);
+    }
+
+    /**
+     * AJAX handler for getting source URLs
+     *
+     * @since 0.2.0
+     * @return void
+     */
+    public function ajax_get_source_urls() {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_get_source_urls'))) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('api');
+
+        $api_key = $this->settings->get_api_key();
+
+        if (empty($api_key)) {
+            wp_send_json_error(['message' => __('No subscription found.', 'bandwidth-saver')]);
+            return;
+        }
+
+        $source_urls = $this->api->get_source_urls($api_key);
+
+        if (is_wp_error($source_urls)) {
+            wp_send_json_error([
+                'message' => __('Could not fetch source URLs. Please try again.', 'bandwidth-saver'),
+                'code' => 'source_urls_error'
+            ]);
+            return;
+        }
+
+        // Sync to local settings for use by rewriter (no API calls on page load)
+        $domain_list = array_map(function($item) {
+            return is_array($item) && isset($item['domain']) ? $item['domain'] : $item;
+        }, $source_urls);
+        $this->settings->update(['source_urls' => $domain_list]);
+
+        wp_send_json_success(['source_urls' => $source_urls]);
+    }
+
+    /**
+     * AJAX handler for adding a source URL
+     *
+     * @since 0.2.0
+     * @return void
+     */
+    public function ajax_add_source_url() {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_add_source_url'))) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('api');
+
+        $api_key = $this->settings->get_api_key();
+
+        if (empty($api_key)) {
+            wp_send_json_error(['message' => __('No subscription found.', 'bandwidth-saver')]);
+            return;
+        }
+
+        // Get and validate domain
+        if (!isset($_POST['domain'])) {
+            wp_send_json_error(['message' => __('Domain is required.', 'bandwidth-saver')]);
+            return;
+        }
+
+        $domain = sanitize_text_field(wp_unslash($_POST['domain']));
+
+        if (empty($domain)) {
+            wp_send_json_error(['message' => __('Domain cannot be empty.', 'bandwidth-saver')]);
+            return;
+        }
+
+        $result = $this->api->add_source_url($api_key, $domain);
+
+        if (is_wp_error($result)) {
+            $error_code = $result->get_error_code();
+            $error_message = $result->get_error_message();
+
+            // Map API error codes to user-friendly messages
+            if ($error_code === 'limit_exceeded') {
+                $error_message = __('Domain limit reached for your tier. Upgrade to add more domains.', 'bandwidth-saver');
+            } elseif ($error_code === 'already_exists') {
+                $error_message = __('This domain is already in your source URL list.', 'bandwidth-saver');
+            } elseif ($error_code === 'invalid_domain') {
+                $error_message = __('Invalid domain format. Please enter a valid domain (e.g., cdn.example.com).', 'bandwidth-saver');
+            }
+
+            wp_send_json_error([
+                'message' => $error_message,
+                'code' => $error_code
+            ]);
+            return;
+        }
+
+        // Sync to local settings after successful add
+        $this->sync_source_urls_to_settings($api_key);
+
+        wp_send_json_success([
+            'message' => __('Domain added successfully.', 'bandwidth-saver'),
+            'source_url' => $result['source_url'] ?? null
+        ]);
+    }
+
+    /**
+     * AJAX handler for removing a source URL
+     *
+     * @since 0.2.0
+     * @return void
+     */
+    public function ajax_remove_source_url() {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_remove_source_url'))) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('api');
+
+        $api_key = $this->settings->get_api_key();
+
+        if (empty($api_key)) {
+            wp_send_json_error(['message' => __('No subscription found.', 'bandwidth-saver')]);
+            return;
+        }
+
+        // Get and validate domain
+        if (!isset($_POST['domain'])) {
+            wp_send_json_error(['message' => __('Domain is required.', 'bandwidth-saver')]);
+            return;
+        }
+
+        $domain = sanitize_text_field(wp_unslash($_POST['domain']));
+
+        if (empty($domain)) {
+            wp_send_json_error(['message' => __('Domain cannot be empty.', 'bandwidth-saver')]);
+            return;
+        }
+
+        $result = $this->api->remove_source_url($api_key, $domain);
+
+        if (is_wp_error($result)) {
+            $error_code = $result->get_error_code();
+            $error_message = $result->get_error_message();
+
+            // Map API error codes to user-friendly messages
+            if ($error_code === 'cannot_remove_primary') {
+                $error_message = __('Cannot remove the primary domain.', 'bandwidth-saver');
+            } elseif ($error_code === 'not_found') {
+                $error_message = __('Domain not found in your source URL list.', 'bandwidth-saver');
+            }
+
+            wp_send_json_error([
+                'message' => $error_message,
+                'code' => $error_code
+            ]);
+            return;
+        }
+
+        // Sync to local settings after successful removal
+        $this->sync_source_urls_to_settings($api_key);
+
+        wp_send_json_success([
+            'message' => __('Domain removed successfully.', 'bandwidth-saver')
+        ]);
+    }
+
+    /**
+     * Sync source URLs from API to local settings
+     *
+     * @since 0.2.0
+     * @param string $api_key API key.
+     * @return void
+     */
+    private function sync_source_urls_to_settings($api_key) {
+        $source_urls = $this->api->get_source_urls($api_key);
+
+        if (is_wp_error($source_urls)) {
+            return;
+        }
+
+        // Extract domain strings only
+        $domain_list = array_map(function($item) {
+            return is_array($item) && isset($item['domain']) ? $item['domain'] : $item;
+        }, $source_urls);
+
+        $this->settings->update(['source_urls' => $domain_list]);
     }
 }

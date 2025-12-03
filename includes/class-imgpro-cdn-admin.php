@@ -312,16 +312,28 @@ class ImgPro_CDN_Admin {
             );
         }
 
+        // Enqueue Chart.js from CDN for analytics
+        wp_enqueue_script(
+            'chartjs',
+            'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
+            [],
+            '4.4.1',
+            true
+        );
+
         // Enqueue admin JS
         $js_file = dirname(__FILE__) . '/../admin/js/imgpro-cdn-admin.js';
         if (file_exists($js_file)) {
             wp_enqueue_script(
                 'imgpro-cdn-admin',
                 plugins_url('admin/js/imgpro-cdn-admin.js', dirname(__FILE__)),
-                ['jquery'],
+                ['jquery', 'chartjs'],
                 IMGPRO_CDN_VERSION . '.' . filemtime($js_file),
                 true
             );
+        }
+
+        if (file_exists($js_file)) {
 
             $all_settings = $this->settings->get_all();
             $pricing = $this->get_pricing();
@@ -765,34 +777,139 @@ class ImgPro_CDN_Admin {
         $bandwidth_used = $settings['bandwidth_used'] ?? 0;
         $bandwidth_limit = ImgPro_CDN_Settings::get_bandwidth_limit($settings);
         $bandwidth_percentage = ImgPro_CDN_Settings::get_bandwidth_percentage($settings);
-        $cache_used = $settings['cache_used'] ?? 0;
-        $cache_limit = ImgPro_CDN_Settings::get_cache_limit($settings);
-        $cache_percentage = ImgPro_CDN_Settings::get_cache_percentage($settings);
         $images_cached = $settings['images_cached'] ?? 0;
+
+        // Calculate days remaining in billing period
+        $period_end = $settings['billing_period_end'] ?? 0;
+        $now = time();
+        $days_remaining = $period_end > 0 ? max(0, ceil(($period_end - $now) / 86400)) : 0;
         ?>
-        <div class="imgpro-stats-grid" id="imgpro-stats-grid">
-            <div class="imgpro-stat-card">
-                <div class="imgpro-stat-header">
-                    <span class="imgpro-stat-label"><?php esc_html_e('Bandwidth Used', 'bandwidth-saver'); ?></span>
+
+        <!-- Analytics Section -->
+        <div class="imgpro-analytics-section" id="imgpro-analytics-section">
+
+            <!-- Quick Stats Grid -->
+            <div class="imgpro-stats-grid" id="imgpro-stats-grid">
+                <!-- Image Requests Card (populated by JS) -->
+                <div class="imgpro-stat-card">
+                    <div class="imgpro-stat-header">
+                        <span class="imgpro-stat-label"><?php esc_html_e('Image Requests', 'bandwidth-saver'); ?></span>
+                    </div>
+                    <div class="imgpro-stat-value" id="imgpro-stat-total-requests">
+                        <span class="imgpro-stat-loading">—</span>
+                    </div>
+                    <p class="imgpro-stat-hint"><?php esc_html_e('Last 7 days', 'bandwidth-saver'); ?></p>
                 </div>
-                <div class="imgpro-stat-value" id="imgpro-stat-bandwidth">
-                    <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($bandwidth_used)); ?>
-                    <span class="imgpro-stat-limit">/ <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0)); ?></span>
+
+                <!-- Cached Images Card (populated by JS) -->
+                <div class="imgpro-stat-card">
+                    <div class="imgpro-stat-header">
+                        <span class="imgpro-stat-label"><?php esc_html_e('Cached Images', 'bandwidth-saver'); ?></span>
+                    </div>
+                    <div class="imgpro-stat-value" id="imgpro-stat-cached">
+                        <span class="imgpro-stat-loading">—</span>
+                    </div>
+                    <p class="imgpro-stat-hint"><?php esc_html_e('Last 7 days', 'bandwidth-saver'); ?></p>
                 </div>
-                <div class="imgpro-progress-bar">
-                    <div id="imgpro-progress-bandwidth" class="imgpro-progress-fill <?php echo esc_attr( $bandwidth_percentage >= 90 ? 'is-critical' : ( $bandwidth_percentage >= 70 ? 'is-warning' : '' ) ); ?>" style="width: <?php echo esc_attr(min(100, $bandwidth_percentage)); ?>%"></div>
+
+                <!-- Served by CDN Card (populated by JS) -->
+                <div class="imgpro-stat-card">
+                    <div class="imgpro-stat-header">
+                        <span class="imgpro-stat-label"><?php esc_html_e('Served by CDN', 'bandwidth-saver'); ?></span>
+                    </div>
+                    <div class="imgpro-stat-value" id="imgpro-stat-cache-hit-rate">
+                        <span class="imgpro-stat-loading">—</span>
+                    </div>
+                    <p class="imgpro-stat-hint"><?php esc_html_e('Last 7 days', 'bandwidth-saver'); ?></p>
                 </div>
             </div>
 
-            <div class="imgpro-stat-card">
-                <div class="imgpro-stat-header">
-                    <span class="imgpro-stat-label"><?php esc_html_e('Images Cached', 'bandwidth-saver'); ?></span>
+            <!-- Usage Chart -->
+            <div class="imgpro-chart-card">
+                <div class="imgpro-chart-header">
+                    <h3><?php esc_html_e('Bandwidth Usage', 'bandwidth-saver'); ?></h3>
+                    <div class="imgpro-chart-controls">
+                        <button type="button" class="imgpro-stat-refresh" id="imgpro-refresh-stats" title="<?php esc_attr_e('Refresh stats', 'bandwidth-saver'); ?>">
+                            <!-- Heroicon: arrow-path (outline) -->
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                            </svg>
+                        </button>
+                        <select id="imgpro-chart-period" class="imgpro-chart-period-select">
+                            <option value="7"><?php esc_html_e('Last 7 days', 'bandwidth-saver'); ?></option>
+                            <option value="30" selected><?php esc_html_e('Last 30 days', 'bandwidth-saver'); ?></option>
+                            <option value="90"><?php esc_html_e('Last 90 days', 'bandwidth-saver'); ?></option>
+                        </select>
+                    </div>
                 </div>
-                <div class="imgpro-stat-value" id="imgpro-stat-images">
-                    <?php echo esc_html(number_format($images_cached)); ?>
+                <div class="imgpro-chart-body">
+                    <div class="imgpro-chart-loading" id="imgpro-chart-loading">
+                        <svg class="imgpro-spinner" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                            <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="4" stroke-opacity="0.2"/>
+                            <path d="M16 2a14 14 0 0 1 14 14" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                        </svg>
+                        <p><?php esc_html_e('Loading chart...', 'bandwidth-saver'); ?></p>
+                    </div>
+                    <canvas id="imgpro-usage-chart" width="800" height="300"></canvas>
+                    <div class="imgpro-chart-empty" id="imgpro-chart-empty" style="display: none;">
+                        <!-- Heroicon: chart-bar (outline) -->
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="48" height="48" opacity="0.3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                        </svg>
+                        <p><?php esc_html_e('No usage data yet', 'bandwidth-saver'); ?></p>
+                        <p class="imgpro-text-muted"><?php esc_html_e('Data will appear once you start using the CDN', 'bandwidth-saver'); ?></p>
+                    </div>
                 </div>
-                <p class="imgpro-stat-hint"><?php esc_html_e('Across all edge locations', 'bandwidth-saver'); ?></p>
             </div>
+
+            <!-- Insights Grid -->
+            <div class="imgpro-insights-grid" id="imgpro-insights-grid">
+                <div class="imgpro-insight-card">
+                    <div class="imgpro-insight-icon">
+                        <!-- Heroicon: signal (outline) -->
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="20" height="20">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.348 14.652a3.75 3.75 0 0 1 0-5.304m5.304 0a3.75 3.75 0 0 1 0 5.304m-7.425 2.121a6.75 6.75 0 0 1 0-9.546m9.546 0a6.75 6.75 0 0 1 0 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                        </svg>
+                    </div>
+                    <div class="imgpro-insight-content">
+                        <div class="imgpro-insight-label"><?php esc_html_e('Bandwidth Used', 'bandwidth-saver'); ?></div>
+                        <div class="imgpro-insight-value" id="imgpro-insight-bandwidth">
+                            <?php echo esc_html(ImgPro_CDN_Settings::format_bytes($bandwidth_used)); ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="imgpro-insight-card">
+                    <div class="imgpro-insight-icon">
+                        <!-- Heroicon: chart-bar-square (outline) -->
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="20" height="20">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z" />
+                        </svg>
+                    </div>
+                    <div class="imgpro-insight-content">
+                        <div class="imgpro-insight-label"><?php esc_html_e('Projected This Period', 'bandwidth-saver'); ?></div>
+                        <div class="imgpro-insight-value" id="imgpro-insight-projected">
+                            <span class="imgpro-stat-loading">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="imgpro-insight-card">
+                    <div class="imgpro-insight-icon">
+                        <!-- Heroicon: clock (outline) -->
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="20" height="20">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </div>
+                    <div class="imgpro-insight-content">
+                        <div class="imgpro-insight-label"><?php esc_html_e('Days Until Reset', 'bandwidth-saver'); ?></div>
+                        <div class="imgpro-insight-value" id="imgpro-insight-days">
+                            <?php echo esc_html($days_remaining); ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
         <?php
     }
@@ -1019,7 +1136,10 @@ class ImgPro_CDN_Admin {
             <?php // 3. Stats Grid ?>
             <?php $this->render_stats_grid($settings); ?>
 
-            <?php // 4. Custom Domain Section ?>
+            <?php // 4. Source URLs Section ?>
+            <?php $this->render_source_urls_section($settings); ?>
+
+            <?php // 5. Custom Domain Section ?>
             <?php $this->render_custom_domain_section($settings); ?>
 
             <?php // Custom Domain Pending Notice (if DNS needs attention) ?>
@@ -1027,26 +1147,26 @@ class ImgPro_CDN_Admin {
                 <?php $this->render_custom_domain_pending($settings); ?>
             <?php endif; ?>
 
-            <?php // 5. Advanced Settings ?>
-            <details class="imgpro-details">
-                <summary class="imgpro-details-summary">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span><?php esc_html_e('Advanced Settings', 'bandwidth-saver'); ?></span>
-                </summary>
+            <?php // 5. Developer Options (only shown when WP_DEBUG is enabled) ?>
+            <?php if (defined('WP_DEBUG') && WP_DEBUG): ?>
+            <div class="imgpro-dev-options">
+                <form method="post" action="options.php" class="imgpro-dev-options-form">
+                    <?php settings_fields('imgpro_cdn_settings_group'); ?>
+                    <input type="hidden" name="imgpro_cdn_settings[setup_mode]" value="<?php echo esc_attr(ImgPro_CDN_Settings::MODE_CLOUD); ?>">
 
-                <div class="imgpro-details-content">
-                    <form method="post" action="options.php" class="imgpro-settings-form">
-                        <?php settings_fields('imgpro_cdn_settings_group'); ?>
-                        <input type="hidden" name="imgpro_cdn_settings[setup_mode]" value="<?php echo esc_attr(ImgPro_CDN_Settings::MODE_CLOUD); ?>">
-
-                        <?php $this->render_advanced_options($settings); ?>
-
-                        <div class="imgpro-form-actions">
-                            <button type="submit" class="imgpro-btn imgpro-btn-primary"><?php esc_html_e('Save Settings', 'bandwidth-saver'); ?></button>
-                        </div>
-                    </form>
-                </div>
-            </details>
+                    <label class="imgpro-dev-checkbox">
+                        <input
+                            type="checkbox"
+                            name="imgpro_cdn_settings[debug_mode]"
+                            value="1"
+                            <?php checked($settings['debug_mode'], true); ?>
+                        >
+                        <span class="imgpro-dev-checkbox-text"><?php esc_html_e('Debug mode', 'bandwidth-saver'); ?></span>
+                        <span class="imgpro-dev-badge">WP_DEBUG</span>
+                    </label>
+                </form>
+            </div>
+            <?php endif; ?>
         </div>
         <?php
     }
@@ -1274,26 +1394,27 @@ class ImgPro_CDN_Admin {
                         </div>
                     </div>
 
-                    <?php // 3. Advanced Settings ?>
-                    <details class="imgpro-details">
-                        <summary class="imgpro-details-summary">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <span><?php esc_html_e('Advanced Settings', 'bandwidth-saver'); ?></span>
-                        </summary>
-                        <div class="imgpro-details-content">
-                            <form method="post" action="options.php" class="imgpro-settings-form">
-                                <?php settings_fields('imgpro_cdn_settings_group'); ?>
-                                <input type="hidden" name="imgpro_cdn_settings[setup_mode]" value="<?php echo esc_attr(ImgPro_CDN_Settings::MODE_CLOUDFLARE); ?>">
-                                <input type="hidden" name="imgpro_cdn_settings[cdn_url]" value="<?php echo esc_attr($settings['cdn_url']); ?>">
+                    <?php // 3. Developer Options (only shown when WP_DEBUG is enabled) ?>
+                    <?php if (defined('WP_DEBUG') && WP_DEBUG): ?>
+                    <div class="imgpro-dev-options">
+                        <form method="post" action="options.php" class="imgpro-dev-options-form">
+                            <?php settings_fields('imgpro_cdn_settings_group'); ?>
+                            <input type="hidden" name="imgpro_cdn_settings[setup_mode]" value="<?php echo esc_attr(ImgPro_CDN_Settings::MODE_CLOUDFLARE); ?>">
+                            <input type="hidden" name="imgpro_cdn_settings[cdn_url]" value="<?php echo esc_attr($settings['cdn_url']); ?>">
 
-                                <?php $this->render_advanced_options($settings); ?>
-
-                                <div class="imgpro-form-actions">
-                                    <button type="submit" class="imgpro-btn imgpro-btn-primary"><?php esc_html_e('Save Settings', 'bandwidth-saver'); ?></button>
-                                </div>
-                            </form>
-                        </div>
-                    </details>
+                            <label class="imgpro-dev-checkbox">
+                                <input
+                                    type="checkbox"
+                                    name="imgpro_cdn_settings[debug_mode]"
+                                    value="1"
+                                    <?php checked($settings['debug_mode'], true); ?>
+                                >
+                                <span class="imgpro-dev-checkbox-text"><?php esc_html_e('Debug mode', 'bandwidth-saver'); ?></span>
+                                <span class="imgpro-dev-badge">WP_DEBUG</span>
+                            </label>
+                        </form>
+                    </div>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
         </div>
@@ -1412,6 +1533,76 @@ class ImgPro_CDN_Admin {
     }
 
     /**
+     * Render source URLs section
+     *
+     * @since 0.2.0
+     * @param array $settings Plugin settings.
+     * @return void
+     */
+    private function render_source_urls_section($settings) {
+        $tier = $settings['tier'] ?? 'free';
+
+        // Domain limits by tier
+        $domain_limits = [
+            'free' => 1,
+            'lite' => 3,
+            'pro' => 5,
+            'business' => 10,
+        ];
+
+        $domain_limit = $domain_limits[$tier] ?? 1;
+
+        ?>
+        <div class="imgpro-source-urls-card" id="imgpro-source-urls-section">
+            <div class="imgpro-source-urls-header">
+                <h4><?php esc_html_e('Source URLs', 'bandwidth-saver'); ?></h4>
+                <p class="imgpro-source-urls-description">
+                    <?php esc_html_e('Domains where your images are hosted. The CDN will proxy images from these origins.', 'bandwidth-saver'); ?>
+                </p>
+            </div>
+
+            <!-- Source URLs List (populated by JavaScript) -->
+            <div class="imgpro-source-urls-list" id="imgpro-source-urls-list">
+                <div class="imgpro-source-urls-loading">
+                    <svg class="imgpro-spinner" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" stroke-opacity="0.2"/>
+                        <path d="M10 2a8 8 0 0 1 8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span><?php esc_html_e('Loading...', 'bandwidth-saver'); ?></span>
+                </div>
+            </div>
+
+            <!-- Add Source URL Form -->
+            <div class="imgpro-source-urls-form">
+                <div class="imgpro-source-urls-input-group">
+                    <input
+                        type="text"
+                        id="imgpro-source-url-input"
+                        class="imgpro-input"
+                        placeholder="<?php esc_attr_e('cdn.example.com', 'bandwidth-saver'); ?>"
+                        autocomplete="off"
+                    />
+                    <button type="button" class="imgpro-btn imgpro-btn-primary" id="imgpro-add-source-url">
+                        <?php esc_html_e('Add Domain', 'bandwidth-saver'); ?>
+                    </button>
+                </div>
+                <p class="imgpro-source-urls-limit">
+                    <?php
+                    printf(
+                        /* translators: %s: domain limit for current tier */
+                        esc_html__('Your %s plan allows up to %d domain(s).', 'bandwidth-saver'),
+                        '<strong>' . esc_html(ucfirst($tier)) . '</strong>',
+                        esc_html($domain_limit)
+                    );
+                    ?>
+                    <span id="imgpro-source-urls-count"></span>
+                </p>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
      * Render custom domain section
      *
      * @since 0.1.6
@@ -1471,53 +1662,6 @@ class ImgPro_CDN_Admin {
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 3L3 11M3 3l8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                         <?php esc_html_e('Remove', 'bandwidth-saver'); ?>
                     </button>
-                </div>
-            <?php endif; ?>
-        </div>
-        <?php
-    }
-
-    /**
-     * Render advanced options
-     *
-     * @since 0.1.0
-     * @param array $settings Plugin settings.
-     * @return void
-     */
-    private function render_advanced_options($settings) {
-        ?>
-        <div class="imgpro-settings-section">
-            <div class="imgpro-form-group">
-                <label for="allowed_domains"><?php esc_html_e('Allowed Domains', 'bandwidth-saver'); ?></label>
-                <textarea
-                    id="allowed_domains"
-                    name="imgpro_cdn_settings[allowed_domains]"
-                    rows="3"
-                    class="imgpro-textarea"
-                    placeholder="example.com&#10;blog.example.com"
-                ><?php
-                    if (is_array($settings['allowed_domains'])) {
-                        echo esc_textarea(implode("\n", $settings['allowed_domains']));
-                    }
-                ?></textarea>
-                <p class="imgpro-input-hint">
-                    <?php esc_html_e('Only rewrite images from these domains (one per line). Leave empty to rewrite all.', 'bandwidth-saver'); ?>
-                </p>
-            </div>
-
-            <?php if (defined('WP_DEBUG') && WP_DEBUG): ?>
-                <div class="imgpro-form-group imgpro-form-checkbox">
-                    <label class="imgpro-checkbox-label">
-                        <input
-                            type="checkbox"
-                            id="debug_mode"
-                            name="imgpro_cdn_settings[debug_mode]"
-                            value="1"
-                            <?php checked($settings['debug_mode'], true); ?>
-                        >
-                        <span class="imgpro-checkbox-text"><?php esc_html_e('Enable debug mode', 'bandwidth-saver'); ?></span>
-                    </label>
-                    <p class="imgpro-input-hint"><?php esc_html_e('Adds debug info to image elements (visible in dev tools).', 'bandwidth-saver'); ?></p>
                 </div>
             <?php endif; ?>
         </div>

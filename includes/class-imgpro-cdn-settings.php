@@ -254,7 +254,8 @@ class ImgPro_CDN_Settings {
         'cdn_url'         => '',
 
         // Common settings
-        'allowed_domains' => [],
+        'allowed_domains' => [],  // Deprecated - kept for backward compatibility
+        'source_urls'     => [],  // Source URLs (origin domains) synced from API
         'debug_mode'      => false,
     ];
 
@@ -415,6 +416,12 @@ class ImgPro_CDN_Settings {
         if (isset($settings['stats_updated_at'])) {
             $validated['stats_updated_at'] = absint($settings['stats_updated_at']);
         }
+        if (isset($settings['billing_period_start'])) {
+            $validated['billing_period_start'] = absint($settings['billing_period_start']);
+        }
+        if (isset($settings['billing_period_end'])) {
+            $validated['billing_period_end'] = absint($settings['billing_period_end']);
+        }
 
         // Onboarding state
         if (isset($settings['onboarding_completed'])) {
@@ -450,7 +457,7 @@ class ImgPro_CDN_Settings {
             $validated['cdn_url'] = $cdn_url;
         }
 
-        // Allowed domains (array)
+        // Allowed domains (array) - deprecated, kept for backward compatibility
         if (isset($settings['allowed_domains'])) {
             if (is_string($settings['allowed_domains'])) {
                 $domains = array_map('trim', explode("\n", $settings['allowed_domains']));
@@ -459,6 +466,15 @@ class ImgPro_CDN_Settings {
             }
 
             $validated['allowed_domains'] = array_map(
+                [self::class, 'sanitize_domain'],
+                array_filter($domains)
+            );
+        }
+
+        // Source URLs (array) - synced from API, used by rewriter
+        if (isset($settings['source_urls'])) {
+            $domains = (array) $settings['source_urls'];
+            $validated['source_urls'] = array_map(
                 [self::class, 'sanitize_domain'],
                 array_filter($domains)
             );

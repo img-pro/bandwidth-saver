@@ -549,11 +549,11 @@ class ImgPro_CDN_Rewriter {
             return false;
         }
 
-        // Allowed domains (with subdomain support)
-        $allowed = $this->settings->get('allowed_domains', []);
-        if (!empty($allowed)) {
+        // Check source URLs (allowed domains) - stored locally in settings
+        $source_urls = $this->settings->get('source_urls', []);
+        if (!empty($source_urls)) {
             $url_host = wp_parse_url($url, PHP_URL_HOST);
-            if (!$url_host || !$this->is_domain_allowed($url_host, $allowed)) {
+            if (!$url_host || !$this->is_domain_allowed($url_host, $source_urls)) {
                 return false;
             }
         }

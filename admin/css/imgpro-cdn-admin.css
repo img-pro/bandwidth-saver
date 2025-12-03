@@ -3534,10 +3534,11 @@ body.imgpro-modal-open {
 
 /* Source URLs Section */
 .imgpro-source-urls-card {
-    padding: var(--imgpro-space-5);
+    padding: var(--imgpro-space-5) var(--imgpro-space-6);
     background: var(--imgpro-bg);
     border: 1px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-lg);
+    box-shadow: var(--imgpro-card-shadow);
     margin-bottom: var(--imgpro-space-6);
 }
 

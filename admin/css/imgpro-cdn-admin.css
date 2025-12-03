@@ -860,10 +860,11 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--imgpro-space-4);
-    padding: var(--imgpro-space-5);
-    background: var(--imgpro-bg-subtle);
-    border: 2px solid var(--imgpro-border);
+    padding: var(--imgpro-space-5) var(--imgpro-space-6);
+    background: var(--imgpro-bg);
+    border: 1px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-lg);
+    box-shadow: var(--imgpro-card-shadow);
     margin-bottom: var(--imgpro-space-6);
     transition: all var(--imgpro-transition-base) var(--imgpro-ease-out);
 }
@@ -2126,45 +2127,41 @@
     margin: 0;
 }
 
-.imgpro-dev-checkbox {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--imgpro-space-2);
-    padding: var(--imgpro-space-2) var(--imgpro-space-3);
-    background: var(--imgpro-gray-50);
-    border: 1px dashed var(--imgpro-gray-300);
-    border-radius: var(--imgpro-radius-sm);
-    cursor: pointer;
-    transition: all var(--imgpro-transition-fast);
+.imgpro-dev-options {
+    margin-top: var(--imgpro-space-4);
 }
 
-.imgpro-dev-checkbox:hover {
-    background: var(--imgpro-gray-100);
-    border-color: var(--imgpro-gray-400);
+.imgpro-dev-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--imgpro-space-3);
+    margin-bottom: var(--imgpro-space-2);
+    cursor: pointer;
 }
 
 .imgpro-dev-checkbox input[type="checkbox"] {
     flex-shrink: 0;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     margin: 0;
-    accent-color: var(--imgpro-gray-600);
+    accent-color: var(--imgpro-primary-600);
 }
 
 .imgpro-dev-checkbox-text {
-    font-family: var(--imgpro-font-mono);
-    font-size: var(--imgpro-text-xs);
-    color: var(--imgpro-gray-600);
+    font-size: var(--imgpro-text-sm);
+    color: var(--imgpro-text-secondary);
+    position: relative;
+    top: 1px;
 }
 
 .imgpro-dev-badge {
     font-family: var(--imgpro-font-mono);
-    font-size: 10px;
+    font-size: var(--imgpro-text-xs);
     font-weight: 500;
-    color: var(--imgpro-gray-500);
-    background: var(--imgpro-gray-200);
-    padding: 2px 6px;
-    border-radius: 3px;
+    color: var(--imgpro-text-tertiary);
+    background: var(--imgpro-bg-secondary);
+    padding: var(--imgpro-space-1) var(--imgpro-space-2);
+    border-radius: var(--imgpro-radius-sm);
     letter-spacing: 0.02em;
 }
 
@@ -2264,6 +2261,7 @@
     background: var(--imgpro-bg);
     border: 1px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-lg);
+    box-shadow: var(--imgpro-card-shadow);
     margin-bottom: var(--imgpro-space-6);
 }
 
@@ -2419,6 +2417,7 @@
     background: var(--imgpro-bg);
     border: 1px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-lg);
+    box-shadow: var(--imgpro-card-shadow);
     margin-bottom: var(--imgpro-space-6);
     overflow: hidden;
 }
@@ -2560,10 +2559,11 @@
 /* Configuration Form Card */
 
 .imgpro-custom-domain-card {
-    padding: var(--imgpro-space-5);
+    padding: var(--imgpro-space-5) var(--imgpro-space-6);
     background: var(--imgpro-bg);
     border: 1px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-lg);
+    box-shadow: var(--imgpro-card-shadow);
     margin-bottom: var(--imgpro-space-6);
 }
 

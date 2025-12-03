@@ -1149,21 +1149,29 @@ class ImgPro_CDN_Admin {
 
             <?php // 5. Developer Options (only shown when WP_DEBUG is enabled) ?>
             <?php if (defined('WP_DEBUG') && WP_DEBUG): ?>
-            <div class="imgpro-dev-options">
+            <div class="imgpro-card imgpro-dev-options">
                 <form method="post" action="options.php" class="imgpro-dev-options-form">
                     <?php settings_fields('imgpro_cdn_settings_group'); ?>
+                    <input type="hidden" name="imgpro_cdn_settings[_has_enabled_field]" value="1">
                     <input type="hidden" name="imgpro_cdn_settings[setup_mode]" value="<?php echo esc_attr(ImgPro_CDN_Settings::MODE_CLOUD); ?>">
+                    <input type="hidden" name="imgpro_cdn_settings[enabled]" value="<?php echo $settings['enabled'] ? '1' : '0'; ?>">
+                    <input type="hidden" name="imgpro_cdn_settings[cdn_url]" value="<?php echo esc_attr($settings['cdn_url']); ?>">
 
-                    <label class="imgpro-dev-checkbox">
-                        <input
-                            type="checkbox"
-                            name="imgpro_cdn_settings[debug_mode]"
-                            value="1"
-                            <?php checked($settings['debug_mode'], true); ?>
-                        >
-                        <span class="imgpro-dev-checkbox-text"><?php esc_html_e('Debug mode', 'bandwidth-saver'); ?></span>
-                        <span class="imgpro-dev-badge">WP_DEBUG</span>
-                    </label>
+                    <div class="imgpro-card-header">
+                        <h3><?php esc_html_e('Developer Options', 'bandwidth-saver'); ?></h3>
+                    </div>
+                    <div class="imgpro-card-body">
+                        <label class="imgpro-dev-checkbox">
+                            <input
+                                type="checkbox"
+                                name="imgpro_cdn_settings[debug_mode]"
+                                value="1"
+                                <?php checked($settings['debug_mode'], true); ?>
+                            >
+                            <span class="imgpro-dev-checkbox-text"><?php esc_html_e('Enable debug logging', 'bandwidth-saver'); ?></span>
+                        </label>
+                        <p class="imgpro-help-text"><?php esc_html_e('Logs CDN operations to browser console.', 'bandwidth-saver'); ?></p>
+                    </div>
                 </form>
             </div>
             <?php endif; ?>
@@ -1396,22 +1404,29 @@ class ImgPro_CDN_Admin {
 
                     <?php // 3. Developer Options (only shown when WP_DEBUG is enabled) ?>
                     <?php if (defined('WP_DEBUG') && WP_DEBUG): ?>
-                    <div class="imgpro-dev-options">
+                    <div class="imgpro-card imgpro-dev-options">
                         <form method="post" action="options.php" class="imgpro-dev-options-form">
                             <?php settings_fields('imgpro_cdn_settings_group'); ?>
+                            <input type="hidden" name="imgpro_cdn_settings[_has_enabled_field]" value="1">
                             <input type="hidden" name="imgpro_cdn_settings[setup_mode]" value="<?php echo esc_attr(ImgPro_CDN_Settings::MODE_CLOUDFLARE); ?>">
+                            <input type="hidden" name="imgpro_cdn_settings[enabled]" value="<?php echo $settings['enabled'] ? '1' : '0'; ?>">
                             <input type="hidden" name="imgpro_cdn_settings[cdn_url]" value="<?php echo esc_attr($settings['cdn_url']); ?>">
 
-                            <label class="imgpro-dev-checkbox">
-                                <input
-                                    type="checkbox"
-                                    name="imgpro_cdn_settings[debug_mode]"
-                                    value="1"
-                                    <?php checked($settings['debug_mode'], true); ?>
-                                >
-                                <span class="imgpro-dev-checkbox-text"><?php esc_html_e('Debug mode', 'bandwidth-saver'); ?></span>
-                                <span class="imgpro-dev-badge">WP_DEBUG</span>
-                            </label>
+                            <div class="imgpro-card-header">
+                                <h3><?php esc_html_e('Developer Options', 'bandwidth-saver'); ?></h3>
+                            </div>
+                            <div class="imgpro-card-body">
+                                <label class="imgpro-dev-checkbox">
+                                    <input
+                                        type="checkbox"
+                                        name="imgpro_cdn_settings[debug_mode]"
+                                        value="1"
+                                        <?php checked($settings['debug_mode'], true); ?>
+                                    >
+                                    <span class="imgpro-dev-checkbox-text"><?php esc_html_e('Enable debug logging', 'bandwidth-saver'); ?></span>
+                                </label>
+                                <p class="imgpro-help-text"><?php esc_html_e('Logs CDN operations to browser console.', 'bandwidth-saver'); ?></p>
+                            </div>
                         </form>
                     </div>
                     <?php endif; ?>
@@ -1540,7 +1555,7 @@ class ImgPro_CDN_Admin {
      * @return void
      */
     private function render_source_urls_section($settings) {
-        $tier = $settings['tier'] ?? 'free';
+        $tier = $settings['cloud_tier'] ?? 'free';
 
         // Domain limits by tier
         $domain_limits = [

@@ -789,8 +789,28 @@
      */
     function initDevOptions() {
         $('.imgpro-dev-checkbox input[type="checkbox"]').off('change').on('change', function() {
-            var $form = $(this).closest('form');
+            var $checkbox = $(this);
+            var $form = $checkbox.closest('form');
+
             if ($form.length) {
+                // When unchecked, ensure the value is explicitly set to 0
+                if (!$checkbox.is(':checked')) {
+                    // Add hidden field to send 0 value
+                    var fieldName = $checkbox.attr('name');
+                    if (fieldName) {
+                        // Remove any existing hidden field with this name
+                        $form.find('input[type="hidden"][name="' + fieldName + '"]').remove();
+                        // Add hidden field with 0 value before checkbox
+                        $checkbox.before('<input type="hidden" name="' + fieldName + '" value="0">');
+                    }
+                } else {
+                    // When checked, remove any hidden field (checkbox will send its value)
+                    var fieldName = $checkbox.attr('name');
+                    if (fieldName) {
+                        $form.find('input[type="hidden"][name="' + fieldName + '"]').remove();
+                    }
+                }
+
                 $form.submit();
             }
         });
@@ -1626,7 +1646,7 @@
 
         $button.addClass('is-loading');
 
-        // Force sync stats from API
+        // Force sync stats from API, then reload insights
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
@@ -1636,20 +1656,7 @@
                 nonce: imgproCdnAdmin.nonces.sync_stats
             },
             success: function(response) {
-                if (response.success && response.data.formatted) {
-                    // Update bandwidth stat
-                    const $bandwidthVal = $('#imgpro-stat-bandwidth');
-                    if ($bandwidthVal.length) {
-                        $bandwidthVal.html(escapeHtml(response.data.formatted.bandwidth_used || '0 B') +
-                            '<span class="imgpro-stat-limit">/ ' + escapeHtml(response.data.formatted.bandwidth_limit) + '</span>');
-                    }
-
-                    // Update images stat
-                    $('#imgpro-stat-images').text((response.data.images_cached || 0).toLocaleString());
-
-                    // Update progress bar
-                    updateProgressBar('#imgpro-progress-bandwidth', response.data.bandwidth_percentage || 0);
-
+                if (response.success) {
                     // Reload insights and chart with fresh data
                     loadInsights();
                     loadChartData();

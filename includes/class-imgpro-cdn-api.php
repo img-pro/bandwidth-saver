@@ -56,6 +56,13 @@ class ImgPro_CDN_API {
     private $site_cache = null;
 
     /**
+     * API key for Bearer token authentication (v0.2.0+)
+     *
+     * @var string|null
+     */
+    private $api_key = null;
+
+    /**
      * Get singleton instance
      *
      * @return self
@@ -71,6 +78,30 @@ class ImgPro_CDN_API {
      * Private constructor for singleton
      */
     private function __construct() {}
+
+    /**
+     * Set API key for Bearer token authentication
+     *
+     * This allows using modern v0.2.0+ endpoints with Bearer tokens.
+     *
+     * @since 0.2.0
+     * @param string $api_key API key.
+     * @return self Fluent interface.
+     */
+    public function set_api_key($api_key) {
+        $this->api_key = $api_key;
+        return $this;
+    }
+
+    /**
+     * Get stored API key
+     *
+     * @since 0.2.0
+     * @return string|null
+     */
+    public function get_api_key() {
+        return $this->api_key;
+    }
 
     // =========================================================================
     // PUBLIC API METHODS
@@ -99,8 +130,13 @@ class ImgPro_CDN_API {
             }
         }
 
-        // Fetch from API
-        $response = $this->request('GET', '/api/sites/' . $api_key);
+        // Set API key for Bearer token authentication (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        // Fetch from API using modern endpoint
+        // v0.2.0+: GET /api/site with Bearer token
+        // Legacy: GET /api/sites/:api_key (fallback for errors)
+        $response = $this->request('GET', '/api/site');
 
         if (is_wp_error($response)) {
             return $response;
@@ -127,6 +163,9 @@ class ImgPro_CDN_API {
             return new WP_Error('missing_site_url', __('Site URL is required', 'bandwidth-saver'));
         }
 
+        // Public endpoint - clear any stale API key
+        $this->set_api_key(null);
+
         return $this->request('POST', '/api/recovery/request', [
             'site_url' => $site_url,
         ]);
@@ -149,6 +188,9 @@ class ImgPro_CDN_API {
         if (empty($code)) {
             return new WP_Error('missing_code', __('Verification code is required', 'bandwidth-saver'));
         }
+
+        // Public endpoint - clear any stale API key
+        $this->set_api_key(null);
 
         $response = $this->request('POST', '/api/recovery/verify', [
             'site_url' => $site_url,
@@ -178,6 +220,9 @@ class ImgPro_CDN_API {
             return new WP_Error('missing_fields', __('Email and site URL are required', 'bandwidth-saver'));
         }
 
+        // Public endpoint - clear any stale API key
+        $this->set_api_key(null);
+
         $response = $this->request('POST', '/api/sites', [
             'email'            => $email,
             'site_url'         => $site_url,
@@ -206,7 +251,10 @@ class ImgPro_CDN_API {
             return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
         }
 
-        return $this->request('POST', '/api/sites/' . $api_key . '/checkout', [
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        return $this->request('POST', '/api/checkout', [
             'tier_id' => $tier_id,
         ]);
     }
@@ -222,7 +270,10 @@ class ImgPro_CDN_API {
             return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
         }
 
-        return $this->request('POST', '/api/sites/' . $api_key . '/portal');
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        return $this->request('POST', '/api/portal');
     }
 
     /**
@@ -237,7 +288,10 @@ class ImgPro_CDN_API {
             return new WP_Error('missing_fields', __('API key and domain are required', 'bandwidth-saver'));
         }
 
-        $response = $this->request('PUT', '/api/sites/' . $api_key . '/domain', [
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        $response = $this->request('PUT', '/api/domain', [
             'domain' => $domain,
         ]);
 
@@ -262,7 +316,10 @@ class ImgPro_CDN_API {
             return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
         }
 
-        return $this->request('GET', '/api/sites/' . $api_key . '/domain');
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        return $this->request('GET', '/api/domain');
     }
 
     /**
@@ -276,10 +333,280 @@ class ImgPro_CDN_API {
             return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
         }
 
-        $response = $this->request('DELETE', '/api/sites/' . $api_key . '/domain');
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        $response = $this->request('DELETE', '/api/domain');
 
         if (!is_wp_error($response)) {
             $this->invalidate_cache();
+        }
+
+        return $response;
+    }
+
+    /**
+     * Get source URLs (origin domains)
+     *
+     * Retrieves the list of allowed source domains for this site.
+     * These are the origins that the CDN will proxy images from.
+     *
+     * @since 0.2.0
+     * @param string $api_key Site API key.
+     * @return array|WP_Error Array of source URLs or error.
+     */
+    public function get_source_urls($api_key) {
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
+        }
+
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        $response = $this->request('GET', '/api/source-urls');
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        return $response['domains'] ?? [];
+    }
+
+    /**
+     * Add source URL (origin domain)
+     *
+     * Adds a new allowed source domain for this site.
+     * Subject to tier limits (Free: 1, Lite: 3, Pro: 5, Business: 10).
+     *
+     * @since 0.2.0
+     * @param string $api_key Site API key.
+     * @param string $domain  Domain to add (e.g., "cdn.example.com").
+     * @return array|WP_Error Success response or error.
+     */
+    public function add_source_url($api_key, $domain) {
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
+        }
+
+        if (empty($domain)) {
+            return new WP_Error('missing_domain', __('Domain is required', 'bandwidth-saver'));
+        }
+
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        $response = $this->request('POST', '/api/source-urls', [
+            'domain' => $domain,
+        ]);
+
+        if (!is_wp_error($response)) {
+            $this->invalidate_cache();
+        }
+
+        return $response;
+    }
+
+    /**
+     * Remove source URL (origin domain)
+     *
+     * Removes an allowed source domain from this site.
+     * Cannot remove the primary domain.
+     *
+     * @since 0.2.0
+     * @param string $api_key Site API key.
+     * @param string $domain  Domain to remove.
+     * @return array|WP_Error Success response or error.
+     */
+    public function remove_source_url($api_key, $domain) {
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
+        }
+
+        if (empty($domain)) {
+            return new WP_Error('missing_domain', __('Domain is required', 'bandwidth-saver'));
+        }
+
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        $response = $this->request('DELETE', '/api/source-urls/' . rawurlencode($domain));
+
+        if (!is_wp_error($response)) {
+            $this->invalidate_cache();
+        }
+
+        return $response;
+    }
+
+    /**
+     * Get usage insights
+     *
+     * Fetches comprehensive usage analytics including projections,
+     * average daily usage, and historical data.
+     *
+     * @since 0.2.0
+     * @param string $api_key Site API key.
+     * @param bool   $use_cache Use cached data if available (default: true).
+     * @return array|WP_Error Usage insights or error.
+     */
+    public function get_usage_insights($api_key, $use_cache = true) {
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
+        }
+
+        // Check cache
+        if ($use_cache) {
+            $cache_key = 'imgpro_insights_' . md5($api_key);
+            $cached = get_transient($cache_key);
+            if (false !== $cached) {
+                return $cached;
+            }
+        }
+
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        $response = $this->request('GET', '/api/usage/insights');
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Cache for 5 minutes (insights change less frequently)
+        if ($use_cache) {
+            set_transient($cache_key, $response, 300);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Get daily usage rollups
+     *
+     * Fetches daily aggregated usage data for charts.
+     *
+     * @since 0.2.0
+     * @param string $api_key Site API key.
+     * @param int    $days    Number of days to fetch (max 90, default 30).
+     * @param bool   $use_cache Use cached data if available (default: true).
+     * @return array|WP_Error Daily usage data or error.
+     */
+    public function get_daily_usage($api_key, $days = 30, $use_cache = true) {
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
+        }
+
+        $days = min(90, max(1, intval($days)));
+
+        // Check cache
+        if ($use_cache) {
+            $cache_key = 'imgpro_daily_' . md5($api_key . '_' . $days);
+            $cached = get_transient($cache_key);
+            if (false !== $cached) {
+                return $cached;
+            }
+        }
+
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        $response = $this->request('GET', '/api/usage/daily', ['days' => $days]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Cache for 5 minutes
+        if ($use_cache) {
+            set_transient($cache_key, $response, 300);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Get hourly usage data
+     *
+     * Fetches hourly usage data for detailed analysis.
+     *
+     * @since 0.2.0
+     * @param string $api_key Site API key.
+     * @param int    $hours   Number of hours to fetch (max 720, default 168).
+     * @param bool   $use_cache Use cached data if available (default: true).
+     * @return array|WP_Error Hourly usage data or error.
+     */
+    public function get_hourly_usage($api_key, $hours = 168, $use_cache = true) {
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
+        }
+
+        $hours = min(720, max(1, intval($hours)));
+
+        // Check cache
+        if ($use_cache) {
+            $cache_key = 'imgpro_hourly_' . md5($api_key . '_' . $hours);
+            $cached = get_transient($cache_key);
+            if (false !== $cached) {
+                return $cached;
+            }
+        }
+
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        $response = $this->request('GET', '/api/usage/hourly', ['hours' => $hours]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Cache for 5 minutes
+        if ($use_cache) {
+            set_transient($cache_key, $response, 300);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Get historical billing periods
+     *
+     * Fetches archived billing period data for history.
+     *
+     * @since 0.2.0
+     * @param string $api_key Site API key.
+     * @param int    $limit   Number of periods to fetch (max 100, default 12).
+     * @param bool   $use_cache Use cached data if available (default: true).
+     * @return array|WP_Error Historical periods or error.
+     */
+    public function get_usage_periods($api_key, $limit = 12, $use_cache = true) {
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
+        }
+
+        $limit = min(100, max(1, intval($limit)));
+
+        // Check cache
+        if ($use_cache) {
+            $cache_key = 'imgpro_periods_' . md5($api_key . '_' . $limit);
+            $cached = get_transient($cache_key);
+            if (false !== $cached) {
+                return $cached;
+            }
+        }
+
+        // Set API key for Bearer token (v0.2.0+)
+        $this->set_api_key($api_key);
+
+        $response = $this->request('GET', '/api/usage/periods', ['limit' => $limit]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Cache for 1 hour (historical data doesn't change)
+        if ($use_cache) {
+            set_transient($cache_key, $response, 3600);
         }
 
         return $response;
@@ -305,6 +632,9 @@ class ImgPro_CDN_API {
                 return $cached;
             }
         }
+
+        // Public endpoint - clear any stale API key
+        $this->set_api_key(null);
 
         // Fetch from API
         $response = $this->request('GET', '/api/tiers');
@@ -472,6 +802,8 @@ class ImgPro_CDN_API {
             'cache_used'       => $usage['cache']['used_bytes'] ?? 0,
             'cache_limit'      => $usage['cache']['limit_bytes'] ?? 0,
             'images_cached'    => $usage['images_cached'] ?? 0,
+            'period_start'     => $usage['period_start'] ?? null,
+            'period_end'       => $usage['period_end'] ?? null,
         ];
     }
 
@@ -563,6 +895,11 @@ class ImgPro_CDN_API {
                 'Accept'       => 'application/json',
             ],
         ];
+
+        // Add Bearer token authentication if API key is set (v0.2.0+)
+        if ($this->api_key) {
+            $args['headers']['Authorization'] = 'Bearer ' . $this->api_key;
+        }
 
         // GET requests: add data as query params
         if ('GET' === $method && $data) {

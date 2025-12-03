@@ -101,7 +101,7 @@ class ImgPro_CDN_Admin_Ajax {
      *
      * DRY helper to avoid duplicate code in ajax_free_register() and ajax_checkout()
      *
-     * @since 0.1.10
+     * @since 0.2.0
      * @param string $site_url The site URL
      * @return void Sends JSON response and exits
      */

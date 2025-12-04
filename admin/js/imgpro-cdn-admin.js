@@ -1188,8 +1188,13 @@
                 $upgradeLink.attr('data-next-tier', nextTier);
             }
 
-            $upgradeLink.attr('data-action', action).find('strong').text(linkText);
-            $upgradeLink.show();
+            // Only show upgrade link if we have a valid action
+            if (action) {
+                $upgradeLink.attr('data-action', action).find('strong').text(linkText);
+                $upgradeLink.show();
+            } else {
+                $upgradeLink.hide();
+            }
         } else {
             $inputWrapper.show();
             $upgradeLink.hide();

@@ -240,6 +240,12 @@ You are responsible for the images served through your account.
 
 == Changelog ==
 
+= 0.2.2 =
+* Improved: Faster settings page — analytics data now loads in a single request
+* Improved: Source URLs and usage stats are pre-loaded, eliminating extra API calls
+* Improved: Better WordPress coding standards compliance
+* Fixed: Cleaner transient cleanup on uninstall
+
 = 0.2.1 =
 * New: Usage analytics dashboard with bandwidth charts and insights
 * New: Source URLs management — add multiple origin domains (tier-based limits)
@@ -325,6 +331,9 @@ You are responsible for the images served through your account.
 * Initial release
 
 == Upgrade Notice ==
+
+= 0.2.2 =
+Performance release: Settings page loads faster with batched API requests. Improved WordPress coding standards compliance.
 
 = 0.2.1 =
 New analytics dashboard shows bandwidth usage over time. Manage multiple source domains. CDN now works with infinite scroll for visitors. Custom domains available on all paid plans including Lite.

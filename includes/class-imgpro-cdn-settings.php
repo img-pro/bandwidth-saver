@@ -242,7 +242,8 @@ class ImgPro_CDN_Settings {
         'bandwidth_limit'    => 0,
         'cache_used'         => 0,
         'cache_limit'        => 0,
-        'images_cached'      => 0,
+        'cache_hits'         => 0,
+        'cache_misses'       => 0,
         'stats_updated_at'   => 0,
 
         // Onboarding state
@@ -410,8 +411,11 @@ class ImgPro_CDN_Settings {
         if (isset($settings['cache_limit'])) {
             $validated['cache_limit'] = absint($settings['cache_limit']);
         }
-        if (isset($settings['images_cached'])) {
-            $validated['images_cached'] = absint($settings['images_cached']);
+        if (isset($settings['cache_hits'])) {
+            $validated['cache_hits'] = absint($settings['cache_hits']);
+        }
+        if (isset($settings['cache_misses'])) {
+            $validated['cache_misses'] = absint($settings['cache_misses']);
         }
         if (isset($settings['stats_updated_at'])) {
             $validated['stats_updated_at'] = absint($settings['stats_updated_at']);

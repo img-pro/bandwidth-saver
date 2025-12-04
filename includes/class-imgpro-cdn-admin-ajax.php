@@ -74,6 +74,7 @@ class ImgPro_CDN_Admin_Ajax {
         add_action('wp_ajax_imgpro_cdn_health_check', [$this, 'ajax_health_check']);
 
         // Analytics endpoints
+        add_action('wp_ajax_imgpro_cdn_get_usage', [$this, 'ajax_get_usage']);
         add_action('wp_ajax_imgpro_cdn_get_insights', [$this, 'ajax_get_insights']);
         add_action('wp_ajax_imgpro_cdn_get_daily_usage', [$this, 'ajax_get_daily_usage']);
         add_action('wp_ajax_imgpro_cdn_get_usage_periods', [$this, 'ajax_get_usage_periods']);
@@ -288,7 +289,8 @@ class ImgPro_CDN_Admin_Ajax {
             'cloud_tier' => $tier_id,
             'bandwidth_used' => $usage['bandwidth_used'],
             'cache_used' => $usage['cache_used'],
-            'images_cached' => $usage['images_cached'],
+            'cache_hits' => $usage['cache_hits'],
+            'cache_misses' => $usage['cache_misses'],
             'stats_updated_at' => time(),
             // Always set limits (use defaults for free tier)
             'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
@@ -436,7 +438,8 @@ class ImgPro_CDN_Admin_Ajax {
             'cache_used' => $updated_settings['cache_used'] ?? 0,
             'cache_limit' => $cache_limit,
             'cache_percentage' => ImgPro_CDN_Settings::get_cache_percentage($updated_settings),
-            'images_cached' => $updated_settings['images_cached'] ?? 0,
+            'cache_hits' => $updated_settings['cache_hits'] ?? 0,
+            'cache_misses' => $updated_settings['cache_misses'] ?? 0,
             'formatted' => [
                 'bandwidth_used' => ImgPro_CDN_Settings::format_bytes($updated_settings['bandwidth_used'] ?? 0),
                 'bandwidth_limit' => ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0),
@@ -1037,6 +1040,78 @@ class ImgPro_CDN_Admin_Ajax {
         $health['overall_status'] = $has_errors ? 'error' : ($has_warnings ? 'warning' : 'ok');
 
         wp_send_json_success($health);
+    }
+
+    /**
+     * AJAX handler for getting usage analytics (insights + daily chart)
+     *
+     * Batched endpoint for analytics section - returns both insights
+     * and daily chart data in a single request.
+     *
+     * @since 0.2.2
+     * @return void
+     */
+    public function ajax_get_usage() {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), ImgPro_CDN_Security::get_nonce_action('imgpro_cdn_get_usage'))) {
+            wp_send_json_error(['message' => __('Security check failed', 'bandwidth-saver')]);
+        }
+        ImgPro_CDN_Security::check_permission();
+        ImgPro_CDN_Security::check_rate_limit('analytics');
+
+        $api_key = $this->settings->get_api_key();
+
+        if (empty($api_key)) {
+            wp_send_json_error(['message' => __('No subscription found.', 'bandwidth-saver')]);
+            return;
+        }
+
+        // Get days parameter (default 30)
+        $days = isset($_POST['days']) ? intval($_POST['days']) : 30;
+        $days = min(90, max(1, $days));
+
+        $data = $this->api->get_usage_analytics($api_key, $days);
+
+        if (is_wp_error($data)) {
+            wp_send_json_error([
+                'message' => __('Could not fetch usage data. Please try again.', 'bandwidth-saver'),
+                'code' => 'usage_error'
+            ]);
+            return;
+        }
+
+        // Transform insights for frontend
+        $insights = $data['insights'] ?? [];
+        $transformed_insights = [
+            'avg_daily_bandwidth' => isset($insights['bandwidth']['avg_daily'])
+                ? ImgPro_CDN_Settings::format_bytes($insights['bandwidth']['avg_daily'])
+                : null,
+            'projected_period_bandwidth' => isset($insights['bandwidth']['projected'])
+                ? ImgPro_CDN_Settings::format_bytes($insights['bandwidth']['projected'])
+                : null,
+            'cache_hit_rate' => isset($insights['recent']['cache_hit_rate'])
+                ? $insights['recent']['cache_hit_rate']
+                : null,
+            'cache_hits' => isset($insights['recent']['cache_hits'])
+                ? $insights['recent']['cache_hits']
+                : null,
+            'cache_misses' => isset($insights['recent']['cache_misses'])
+                ? $insights['recent']['cache_misses']
+                : null,
+            'days_remaining' => isset($insights['period']['days_remaining'])
+                ? $insights['period']['days_remaining']
+                : null,
+            'total_requests' => isset($insights['recent']['requests'])
+                ? $insights['recent']['requests']
+                : null,
+        ];
+
+        // Extract daily array
+        $daily_data = $data['daily'] ?? [];
+
+        wp_send_json_success([
+            'insights' => $transformed_insights,
+            'daily' => $daily_data,
+        ]);
     }
 
     /**

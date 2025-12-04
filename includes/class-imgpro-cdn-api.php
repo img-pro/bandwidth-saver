@@ -125,7 +125,7 @@ class ImgPro_CDN_API {
         // Check cache first (unless forcing refresh)
         if (!$force_refresh) {
             $cached = $this->get_cached_site();
-            if ($cached && ($cached['api_key'] ?? '') === $api_key) {
+            if ($cached) {
                 return $cached;
             }
         }
@@ -147,6 +147,72 @@ class ImgPro_CDN_API {
         $this->cache_site($site);
 
         return $site;
+    }
+
+    /**
+     * Get full site data in a single batched request
+     *
+     * Fetches site info, domains, and optionally tiers in one API call.
+     * This is more efficient than calling get_site() + get_source_urls() + get_tiers()
+     * separately, especially on admin page load.
+     *
+     * @since 0.2.2
+     * @param string $api_key       Site API key.
+     * @param array  $include       Data to include: 'domains', 'tiers', 'usage'. Default: ['domains'].
+     * @param bool   $force_refresh Force fresh fetch, ignoring cache.
+     * @return array|WP_Error Site data array with requested includes, or error.
+     */
+    public function get_site_with_includes($api_key, $include = ['domains'], $force_refresh = false) {
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
+        }
+
+        // Build cache key based on includes
+        $cache_key = 'imgpro_site_' . md5($api_key . implode(',', $include));
+
+        // Check cache first (unless forcing refresh)
+        if (!$force_refresh) {
+            $cached = get_transient($cache_key);
+            if (false !== $cached) {
+                return $cached;
+            }
+        }
+
+        // Set API key for Bearer token authentication
+        $this->set_api_key($api_key);
+
+        // Build include parameter
+        $include_param = implode(',', array_map('sanitize_key', $include));
+
+        // Fetch from /api/site with includes
+        $response = $this->request('GET', '/api/site', ['include' => $include_param]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Cache the site data separately for get_site() compatibility
+        if (isset($response['site'])) {
+            $this->cache_site($response['site']);
+        }
+
+        // Cache the full response
+        set_transient($cache_key, $response, self::CACHE_TTL);
+
+        return $response;
+    }
+
+    /**
+     * Get site data with optional includes (alias for get_site_with_includes)
+     *
+     * @deprecated Use get_site_with_includes() instead
+     * @param string $api_key       Site API key.
+     * @param array  $include       Data to include.
+     * @param bool   $force_refresh Force fresh fetch.
+     * @return array|WP_Error Site data or error.
+     */
+    public function get_site_full($api_key, $include = ['domains'], $force_refresh = false) {
+        return $this->get_site_with_includes($api_key, $include, $force_refresh);
     }
 
     /**
@@ -530,6 +596,62 @@ class ImgPro_CDN_API {
     }
 
     /**
+     * Get usage analytics data (insights + daily chart)
+     *
+     * Uses /api/site?include=usage to fetch both insights and daily chart data
+     * in a single request, reducing page load API calls.
+     *
+     * @since 0.2.2
+     * @param string $api_key   Site API key.
+     * @param int    $days      Number of days for daily chart (max 90, default 30).
+     * @param bool   $use_cache Use cached data if available (default: true).
+     * @return array|WP_Error Usage analytics data or error.
+     */
+    public function get_usage_analytics($api_key, $days = 30, $use_cache = true) {
+        if (empty($api_key)) {
+            return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
+        }
+
+        $days = min(90, max(1, intval($days)));
+
+        // Check cache
+        if ($use_cache) {
+            $cache_key = 'imgpro_usage_' . md5($api_key . '_' . $days);
+            $cached = get_transient($cache_key);
+            if (false !== $cached) {
+                return $cached;
+            }
+        }
+
+        // Set API key for Bearer token
+        $this->set_api_key($api_key);
+
+        // Use /api/site?include=usage instead of dedicated endpoint
+        $response = $this->request('GET', '/api/site', [
+            'include' => 'usage',
+            'days' => $days,
+        ]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        // Transform response to match expected format
+        // /api/site?include=usage returns: { site: {...}, usage: { insights: {...}, daily: {...} } }
+        $result = [
+            'insights' => $response['usage']['insights'] ?? [],
+            'daily' => $response['usage']['daily'] ?? [],
+        ];
+
+        // Cache for 5 minutes
+        if ($use_cache) {
+            set_transient($cache_key, $result, 300);
+        }
+
+        return $result;
+    }
+
+    /**
      * Get hourly usage data
      *
      * Fetches hourly usage data for detailed analysis.
@@ -741,26 +863,19 @@ class ImgPro_CDN_API {
     /**
      * Get pricing information
      *
-     * Returns cached pricing from site data, or fallback defaults.
+     * Returns pricing from cached site data, or fallback defaults.
+     * No longer uses a separate transient - derives from site_data['tier']['price'].
      *
      * @return array Pricing data.
      */
     public function get_pricing() {
-        // Check dedicated pricing cache
-        $cached = get_transient('imgpro_cdn_pricing');
-        if (false !== $cached) {
-            return $cached;
-        }
-
-        // Try to extract from cached site data
+        // Extract from cached site data
         $site = $this->get_cached_site();
         if ($site && isset($site['tier']['price'])) {
-            $pricing = $this->format_pricing($site['tier']['price']);
-            set_transient('imgpro_cdn_pricing', $pricing, self::CACHE_TTL);
-            return $pricing;
+            return $this->format_pricing($site['tier']['price']);
         }
 
-        // Fallback defaults
+        // Fallback defaults (Pro tier pricing)
         return [
             'amount'    => 1499,
             'currency'  => 'USD',
@@ -806,7 +921,8 @@ class ImgPro_CDN_API {
             'bandwidth_limit'  => $usage['bandwidth']['limit_bytes'] ?? 0,
             'cache_used'       => $usage['cache']['used_bytes'] ?? 0,
             'cache_limit'      => $usage['cache']['limit_bytes'] ?? 0,
-            'images_cached'    => $usage['images_cached'] ?? 0,
+            'cache_hits'       => $usage['cache_hits'] ?? 0,
+            'cache_misses'     => $usage['cache_misses'] ?? 0,
             'period_start'     => $usage['period_start'] ?? null,
             'period_end'       => $usage['period_end'] ?? null,
         ];
@@ -864,7 +980,6 @@ class ImgPro_CDN_API {
     public function invalidate_cache() {
         $this->site_cache = null;
         delete_transient('imgpro_cdn_site_data');
-        delete_transient('imgpro_cdn_pricing');
         delete_transient('imgpro_cdn_last_sync');
     }
 
@@ -892,12 +1007,16 @@ class ImgPro_CDN_API {
     private function request($method, $endpoint, $data = null) {
         $url = $this->get_base_url() . $endpoint;
 
+        $user_agent = $this->get_user_agent();
+
         $args = [
-            'method'  => $method,
-            'timeout' => self::TIMEOUT,
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'Accept'       => 'application/json',
+            'method'     => $method,
+            'timeout'    => self::TIMEOUT,
+            'user-agent' => $user_agent, // WordPress-specific key
+            'headers'    => [
+                'Content-Type'        => 'application/json',
+                'Accept'              => 'application/json',
+                'X-Plugin-User-Agent' => $user_agent, // Backup header
             ],
         ];
 
@@ -972,6 +1091,28 @@ class ImgPro_CDN_API {
     }
 
     /**
+     * Get User-Agent string for API requests
+     *
+     * Format: BandwidthSaver/{version} WordPress/{wp_version} PHP/{php_version}
+     * This allows the API to track plugin versions and optimize responses.
+     *
+     * @since 0.2.2
+     * @return string User-Agent string.
+     */
+    private function get_user_agent() {
+        global $wp_version;
+
+        $plugin_version = defined('IMGPRO_CDN_VERSION') ? IMGPRO_CDN_VERSION : 'unknown';
+
+        return sprintf(
+            'BandwidthSaver/%s WordPress/%s PHP/%s',
+            $plugin_version,
+            $wp_version,
+            PHP_VERSION
+        );
+    }
+
+    /**
      * Get API base URL
      *
      * SECURITY: Only HTTPS URLs are allowed to prevent credential leakage.
@@ -1003,12 +1144,6 @@ class ImgPro_CDN_API {
     private function cache_site($site) {
         $this->site_cache = $site;
         set_transient('imgpro_cdn_site_data', $site, self::CACHE_TTL);
-
-        // Also cache pricing for quick access
-        if (isset($site['tier']['price'])) {
-            $pricing = $this->format_pricing($site['tier']['price']);
-            set_transient('imgpro_cdn_pricing', $pricing, self::CACHE_TTL);
-        }
     }
 
     /**

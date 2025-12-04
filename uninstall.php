@@ -30,15 +30,19 @@ delete_option('imgpro_cdn_settings');
 delete_option('imgpro_cdn_version');
 
 // Delete known transients
-delete_transient('imgpro_cdn_pricing');
 delete_transient('imgpro_cdn_pending_payment');
 delete_transient('imgpro_cdn_tiers');
 delete_transient('imgpro_cdn_site_data');
 delete_transient('imgpro_cdn_payment_pending_recovery');
 delete_transient('imgpro_cdn_last_sync');
 
-// Rate limit transients (imgpro_rl_*) have a 60-second TTL and will expire naturally.
-// No explicit cleanup needed - they'll be gone within a minute of uninstall.
+// Short-lived transients that will expire naturally (no explicit cleanup needed):
+// - imgpro_usage_* (5 min TTL) - usage analytics cache
+// - imgpro_rl_* (60 sec TTL) - rate limiting
+// - imgpro_cdn_pricing (legacy, no longer created)
+//
+// These have hashed keys and short TTLs, so we let WordPress handle expiration
+// rather than running direct DB queries that could fail plugin check.
 
 // For multisite installations
 if (is_multisite()) {
@@ -67,14 +71,13 @@ if (is_multisite()) {
             delete_option('imgpro_cdn_version');
 
             // Delete transients for this site
-            delete_transient('imgpro_cdn_pricing');
             delete_transient('imgpro_cdn_pending_payment');
             delete_transient('imgpro_cdn_tiers');
             delete_transient('imgpro_cdn_site_data');
             delete_transient('imgpro_cdn_payment_pending_recovery');
             delete_transient('imgpro_cdn_last_sync');
 
-            // Rate limit transients expire naturally (60s TTL)
+            // Short-lived transients (imgpro_usage_*, imgpro_rl_*) expire naturally
 
             restore_current_blog();
         }

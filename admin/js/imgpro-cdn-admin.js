@@ -311,12 +311,8 @@
         // Self-hosted CDN domain handlers
         initCdnDomain();
 
-        // Sync stats on page load (if dashboard visible)
-        if ($('#imgpro-stats-grid').length && imgproCdnAdmin.tier !== 'none') {
-            // Sync stats every 5 minutes while page is open
-            syncStats();
-            setInterval(syncStats, 5 * 60 * 1000); // 5 minutes
-        }
+        // Note: Stats sync is now handled by PHP sync_site_data() on page load
+        // No need for JS syncStats() call - analytics section handles live data
     }
 
     // Track if stats sync is in progress to prevent race conditions
@@ -1082,11 +1078,24 @@
     }
 
     /**
-     * Load source URLs from API
+     * Load source URLs - uses pre-loaded data if available, otherwise fetches via AJAX
      */
     function loadSourceUrls() {
         var $list = $('#imgpro-source-urls-list');
 
+        // Use pre-loaded data from PHP if available (avoids extra AJAX call)
+        if (imgproCdnAdmin.sourceDomains) {
+            renderSourceUrls(
+                imgproCdnAdmin.sourceDomains.items || [],
+                imgproCdnAdmin.sourceDomains.count || 0,
+                imgproCdnAdmin.sourceDomains.max_domains || 1
+            );
+            // Clear pre-loaded data so subsequent calls fetch fresh
+            imgproCdnAdmin.sourceDomains = null;
+            return;
+        }
+
+        // Fallback: fetch via AJAX (for refreshes after add/remove)
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
@@ -1685,17 +1694,15 @@
         // Initialize chart period selector
         $('#imgpro-chart-period').off('change').on('change', function() {
             chartPeriod = parseInt($(this).val(), 10);
-            loadChartData();
+            loadAnalytics(true); // Force AJAX for different period
         });
 
-        // Load initial data
-        loadInsights();
-        loadChartData();
+        // Load initial data (single batched call for insights + daily)
+        loadAnalytics();
 
-        // Auto-refresh every 5 minutes
+        // Auto-refresh every 5 minutes (force AJAX for fresh data)
         analyticsRefreshInterval = setInterval(function() {
-            loadInsights();
-            loadChartData();
+            loadAnalytics(true);
         }, 5 * 60 * 1000);
     }
 
@@ -1707,7 +1714,7 @@
 
         $button.addClass('is-loading');
 
-        // Force sync stats from API, then reload insights
+        // Force sync stats from API, then reload analytics
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
@@ -1718,9 +1725,8 @@
             },
             success: function(response) {
                 if (response.success) {
-                    // Reload insights and chart with fresh data
-                    loadInsights();
-                    loadChartData();
+                    // Reload with fresh data (force AJAX)
+                    loadAnalytics(true);
                 }
             },
             complete: function() {
@@ -1730,7 +1736,96 @@
     }
 
     /**
+     * Load analytics data (insights + daily) in a single request
+     * Uses pre-loaded data from PHP on initial load, AJAX for refreshes
+     *
+     * @since 0.2.2
+     * @param {boolean} forceRefresh - If true, always fetch via AJAX
+     */
+    function loadAnalytics(forceRefresh) {
+        const $chartLoading = $('#imgpro-chart-loading');
+        const $chartEmpty = $('#imgpro-chart-empty');
+        const $chartCanvas = $('#imgpro-usage-chart');
+
+        // Use pre-loaded data from PHP on initial load (avoids AJAX call)
+        if (!forceRefresh && imgproCdnAdmin.usage) {
+            var data = imgproCdnAdmin.usage;
+
+            // Update insights cards
+            if (data.insights) {
+                updateInsights(data.insights);
+            } else {
+                showInsightsEmptyState();
+            }
+
+            // Render chart
+            if (data.daily && data.daily.length > 0) {
+                var chartRendered = renderChart(data.daily);
+                $chartLoading.hide();
+                if (chartRendered) {
+                    $chartCanvas.show();
+                }
+            } else {
+                $chartLoading.hide();
+                $chartEmpty.show();
+            }
+
+            // Clear pre-loaded data so subsequent calls use AJAX
+            imgproCdnAdmin.usage = null;
+            return;
+        }
+
+        // Show chart loading state
+        $chartLoading.show();
+        $chartEmpty.hide();
+        $chartCanvas.hide();
+
+        $.ajax({
+            url: imgproCdnAdmin.ajaxUrl,
+            type: 'POST',
+            timeout: AJAX_TIMEOUT,
+            data: {
+                action: 'imgpro_cdn_get_usage',
+                days: chartPeriod,
+                nonce: imgproCdnAdmin.nonces.analytics
+            },
+            success: function(response) {
+                if (response.success && response.data) {
+                    // Update insights cards
+                    if (response.data.insights) {
+                        updateInsights(response.data.insights);
+                    } else {
+                        showInsightsEmptyState();
+                    }
+
+                    // Render chart
+                    if (response.data.daily && response.data.daily.length > 0) {
+                        var chartRendered = renderChart(response.data.daily);
+                        $chartLoading.hide();
+                        if (chartRendered) {
+                            $chartCanvas.show();
+                        }
+                    } else {
+                        $chartLoading.hide();
+                        $chartEmpty.show();
+                    }
+                } else {
+                    showInsightsEmptyState();
+                    $chartLoading.hide();
+                    $chartEmpty.show();
+                }
+            },
+            error: function() {
+                showInsightsEmptyState();
+                $chartLoading.hide();
+                $chartEmpty.show();
+            }
+        });
+    }
+
+    /**
      * Load usage insights (cache hit rate, avg daily, projected, total requests)
+     * @deprecated Use loadAnalytics() instead
      */
     function loadInsights() {
         $.ajax({

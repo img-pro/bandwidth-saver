@@ -86,14 +86,14 @@ class ImgPro_CDN_Admin {
      * @return void
      */
     public function handle_skip_onboarding() {
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        if (!isset($_GET['skip_onboarding']) || !isset($_GET['_wpnonce'])) {
+        // Early return if params not present (nonce verified below)
+        if ( ! isset( $_GET['skip_onboarding'], $_GET['_wpnonce'] ) ) {
             return;
         }
 
         // Verify nonce
-        $nonce = sanitize_text_field(wp_unslash($_GET['_wpnonce']));
-        if (!wp_verify_nonce($nonce, 'imgpro_skip_onboarding')) {
+        $nonce = sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) );
+        if ( ! wp_verify_nonce( $nonce, 'imgpro_skip_onboarding' ) ) {
             wp_die(esc_html__('Security check failed.', 'bandwidth-saver'), '', ['response' => 403]);
         }
 
@@ -119,18 +119,19 @@ class ImgPro_CDN_Admin {
      * @return void
      */
     public function handle_payment_return() {
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        if (!isset($_GET['page']) || 'imgpro-cdn-settings' !== $_GET['page']) {
+        // Check page and payment status (no nonce needed - this is a redirect from Stripe)
+        // Capability check below ensures only authorized users can trigger account sync
+        $page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
+        if ( 'imgpro-cdn-settings' !== $page ) {
             return;
         }
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $payment_status = isset($_GET['payment']) ? sanitize_text_field(wp_unslash($_GET['payment'])) : '';
-        if ('success' !== $payment_status) {
+        $payment_status = isset( $_GET['payment'] ) ? sanitize_text_field( wp_unslash( $_GET['payment'] ) ) : '';
+        if ( 'success' !== $payment_status ) {
             return;
         }
 
-        if (!ImgPro_CDN_Security::current_user_can()) {
+        if ( ! ImgPro_CDN_Security::current_user_can() ) {
             return;
         }
 
@@ -192,18 +193,19 @@ class ImgPro_CDN_Admin {
         if ($old_tier !== $tier_id) {
             // Tier changed - clear all cached data to ensure fresh limits are shown
             delete_transient('imgpro_cdn_site_data');
-            delete_transient('imgpro_cdn_pricing');
             delete_transient('imgpro_cdn_tiers');
         }
 
+        // Note: api_key is NOT updated from response - it's already stored locally
+        // and the API no longer returns it (avoid storing secrets in caches)
         $update_data = [
-            'cloud_api_key' => $site['api_key'] ?? '',
             'cloud_email' => $site['email'] ?? '',
             'cloud_tier' => $tier_id,
             'setup_mode' => ImgPro_CDN_Settings::MODE_CLOUD,
             'bandwidth_used' => $usage['bandwidth_used'],
             'cache_used' => $usage['cache_used'],
-            'images_cached' => $usage['images_cached'],
+            'cache_hits' => $usage['cache_hits'],
+            'cache_misses' => $usage['cache_misses'],
             'stats_updated_at' => time(),
             // Always set limits (use defaults for free tier when API returns 0)
             'bandwidth_limit' => $usage['bandwidth_limit'] ?: ImgPro_CDN_Settings::FREE_BANDWIDTH_LIMIT,
@@ -217,6 +219,14 @@ class ImgPro_CDN_Admin {
 
         $this->settings->update($update_data);
     }
+
+    /**
+     * Cached site data from sync (used to avoid duplicate API calls)
+     *
+     * @since 0.2.2
+     * @var array|null
+     */
+    private $synced_data = null;
 
     /**
      * Sync site data from cloud API
@@ -235,11 +245,20 @@ class ImgPro_CDN_Admin {
             return; // No account to sync
         }
 
-        // API client handles caching internally
-        $site = $this->api->get_site($api_key);
+        // Use batched endpoint for efficiency (v0.2.2+)
+        // This fetches site + domains + tiers + usage in one request
+        $response = $this->api->get_site_full($api_key, ['domains', 'tiers', 'usage']);
 
-        if (is_wp_error($site)) {
+        if (is_wp_error($response)) {
             return; // Silently fail - cached data will be used
+        }
+
+        // Store for later use by enqueue_admin_assets()
+        $this->synced_data = $response;
+
+        $site = $response['site'] ?? null;
+        if (!$site) {
+            return;
         }
 
         // Update local settings if data has changed
@@ -269,11 +288,6 @@ class ImgPro_CDN_Admin {
             $update_data['cache_used'] = $usage['cache_used'];
             $settings_changed = true;
         }
-        if ($usage['images_cached'] !== ($settings['images_cached'] ?? 0)) {
-            $update_data['images_cached'] = $usage['images_cached'];
-            $settings_changed = true;
-        }
-
         // Update custom domain if present
         $domain = $this->api->get_custom_domain($site);
         if ($domain && $domain['status'] !== ($settings['custom_domain_status'] ?? '')) {
@@ -300,6 +314,10 @@ class ImgPro_CDN_Admin {
         if ('settings_page_imgpro-cdn-settings' !== $hook) {
             return;
         }
+
+        // Sync site data early so we have tiers available for localized script
+        // This also populates $this->synced_data for use later
+        $this->sync_site_data();
 
         // Enqueue admin CSS
         $css_file = dirname(__FILE__) . '/../admin/css/imgpro-cdn-admin.css';
@@ -337,7 +355,9 @@ class ImgPro_CDN_Admin {
 
             $all_settings = $this->settings->get_all();
             $pricing = $this->get_pricing();
-            $tiers = $this->api->get_tiers();
+
+            // Use cached tiers from sync_site_data() if available, otherwise fetch
+            $tiers = $this->synced_data['tiers'] ?? $this->api->get_tiers();
 
             // Index tiers by ID for easy JavaScript lookup
             $tiers_by_id = [];
@@ -359,6 +379,10 @@ class ImgPro_CDN_Admin {
                 'cacheLimit' => ImgPro_CDN_Settings::get_cache_limit($all_settings),
                 'pricing' => $pricing,
                 'tiers' => $tiers_by_id,
+                // Pre-load source domains from sync to avoid separate AJAX call
+                'sourceDomains' => $this->synced_data['domains'] ?? null,
+                // Pre-load usage analytics from sync (insights + daily chart)
+                'usage' => $this->transform_usage_for_js($this->synced_data['usage'] ?? null),
                 'i18n' => [
                     'activeLabel' => __('CDN Active', 'bandwidth-saver'),
                     'inactiveLabel' => __('CDN Inactive', 'bandwidth-saver'),
@@ -426,6 +450,38 @@ class ImgPro_CDN_Admin {
                 ]
             ]);
         }
+    }
+
+    /**
+     * Transform usage data from API format to JS-friendly format
+     *
+     * @since 0.2.2
+     * @param array|null $usage Raw usage data from API.
+     * @return array|null Transformed usage data for JavaScript.
+     */
+    private function transform_usage_for_js($usage) {
+        if (empty($usage)) {
+            return null;
+        }
+
+        $insights = $usage['insights'] ?? [];
+
+        return [
+            'insights' => [
+                'avg_daily_bandwidth' => isset($insights['bandwidth']['avg_daily'])
+                    ? ImgPro_CDN_Settings::format_bytes($insights['bandwidth']['avg_daily'])
+                    : null,
+                'projected_period_bandwidth' => isset($insights['bandwidth']['projected'])
+                    ? ImgPro_CDN_Settings::format_bytes($insights['bandwidth']['projected'])
+                    : null,
+                'cache_hit_rate' => $insights['recent']['cache_hit_rate'] ?? null,
+                'cache_hits' => $insights['recent']['cache_hits'] ?? null,
+                'cache_misses' => $insights['recent']['cache_misses'] ?? null,
+                'days_remaining' => $insights['period']['days_remaining'] ?? null,
+                'total_requests' => $insights['recent']['requests'] ?? null,
+            ],
+            'daily' => $usage['daily'] ?? [],
+        ];
     }
 
     /**
@@ -556,8 +612,8 @@ class ImgPro_CDN_Admin {
             return;
         }
 
-        // Sync subscription status from cloud (cached, once per hour)
-        $this->sync_site_data();
+        // Note: sync_site_data() is already called in enqueue_admin_assets()
+        // which runs before render, so $this->synced_data is already populated
 
         $settings = $this->settings->get_all();
 
@@ -567,16 +623,14 @@ class ImgPro_CDN_Admin {
             return;
         }
 
-        // Handle mode switching
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        if (isset($_GET['switch_mode'])) {
-            $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
-            if (!wp_verify_nonce($nonce, 'imgpro_switch_mode')) {
-                wp_die(esc_html__('Security check failed', 'bandwidth-saver'));
+        // Handle mode switching (nonce verified immediately after isset check)
+        if ( isset( $_GET['switch_mode'], $_GET['_wpnonce'] ) ) {
+            $nonce = sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) );
+            if ( ! wp_verify_nonce( $nonce, 'imgpro_switch_mode' ) ) {
+                wp_die( esc_html__( 'Security check failed', 'bandwidth-saver' ) );
             }
 
-            // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $new_mode = isset($_GET['switch_mode']) ? sanitize_text_field(wp_unslash($_GET['switch_mode'])) : '';
+            $new_mode = sanitize_text_field( wp_unslash( $_GET['switch_mode'] ) );
             if (in_array($new_mode, [ImgPro_CDN_Settings::MODE_CLOUD, ImgPro_CDN_Settings::MODE_CLOUDFLARE], true)) {
                 $old_mode = $settings['setup_mode'] ?? '';
                 $was_enabled = $settings['enabled'] ?? false;
@@ -777,7 +831,6 @@ class ImgPro_CDN_Admin {
         $bandwidth_used = $settings['bandwidth_used'] ?? 0;
         $bandwidth_limit = ImgPro_CDN_Settings::get_bandwidth_limit($settings);
         $bandwidth_percentage = ImgPro_CDN_Settings::get_bandwidth_percentage($settings);
-        $images_cached = $settings['images_cached'] ?? 0;
 
         // Calculate days remaining in billing period
         $period_end = $settings['billing_period_end'] ?? 0;
@@ -925,32 +978,66 @@ class ImgPro_CDN_Admin {
     private function render_subscription_alert($type, $settings) {
         $pricing = $this->get_pricing();
 
-        if ('cancelled' === $type) {
-            $icon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-            $title = __('Your subscription has ended', 'bandwidth-saver');
-            $message = __('Your Pro subscription has been cancelled. CDN functionality is disabled until you resubscribe.', 'bandwidth-saver');
-            $button_text = __('Resubscribe', 'bandwidth-saver');
-            $button_id = 'imgpro-resubscribe';
+        // Allowed SVG elements and attributes for wp_kses
+        $allowed_svg = [
+            'svg'    => [
+                'width'       => true,
+                'height'      => true,
+                'viewbox'     => true,
+                'fill'        => true,
+                'xmlns'       => true,
+            ],
+            'circle' => [
+                'cx'           => true,
+                'cy'           => true,
+                'r'            => true,
+                'stroke'       => true,
+                'stroke-width' => true,
+            ],
+            'path'   => [
+                'd'               => true,
+                'stroke'          => true,
+                'stroke-width'    => true,
+                'stroke-linecap'  => true,
+                'stroke-linejoin' => true,
+            ],
+            'line'   => [
+                'x1'             => true,
+                'y1'             => true,
+                'x2'             => true,
+                'y2'             => true,
+                'stroke'         => true,
+                'stroke-width'   => true,
+                'stroke-linecap' => true,
+            ],
+        ];
+
+        if ( 'cancelled' === $type ) {
+            $icon        = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+            $title       = __( 'Your subscription has ended', 'bandwidth-saver' );
+            $message     = __( 'Your Pro subscription has been cancelled. CDN functionality is disabled until you resubscribe.', 'bandwidth-saver' );
+            $button_text = __( 'Resubscribe', 'bandwidth-saver' );
+            $button_id   = 'imgpro-resubscribe';
             $alert_class = 'is-error';
-        } elseif ('past_due' === $type) {
-            $icon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-            $title = __('Payment failed', 'bandwidth-saver');
-            $message = __('We couldn\'t process your last payment. Please update your payment method to avoid service interruption.', 'bandwidth-saver');
-            $button_text = __('Update Payment', 'bandwidth-saver');
-            $button_id = 'imgpro-update-payment';
+        } elseif ( 'past_due' === $type ) {
+            $icon        = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+            $title       = __( 'Payment failed', 'bandwidth-saver' );
+            $message     = __( 'We couldn\'t process your last payment. Please update your payment method to avoid service interruption.', 'bandwidth-saver' );
+            $button_text = __( 'Update Payment', 'bandwidth-saver' );
+            $button_id   = 'imgpro-update-payment';
             $alert_class = 'is-warning';
         } else {
-            $icon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-            $title = __('Subscription suspended', 'bandwidth-saver');
-            $message = __('Your subscription has been suspended. Please contact support or update your payment method.', 'bandwidth-saver');
-            $button_text = __('Manage Subscription', 'bandwidth-saver');
-            $button_id = 'imgpro-manage-subscription-alert';
+            $icon        = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+            $title       = __( 'Subscription suspended', 'bandwidth-saver' );
+            $message     = __( 'Your subscription has been suspended. Please contact support or update your payment method.', 'bandwidth-saver' );
+            $button_text = __( 'Manage Subscription', 'bandwidth-saver' );
+            $button_id   = 'imgpro-manage-subscription-alert';
             $alert_class = 'is-error';
         }
         ?>
-        <div class="imgpro-subscription-alert <?php echo esc_attr($alert_class); ?>">
+        <div class="imgpro-subscription-alert <?php echo esc_attr( $alert_class ); ?>">
             <div class="imgpro-subscription-alert-icon">
-                <?php echo $icon; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <?php echo wp_kses( $icon, $allowed_svg ); ?>
             </div>
             <div class="imgpro-subscription-alert-content">
                 <strong><?php echo esc_html($title); ?></strong>

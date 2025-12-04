@@ -69,6 +69,7 @@ class ImgPro_CDN_Security {
         'imgpro_cdn_complete_onboarding'  => 'onboarding',
         'imgpro_cdn_sync_stats'           => 'sync_stats',
         'imgpro_cdn_health_check'         => 'health_check',
+        'imgpro_cdn_get_usage'            => 'analytics',
         'imgpro_cdn_get_insights'         => 'analytics',
         'imgpro_cdn_get_daily_usage'      => 'analytics',
         'imgpro_cdn_get_usage_periods'    => 'analytics',

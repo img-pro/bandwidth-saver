@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Bandwidth Saver: Image CDN
  * Plugin URI: https://github.com/img-pro/bandwidth-saver
- * Description: Faster images without touching DNS. Rewrites image URLs to load through Cloudflare. No configuration needed.
+ * Description: Instant image CDN. 100 GB/month free, no DNS changes, no external accounts.
  * Version: 0.2.2
  * Author: ImgPro
  * Author URI: https://img.pro

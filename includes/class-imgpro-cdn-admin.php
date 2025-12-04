@@ -1017,7 +1017,7 @@ class ImgPro_CDN_Admin {
         if ( 'cancelled' === $type ) {
             $icon        = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
             $title       = __( 'Your subscription has ended', 'bandwidth-saver' );
-            $message     = __( 'Your Pro subscription has been cancelled. CDN functionality is disabled until you resubscribe.', 'bandwidth-saver' );
+            $message     = __( 'Your subscription has been cancelled. CDN functionality is disabled until you resubscribe.', 'bandwidth-saver' );
             $button_text = __( 'Resubscribe', 'bandwidth-saver' );
             $button_id   = 'imgpro-resubscribe';
             $alert_class = 'is-error';
@@ -1155,13 +1155,24 @@ class ImgPro_CDN_Admin {
                     </li>
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span><strong><?php esc_html_e('100 GB/month', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('free forever, no credit card required', 'bandwidth-saver'); ?></span>
+                        <span><strong><?php esc_html_e('100GB/month free', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('forever, no credit card required', 'bandwidth-saver'); ?></span>
                     </li>
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         <span><strong><?php esc_html_e('Nothing to break', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('your images stay safely on your server', 'bandwidth-saver'); ?></span>
                     </li>
                 </ul>
+
+                <div class="imgpro-cta-pills">
+                    <span class="imgpro-cta-pill">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <?php esc_html_e('No DNS changes', 'bandwidth-saver'); ?>
+                    </span>
+                    <span class="imgpro-cta-pill">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <?php esc_html_e('No external accounts', 'bandwidth-saver'); ?>
+                    </span>
+                </div>
 
                 <div class="imgpro-cta-actions">
                     <button type="button" class="imgpro-btn imgpro-btn-primary imgpro-btn-lg" id="imgpro-free-signup">
@@ -1219,18 +1230,21 @@ class ImgPro_CDN_Admin {
             <?php // 1. CDN Toggle ?>
             <?php $this->render_toggle_card($settings, ImgPro_CDN_Settings::MODE_CLOUD); ?>
 
+            <p class="imgpro-safety-note">
+                <?php esc_html_e('Your original images stay on your server. Turning the CDN off or deactivating the plugin will not break your site — image URLs simply return to normal.', 'bandwidth-saver'); ?>
+            </p>
 
-            <?php // 2. Account Card ?>
-            <?php $this->render_account_card($settings, $email); ?>
-
-            <?php // 3. Stats Grid ?>
+            <?php // 2. Stats Grid ?>
             <?php $this->render_stats_grid($settings); ?>
 
-            <?php // 4. Source URLs Section ?>
-            <?php $this->render_source_urls_section($settings); ?>
+            <?php // 3. Account Card ?>
+            <?php $this->render_account_card($settings, $email); ?>
 
-            <?php // 5. Custom Domain Section ?>
+            <?php // 4. Custom Domain Section ?>
             <?php $this->render_custom_domain_section($settings); ?>
+
+            <?php // 5. Source URLs Section ?>
+            <?php $this->render_source_urls_section($settings); ?>
 
             <?php // Custom Domain Pending Notice (if DNS needs attention) ?>
             <?php if ($needs_attention): ?>
@@ -1326,7 +1340,7 @@ class ImgPro_CDN_Admin {
                 <div class="imgpro-account-card__footer">
                     <span><?php echo esc_html($email); ?></span>
                     <span class="imgpro-separator">·</span>
-                    <span><?php esc_html_e('Free Plan', 'bandwidth-saver'); ?></span>
+                    <span><?php esc_html_e('Free Plan — 100 GB/month included', 'bandwidth-saver'); ?></span>
                 </div>
             </div>
         <?php else: ?>

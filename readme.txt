@@ -4,7 +4,7 @@ Tags: images, performance, speed, cdn, cache
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 0.2.2
+Stable tag: 0.2.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -178,6 +178,12 @@ Self-hosted users connect only to their own Cloudflare account.
 
 == Changelog ==
 
+= 0.2.3 =
+* Improved: Clearer messaging focused on speed and SEO benefits
+* Improved: Simplified onboarding copy
+* Improved: Updated screenshot captions
+* Fixed: PHPCS warnings for Stripe redirect handler
+
 = 0.2.2 =
 * Improved: Settings page loads faster with batched API requests
 * Improved: Source URLs and usage stats are pre-loaded
@@ -229,6 +235,9 @@ Self-hosted users connect only to their own Cloudflare account.
 * Initial release
 
 == Upgrade Notice ==
+
+= 0.2.3 =
+Clearer messaging and improved onboarding experience. Recommended for all users.
 
 = 0.2.2 =
 Performance improvements: Settings page now loads faster. Recommended for all users.

@@ -161,9 +161,20 @@ class ImgPro_CDN_Onboarding {
                 </li>
                 <li>
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span><strong><?php esc_html_e('100 GB/month', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('free forever, no credit card required', 'bandwidth-saver'); ?></span>
+                    <span><strong><?php esc_html_e('100GB/month free', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('forever, no credit card required', 'bandwidth-saver'); ?></span>
                 </li>
             </ul>
+
+            <div class="imgpro-onboarding-pills">
+                <span class="imgpro-onboarding-pill">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <?php esc_html_e('No DNS changes', 'bandwidth-saver'); ?>
+                </span>
+                <span class="imgpro-onboarding-pill">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <?php esc_html_e('No external accounts', 'bandwidth-saver'); ?>
+                </span>
+            </div>
 
             <div class="imgpro-onboarding-actions">
                 <button type="button" class="imgpro-btn imgpro-btn-primary imgpro-btn-lg" id="imgpro-onboarding-start">
@@ -309,6 +320,10 @@ class ImgPro_CDN_Onboarding {
                     <li>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="currentColor"/></svg>
                         <?php esc_html_e('Your original files stay safe on your server', 'bandwidth-saver'); ?>
+                    </li>
+                    <li>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="currentColor"/></svg>
+                        <?php esc_html_e('If anything goes wrong, images load directly from your site', 'bandwidth-saver'); ?>
                     </li>
                 </ul>
             </div>

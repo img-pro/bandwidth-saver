@@ -121,11 +121,13 @@ class ImgPro_CDN_Admin {
     public function handle_payment_return() {
         // Check page and payment status (no nonce needed - this is a redirect from Stripe)
         // Capability check below ensures only authorized users can trigger account sync
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Stripe redirect, no nonce available
         $page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
         if ( 'imgpro-cdn-settings' !== $page ) {
             return;
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Stripe redirect, no nonce available
         $payment_status = isset( $_GET['payment'] ) ? sanitize_text_field( wp_unslash( $_GET['payment'] ) ) : '';
         if ( 'success' !== $payment_status ) {
             return;
@@ -385,16 +387,16 @@ class ImgPro_CDN_Admin {
                 'usage' => $this->transform_usage_for_js($this->synced_data['usage'] ?? null),
                 'i18n' => [
                     'activeLabel' => __('CDN Active', 'bandwidth-saver'),
-                    'inactiveLabel' => __('CDN Inactive', 'bandwidth-saver'),
+                    'inactiveLabel' => __('CDN Off', 'bandwidth-saver'),
                     'activeMessage' => sprintf(
                         /* translators: 1: opening span tag, 2: closing span tag, 3: opening span tag, 4: closing span tag */
-                        __('%1$sImages are loading from the global network.%2$s %3$sYour server handles less traffic.%4$s', 'bandwidth-saver'),
+                        __('%1$sYour images are loading faster.%2$s %3$sVisitors get a better experience.%4$s', 'bandwidth-saver'),
                         '<span class="imgpro-cdn-nowrap imgpro-cdn-hide-mobile">',
                         '</span>',
                         '<span class="imgpro-cdn-nowrap">',
                         '</span>'
                     ),
-                    'disabledMessage' => __('Enable to serve images from the global edge network', 'bandwidth-saver'),
+                    'disabledMessage' => __('Turn on to speed up your images', 'bandwidth-saver'),
                     // Button states
                     'creatingCheckout' => __('Creating checkout...', 'bandwidth-saver'),
                     'creatingAccount' => __('Creating account...', 'bandwidth-saver'),
@@ -422,15 +424,15 @@ class ImgPro_CDN_Admin {
                     'verificationFailed' => __('Verification failed. Please check your code and try again.', 'bandwidth-saver'),
                     'accountRecovered' => __('Account recovered!', 'bandwidth-saver'),
                     // Success messages
-                    'subscriptionActivated' => __('Subscription activated. Your images now load from the global edge network.', 'bandwidth-saver'),
-                    'subscriptionUpgraded' => __('Subscription upgraded successfully!', 'bandwidth-saver'),
-                    'accountCreated' => __('Account created! Let\'s activate your CDN.', 'bandwidth-saver'),
+                    'subscriptionActivated' => __('You\'re all set! Your images will now load faster for visitors worldwide.', 'bandwidth-saver'),
+                    'subscriptionUpgraded' => __('Subscription upgraded. New limits are now active.', 'bandwidth-saver'),
+                    'accountCreated' => __('Account created! Toggle on to start speeding up your images.', 'bandwidth-saver'),
                     'checkoutCancelled' => __('Checkout cancelled. You can try again anytime.', 'bandwidth-saver'),
                     // Toggle UI text
-                    'cdnActiveHeading' => __('Image CDN is Active', 'bandwidth-saver'),
-                    'cdnInactiveHeading' => __('Image CDN is Inactive', 'bandwidth-saver'),
-                    'cdnActiveDesc' => __('Images are being delivered from the global edge network.', 'bandwidth-saver'),
-                    'cdnInactiveDesc' => __('Enable to serve images from the global edge network.', 'bandwidth-saver'),
+                    'cdnActiveHeading' => __('Your images are loading faster', 'bandwidth-saver'),
+                    'cdnInactiveHeading' => __('Image CDN is Off', 'bandwidth-saver'),
+                    'cdnActiveDesc' => __('Visitors worldwide are getting faster page loads.', 'bandwidth-saver'),
+                    'cdnInactiveDesc' => __('Turn on to speed up your images.', 'bandwidth-saver'),
                     // Custom domain
                     'addingDomain' => __('Adding domain...', 'bandwidth-saver'),
                     'checkingStatus' => __('Checking...', 'bandwidth-saver'),
@@ -442,8 +444,8 @@ class ImgPro_CDN_Admin {
                     'confirmRemoveCdnDomain' => __('Remove this CDN domain? The Image CDN will be disabled.', 'bandwidth-saver'),
                     'cdnDomainRemoved' => __('CDN domain removed.', 'bandwidth-saver'),
                     // Upgrade prompts
-                    'upgradeTitle' => __('Need more capacity?', 'bandwidth-saver'),
-                    'upgradeSubtitle' => __('Upgrade to Pro for 120 GB storage + 2 TB bandwidth', 'bandwidth-saver'),
+                    'upgradeTitle' => __('Need more bandwidth?', 'bandwidth-saver'),
+                    'upgradeSubtitle' => __('Upgrade for more bandwidth and custom domain support.', 'bandwidth-saver'),
                     // Plan selector
                     'select' => __('Select', 'bandwidth-saver'),
                     'selected' => __('Selected', 'bandwidth-saver'),
@@ -724,7 +726,7 @@ class ImgPro_CDN_Admin {
             <div class="imgpro-header-brand">
                 <div>
                     <h1><?php esc_html_e('Bandwidth Saver', 'bandwidth-saver'); ?></h1>
-                    <p class="imgpro-tagline"><?php esc_html_e('Image CDN for WordPress', 'bandwidth-saver'); ?></p>
+                    <p class="imgpro-tagline"><?php esc_html_e('Faster images for visitors worldwide', 'bandwidth-saver'); ?></p>
                 </div>
             </div>
             <div class="imgpro-header-meta">
@@ -772,13 +774,13 @@ class ImgPro_CDN_Admin {
                         <div>
                             <h2 id="imgpro-toggle-heading">
                                 <?php echo $is_enabled
-                                    ? esc_html__('Image CDN is Active', 'bandwidth-saver')
-                                    : esc_html__('Image CDN is Inactive', 'bandwidth-saver'); ?>
+                                    ? esc_html__('Your images are loading faster', 'bandwidth-saver')
+                                    : esc_html__('Image CDN is Off', 'bandwidth-saver'); ?>
                             </h2>
                             <p id="imgpro-toggle-description">
                                 <?php echo $is_enabled
-                                    ? esc_html__('Images are being delivered from the global edge network.', 'bandwidth-saver')
-                                    : esc_html__('Enable to serve images from the global edge network.', 'bandwidth-saver'); ?>
+                                    ? esc_html__('Visitors worldwide are getting faster page loads.', 'bandwidth-saver')
+                                    : esc_html__('Turn on to speed up your images.', 'bandwidth-saver'); ?>
                             </p>
                         </div>
                     </div>
@@ -1015,7 +1017,7 @@ class ImgPro_CDN_Admin {
         if ( 'cancelled' === $type ) {
             $icon        = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
             $title       = __( 'Your subscription has ended', 'bandwidth-saver' );
-            $message     = __( 'Your Pro subscription has been cancelled. CDN functionality is disabled until you resubscribe.', 'bandwidth-saver' );
+            $message     = __( 'Your subscription has been cancelled. CDN functionality is disabled until you resubscribe.', 'bandwidth-saver' );
             $button_text = __( 'Resubscribe', 'bandwidth-saver' );
             $button_id   = 'imgpro-resubscribe';
             $alert_class = 'is-error';
@@ -1139,31 +1141,42 @@ class ImgPro_CDN_Admin {
         ?>
         <div class="imgpro-cta-card">
             <div class="imgpro-cta-content">
-                <h2><?php esc_html_e('Skip the Setup. We Handle Everything.', 'bandwidth-saver'); ?></h2>
-                <p><?php esc_html_e('Images load from a global edge network with zero configuration. Takes less than a minute.', 'bandwidth-saver'); ?></p>
+                <h2><?php esc_html_e('Speed up your images', 'bandwidth-saver'); ?></h2>
+                <p><?php esc_html_e('Slow images hurt your SEO and drive visitors away. Speed them up in 60 seconds.', 'bandwidth-saver'); ?></p>
 
                 <ul class="imgpro-feature-list">
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span><strong><?php esc_html_e('10 GB storage', 'bandwidth-saver'); ?></strong>, <?php esc_html_e('free forever', 'bandwidth-saver'); ?></span>
+                        <span><strong><?php esc_html_e('Better SEO', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('speed improves your ranking', 'bandwidth-saver'); ?></span>
                     </li>
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span><strong><?php esc_html_e('50 GB/mo bandwidth', 'bandwidth-saver'); ?></strong>, <?php esc_html_e('soft limit', 'bandwidth-saver'); ?></span>
+                        <span><strong><?php esc_html_e('Faster pages', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('images load from global servers', 'bandwidth-saver'); ?></span>
                     </li>
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span><?php esc_html_e('300+ edge locations worldwide', 'bandwidth-saver'); ?></span>
+                        <span><strong><?php esc_html_e('100GB/month free', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('forever, no credit card required', 'bandwidth-saver'); ?></span>
                     </li>
                     <li>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        <span><?php esc_html_e('Automatic fallback if CDN is ever down', 'bandwidth-saver'); ?></span>
+                        <span><strong><?php esc_html_e('Nothing to break', 'bandwidth-saver'); ?></strong> — <?php esc_html_e('your images stay safely on your server', 'bandwidth-saver'); ?></span>
                     </li>
                 </ul>
 
+                <div class="imgpro-cta-pills">
+                    <span class="imgpro-cta-pill">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <?php esc_html_e('No DNS changes', 'bandwidth-saver'); ?>
+                    </span>
+                    <span class="imgpro-cta-pill">
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <?php esc_html_e('No external accounts', 'bandwidth-saver'); ?>
+                    </span>
+                </div>
+
                 <div class="imgpro-cta-actions">
                     <button type="button" class="imgpro-btn imgpro-btn-primary imgpro-btn-lg" id="imgpro-free-signup">
-                        <?php esc_html_e('Start Free', 'bandwidth-saver'); ?>
+                        <?php esc_html_e('Get Started', 'bandwidth-saver'); ?>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4.167 10h11.666M10 4.167L15.833 10 10 15.833" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
 
@@ -1175,7 +1188,7 @@ class ImgPro_CDN_Admin {
                 </div>
 
                 <p class="imgpro-cta-note">
-                    <?php esc_html_e('Start with 10 GB free. Upgrade anytime for more storage and bandwidth.', 'bandwidth-saver'); ?>
+                    <?php esc_html_e('Start with 100 GB/month free. Upgrade anytime for more bandwidth.', 'bandwidth-saver'); ?>
                 </p>
 
                 <p class="imgpro-cta-recovery">
@@ -1217,17 +1230,21 @@ class ImgPro_CDN_Admin {
             <?php // 1. CDN Toggle ?>
             <?php $this->render_toggle_card($settings, ImgPro_CDN_Settings::MODE_CLOUD); ?>
 
-            <?php // 2. Account Card ?>
-            <?php $this->render_account_card($settings, $email); ?>
+            <p class="imgpro-safety-note">
+                <?php esc_html_e('Your original images stay on your server. Turning the CDN off or deactivating the plugin will not break your site — image URLs simply return to normal.', 'bandwidth-saver'); ?>
+            </p>
 
-            <?php // 3. Stats Grid ?>
+            <?php // 2. Stats Grid ?>
             <?php $this->render_stats_grid($settings); ?>
 
-            <?php // 4. Source URLs Section ?>
-            <?php $this->render_source_urls_section($settings); ?>
+            <?php // 3. Account Card ?>
+            <?php $this->render_account_card($settings, $email); ?>
 
-            <?php // 5. Custom Domain Section ?>
+            <?php // 4. Custom Domain Section ?>
             <?php $this->render_custom_domain_section($settings); ?>
+
+            <?php // 5. Source URLs Section ?>
+            <?php $this->render_source_urls_section($settings); ?>
 
             <?php // Custom Domain Pending Notice (if DNS needs attention) ?>
             <?php if ($needs_attention): ?>
@@ -1312,8 +1329,8 @@ class ImgPro_CDN_Admin {
             <div class="imgpro-account-card imgpro-account-card--free">
                 <div class="imgpro-account-card__main">
                     <div class="imgpro-account-card__content">
-                        <strong class="imgpro-account-card__headline"><?php esc_html_e('Need more capacity?', 'bandwidth-saver'); ?></strong>
-                        <span class="imgpro-account-card__description"><?php esc_html_e('Upgrade for more bandwidth and features like custom domains.', 'bandwidth-saver'); ?></span>
+                        <strong class="imgpro-account-card__headline"><?php esc_html_e('Need more bandwidth?', 'bandwidth-saver'); ?></strong>
+                        <span class="imgpro-account-card__description"><?php esc_html_e('Upgrade for higher limits and custom domain support.', 'bandwidth-saver'); ?></span>
                     </div>
                     <button type="button" class="imgpro-btn imgpro-btn-primary imgpro-open-plan-selector">
                         <?php esc_html_e('See upgrade options', 'bandwidth-saver'); ?>
@@ -1323,7 +1340,7 @@ class ImgPro_CDN_Admin {
                 <div class="imgpro-account-card__footer">
                     <span><?php echo esc_html($email); ?></span>
                     <span class="imgpro-separator">·</span>
-                    <span><?php esc_html_e('Free Plan', 'bandwidth-saver'); ?></span>
+                    <span><?php esc_html_e('Free Plan — 100 GB/month included', 'bandwidth-saver'); ?></span>
                 </div>
             </div>
         <?php else: ?>

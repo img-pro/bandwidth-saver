@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Bandwidth Saver: Image CDN
  * Plugin URI: https://github.com/img-pro/bandwidth-saver
- * Description: Faster images without touching DNS. Rewrites image URLs to load through Cloudflare. No configuration needed.
- * Version: 0.2.2
+ * Description: Instant image CDN. 100 GB/month free, no DNS changes, no external accounts.
+ * Version: 0.2.3
  * Author: ImgPro
  * Author URI: https://img.pro
  * License: GPLv2 or later
@@ -25,7 +25,7 @@ if (version_compare(get_bloginfo('version'), '6.2', '<')) {
     add_action('admin_notices', function() {
         ?>
         <div class="notice notice-error">
-            <p><?php esc_html_e('Image CDN requires WordPress 6.2 or higher. Please update WordPress to use this plugin.', 'bandwidth-saver'); ?></p>
+            <p><?php esc_html_e('Bandwidth Saver requires WordPress 6.2 or higher. Please update WordPress to use this plugin.', 'bandwidth-saver'); ?></p>
         </div>
         <?php
     });
@@ -37,7 +37,7 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
     add_action('admin_notices', function() {
         ?>
         <div class="notice notice-error">
-            <p><?php esc_html_e('Image CDN requires PHP 7.4 or higher. Contact your hosting provider to upgrade.', 'bandwidth-saver'); ?></p>
+            <p><?php esc_html_e('Bandwidth Saver requires PHP 7.4 or higher. Contact your hosting provider to upgrade.', 'bandwidth-saver'); ?></p>
         </div>
         <?php
     });
@@ -46,7 +46,7 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
 
 // Define plugin constants
 if (!defined('IMGPRO_CDN_VERSION')) {
-    define('IMGPRO_CDN_VERSION', '0.2.2');
+    define('IMGPRO_CDN_VERSION', '0.2.3');
 }
 if (!defined('IMGPRO_CDN_PLUGIN_DIR')) {
     define('IMGPRO_CDN_PLUGIN_DIR', plugin_dir_path(__FILE__));

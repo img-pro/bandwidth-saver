@@ -1086,7 +1086,7 @@
         // Use pre-loaded data from PHP if available (avoids extra AJAX call)
         if (imgproCdnAdmin.sourceDomains) {
             renderSourceUrls(
-                imgproCdnAdmin.sourceDomains.items || [],
+                imgproCdnAdmin.sourceDomains.domains || [],
                 imgproCdnAdmin.sourceDomains.count || 0,
                 imgproCdnAdmin.sourceDomains.max_domains || 1
             );

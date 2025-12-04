@@ -2,9 +2,9 @@
 Contributors: imgpro
 Tags: cdn, images, cloudflare, performance, speed
 Requires at least: 6.2
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.2.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -240,6 +240,22 @@ You are responsible for the images served through your account.
 
 == Changelog ==
 
+= 0.2.2 =
+* Improved: Faster settings page — analytics data now loads in a single request
+* Improved: Source URLs and usage stats are pre-loaded, eliminating extra API calls
+* Improved: Better WordPress coding standards compliance
+* Fixed: Cleaner transient cleanup on uninstall
+
+= 0.2.1 =
+* New: Usage analytics dashboard with bandwidth charts and insights
+* New: Source URLs management — add multiple origin domains (tier-based limits)
+* New: Projected bandwidth usage to help plan your tier
+* Improved: CDN now works with infinite scroll and "load more" for logged-out visitors
+* Improved: Faster settings page with smarter caching
+* Improved: Cleaner UI with refreshed stats cards and insights panel
+* Fixed: Double-click prevention on all buttons
+* Fixed: Custom domain feature now available on Lite plans too
+
 = 0.2.0 =
 * New: Updated pricing model — bandwidth is now the primary metric
 * New: All paid plans now include custom domain support
@@ -315,6 +331,12 @@ You are responsible for the images served through your account.
 * Initial release
 
 == Upgrade Notice ==
+
+= 0.2.2 =
+Performance release: Settings page loads faster with batched API requests. Improved WordPress coding standards compliance.
+
+= 0.2.1 =
+New analytics dashboard shows bandwidth usage over time. Manage multiple source domains. CDN now works with infinite scroll for visitors. Custom domains available on all paid plans including Lite.
 
 = 0.2.0 =
 New pricing model with more generous limits. Free tier now includes 100 GB bandwidth/month. All paid plans include custom domain. Security hardening with encrypted API keys and rate limiting. Recommended for all users.

@@ -311,12 +311,8 @@
         // Self-hosted CDN domain handlers
         initCdnDomain();
 
-        // Sync stats on page load (if dashboard visible)
-        if ($('#imgpro-stats-grid').length && imgproCdnAdmin.tier !== 'none') {
-            // Sync stats every 5 minutes while page is open
-            syncStats();
-            setInterval(syncStats, 5 * 60 * 1000); // 5 minutes
-        }
+        // Note: Stats sync is now handled by PHP sync_site_data() on page load
+        // No need for JS syncStats() call - analytics section handles live data
     }
 
     // Track if stats sync is in progress to prevent race conditions
@@ -1059,14 +1055,47 @@
                 handleAddSourceUrl();
             }
         });
+
+        // Upgrade link - handle based on action type
+        $(document).off('click', '#imgpro-source-urls-upgrade').on('click', '#imgpro-source-urls-upgrade', function(e) {
+            e.preventDefault();
+            var action = $(this).data('action');
+
+            if (action === 'see-options') {
+                // Free tier: open plan selector modal
+                openPlanModal();
+            } else if (action === 'upgrade-to-next') {
+                // Paid tier: direct upgrade to next tier
+                var nextTier = $(this).data('next-tier');
+                if (nextTier) {
+                    showUpgradeConfirmModal(nextTier, $(this));
+                }
+            } else if (action === 'manage') {
+                // Business tier: open manage subscription
+                window.open(imgproCdnAdmin.manageUrl, '_blank');
+            }
+        });
     }
 
     /**
-     * Load source URLs from API
+     * Load source URLs - uses pre-loaded data if available, otherwise fetches via AJAX
      */
     function loadSourceUrls() {
         var $list = $('#imgpro-source-urls-list');
 
+        // Use pre-loaded data from PHP if available (avoids extra AJAX call)
+        if (imgproCdnAdmin.sourceDomains) {
+            renderSourceUrls(
+                imgproCdnAdmin.sourceDomains.domains || [],
+                imgproCdnAdmin.sourceDomains.count || 0,
+                imgproCdnAdmin.sourceDomains.max_domains || 1
+            );
+            // Clear pre-loaded data so subsequent calls fetch fresh
+            imgproCdnAdmin.sourceDomains = null;
+            return;
+        }
+
+        // Fallback: fetch via AJAX (for refreshes after add/remove)
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
@@ -1077,7 +1106,11 @@
             },
             success: function(response) {
                 if (response.success && response.data.source_urls) {
-                    renderSourceUrls(response.data.source_urls);
+                    renderSourceUrls(
+                        response.data.source_urls,
+                        response.data.count || 0,
+                        response.data.max_domains || 1
+                    );
                 } else {
                     $list.html('<p class="imgpro-source-urls-error">' +
                         escapeHtml(response.data?.message || 'Failed to load source URLs') + '</p>');
@@ -1092,38 +1125,80 @@
     /**
      * Render source URLs list
      */
-    function renderSourceUrls(urls) {
+    function renderSourceUrls(urls, count, maxDomains) {
         var $list = $('#imgpro-source-urls-list');
-        var $count = $('#imgpro-source-urls-count');
+        var $inputWrapper = $('#imgpro-source-urls-input-wrapper');
+        var $upgradeLink = $('#imgpro-source-urls-upgrade');
+
+        count = count || (urls ? urls.length : 0);
+        maxDomains = maxDomains || 1;
 
         if (!urls || !urls.length) {
             $list.html('<p class="imgpro-source-urls-empty">No source URLs configured yet.</p>');
-            $count.text(' (0 configured)');
-            return;
+        } else {
+            var html = '<div class="imgpro-source-urls-items">';
+            urls.forEach(function(item) {
+                var isPrimary = item.is_primary === 1 || item.is_primary === true;
+                html += '<div class="imgpro-source-url-item' + (isPrimary ? ' is-primary' : '') + '">';
+                html += '<code>' + escapeHtml(item.domain) + '</code>';
+                if (isPrimary) {
+                    html += '<span class="imgpro-source-url-badge">Primary</span>';
+                } else {
+                    html += '<button type="button" class="imgpro-source-url-remove" data-domain="' +
+                        escapeHtml(item.domain) + '" title="Remove domain">&times;</button>';
+                }
+                html += '</div>';
+            });
+            html += '</div>';
+
+            $list.html(html);
+
+            // Attach remove handlers
+            $('.imgpro-source-url-remove').off('click').on('click', function() {
+                handleRemoveSourceUrl($(this).data('domain'));
+            });
         }
 
-        var html = '<div class="imgpro-source-urls-items">';
-        urls.forEach(function(item) {
-            var isPrimary = item.is_primary === 1 || item.is_primary === true;
-            html += '<div class="imgpro-source-url-item' + (isPrimary ? ' is-primary' : '') + '">';
-            html += '<code>' + escapeHtml(item.domain) + '</code>';
-            if (isPrimary) {
-                html += '<span class="imgpro-source-url-badge">Primary</span>';
-            } else {
-                html += '<button type="button" class="imgpro-source-url-remove" data-domain="' +
-                    escapeHtml(item.domain) + '" title="Remove domain">&times;</button>';
+        // Check if at limit
+        var atLimit = count >= maxDomains;
+
+        // Show/hide input based on limit
+        if (atLimit) {
+            $inputWrapper.hide();
+
+            // Get tier info from section data attributes
+            var $section = $('#imgpro-source-urls-section');
+            var tier = $section.data('tier');
+            var nextTier = $section.data('next-tier');
+            var nextTierName = $section.data('next-tier-name');
+
+            // Set link text and action based on tier
+            var linkText = '';
+            var action = '';
+
+            if (tier === 'free') {
+                linkText = 'See upgrade options';
+                action = 'see-options';
+            } else if (tier === 'business') {
+                linkText = 'Manage Subscription';
+                action = 'manage';
+            } else if (nextTier) {
+                linkText = 'Upgrade to ' + nextTierName;
+                action = 'upgrade-to-next';
+                $upgradeLink.attr('data-next-tier', nextTier);
             }
-            html += '</div>';
-        });
-        html += '</div>';
 
-        $list.html(html);
-        $count.text(' (' + urls.length + ' configured)');
-
-        // Attach remove handlers
-        $('.imgpro-source-url-remove').off('click').on('click', function() {
-            handleRemoveSourceUrl($(this).data('domain'));
-        });
+            // Only show upgrade link if we have a valid action
+            if (action) {
+                $upgradeLink.attr('data-action', action).find('strong').text(linkText);
+                $upgradeLink.show();
+            } else {
+                $upgradeLink.hide();
+            }
+        } else {
+            $inputWrapper.show();
+            $upgradeLink.hide();
+        }
     }
 
     /**
@@ -1624,17 +1699,15 @@
         // Initialize chart period selector
         $('#imgpro-chart-period').off('change').on('change', function() {
             chartPeriod = parseInt($(this).val(), 10);
-            loadChartData();
+            loadAnalytics(true); // Force AJAX for different period
         });
 
-        // Load initial data
-        loadInsights();
-        loadChartData();
+        // Load initial data (single batched call for insights + daily)
+        loadAnalytics();
 
-        // Auto-refresh every 5 minutes
+        // Auto-refresh every 5 minutes (force AJAX for fresh data)
         analyticsRefreshInterval = setInterval(function() {
-            loadInsights();
-            loadChartData();
+            loadAnalytics(true);
         }, 5 * 60 * 1000);
     }
 
@@ -1646,7 +1719,7 @@
 
         $button.addClass('is-loading');
 
-        // Force sync stats from API, then reload insights
+        // Force sync stats from API, then reload analytics
         $.ajax({
             url: imgproCdnAdmin.ajaxUrl,
             type: 'POST',
@@ -1657,9 +1730,8 @@
             },
             success: function(response) {
                 if (response.success) {
-                    // Reload insights and chart with fresh data
-                    loadInsights();
-                    loadChartData();
+                    // Reload with fresh data (force AJAX)
+                    loadAnalytics(true);
                 }
             },
             complete: function() {
@@ -1669,7 +1741,96 @@
     }
 
     /**
+     * Load analytics data (insights + daily) in a single request
+     * Uses pre-loaded data from PHP on initial load, AJAX for refreshes
+     *
+     * @since 0.2.2
+     * @param {boolean} forceRefresh - If true, always fetch via AJAX
+     */
+    function loadAnalytics(forceRefresh) {
+        const $chartLoading = $('#imgpro-chart-loading');
+        const $chartEmpty = $('#imgpro-chart-empty');
+        const $chartCanvas = $('#imgpro-usage-chart');
+
+        // Use pre-loaded data from PHP on initial load (avoids AJAX call)
+        if (!forceRefresh && imgproCdnAdmin.usage) {
+            var data = imgproCdnAdmin.usage;
+
+            // Update insights cards
+            if (data.insights) {
+                updateInsights(data.insights);
+            } else {
+                showInsightsEmptyState();
+            }
+
+            // Render chart
+            if (data.daily && data.daily.length > 0) {
+                var chartRendered = renderChart(data.daily);
+                $chartLoading.hide();
+                if (chartRendered) {
+                    $chartCanvas.show();
+                }
+            } else {
+                $chartLoading.hide();
+                $chartEmpty.show();
+            }
+
+            // Clear pre-loaded data so subsequent calls use AJAX
+            imgproCdnAdmin.usage = null;
+            return;
+        }
+
+        // Show chart loading state
+        $chartLoading.show();
+        $chartEmpty.hide();
+        $chartCanvas.hide();
+
+        $.ajax({
+            url: imgproCdnAdmin.ajaxUrl,
+            type: 'POST',
+            timeout: AJAX_TIMEOUT,
+            data: {
+                action: 'imgpro_cdn_get_usage',
+                days: chartPeriod,
+                nonce: imgproCdnAdmin.nonces.analytics
+            },
+            success: function(response) {
+                if (response.success && response.data) {
+                    // Update insights cards
+                    if (response.data.insights) {
+                        updateInsights(response.data.insights);
+                    } else {
+                        showInsightsEmptyState();
+                    }
+
+                    // Render chart
+                    if (response.data.daily && response.data.daily.length > 0) {
+                        var chartRendered = renderChart(response.data.daily);
+                        $chartLoading.hide();
+                        if (chartRendered) {
+                            $chartCanvas.show();
+                        }
+                    } else {
+                        $chartLoading.hide();
+                        $chartEmpty.show();
+                    }
+                } else {
+                    showInsightsEmptyState();
+                    $chartLoading.hide();
+                    $chartEmpty.show();
+                }
+            },
+            error: function() {
+                showInsightsEmptyState();
+                $chartLoading.hide();
+                $chartEmpty.show();
+            }
+        });
+    }
+
+    /**
      * Load usage insights (cache hit rate, avg daily, projected, total requests)
+     * @deprecated Use loadAnalytics() instead
      */
     function loadInsights() {
         $.ajax({

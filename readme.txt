@@ -103,7 +103,7 @@ After enabling, visit your site and inspect any image. The URL will start with y
 
 = Is there really a free plan? =
 
-Yes. 100 GB of bandwidth per month, free forever. No credit card required. No trial period. Most small to medium sites never need to upgrade.
+Yes. 100 GB of bandwidth per month, free forever. No credit card required. No trial period. Most sites never need to upgrade.
 
 = What if I go over my bandwidth limit? =
 

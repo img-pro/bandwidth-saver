@@ -573,10 +573,18 @@ class ImgPro_CDN_Admin {
         }
 
         if (filter_input(INPUT_GET, 'activated', FILTER_VALIDATE_BOOLEAN)) {
+            $tier = $this->settings->get('cloud_tier', ImgPro_CDN_Settings::TIER_FREE);
+            $is_free = ImgPro_CDN_Settings::TIER_FREE === $tier;
             ?>
             <div class="imgpro-notice imgpro-notice-success">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M6 10l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <p><strong><?php esc_html_e('Subscription activated. Your images now load from the global edge network.', 'bandwidth-saver'); ?></strong></p>
+                <p><strong>
+                    <?php if ($is_free): ?>
+                        <?php esc_html_e('Account activated. Your images now load from the global edge network.', 'bandwidth-saver'); ?>
+                    <?php else: ?>
+                        <?php esc_html_e('Subscription activated. Your images now load from the global edge network.', 'bandwidth-saver'); ?>
+                    <?php endif; ?>
+                </strong></p>
             </div>
             <?php
         }
@@ -619,11 +627,9 @@ class ImgPro_CDN_Admin {
 
         $settings = $this->settings->get_all();
 
-        // Check if should show onboarding
-        if ($this->onboarding->should_show_onboarding()) {
-            $this->render_onboarding_page();
-            return;
-        }
+        // Onboarding wizard disabled - frictionless activation via toggle
+        // Users now toggle ON directly, which auto-registers if needed
+        // Keeping onboarding code for potential future use (e.g., guided tours)
 
         // Handle mode switching (nonce verified immediately after isset check)
         if ( isset( $_GET['switch_mode'], $_GET['_wpnonce'] ) ) {
@@ -1115,14 +1121,16 @@ class ImgPro_CDN_Admin {
      * @return void
      */
     private function render_cloud_tab($settings) {
-        $is_configured = !empty($settings['cloud_api_key']);
         $tier = $settings['cloud_tier'] ?? ImgPro_CDN_Settings::TIER_NONE;
         $has_subscription = in_array($tier, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true);
-        $pricing = $this->get_pricing();
         ?>
         <div class="imgpro-tab-panel" role="tabpanel">
             <?php if (!$has_subscription): ?>
-                <?php $this->render_cloud_signup($pricing); ?>
+                <?php // New install - show toggle card (will auto-register on first enable) ?>
+                <?php $this->render_toggle_card($settings, ImgPro_CDN_Settings::MODE_CLOUD); ?>
+                <p class="imgpro-safety-note">
+                    <?php esc_html_e('Your original images stay on your server. Turning the CDN off or deactivating the plugin will not break your site — image URLs simply return to normal.', 'bandwidth-saver'); ?>
+                </p>
             <?php else: ?>
                 <?php $this->render_cloud_settings($settings); ?>
             <?php endif; ?>
@@ -1338,9 +1346,11 @@ class ImgPro_CDN_Admin {
                     </button>
                 </div>
                 <div class="imgpro-account-card__footer">
-                    <span><?php echo esc_html($email); ?></span>
-                    <span class="imgpro-separator">·</span>
                     <span><?php esc_html_e('Free Plan — 100 GB/month included', 'bandwidth-saver'); ?></span>
+                    <?php if (!empty($email)): ?>
+                        <span class="imgpro-separator">·</span>
+                        <span><?php echo esc_html($email); ?></span>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php else: ?>
@@ -1376,9 +1386,13 @@ class ImgPro_CDN_Admin {
                     </div>
                 </div>
                 <div class="imgpro-account-card__footer">
-                    <span><?php echo esc_html($email); ?></span>
+                    <?php if (!empty($email)): ?>
+                        <span><?php echo esc_html($email); ?></span>
+                    <?php endif; ?>
                     <?php if (!$is_business): ?>
-                        <span class="imgpro-separator">·</span>
+                        <?php if (!empty($email)): ?>
+                            <span class="imgpro-separator">·</span>
+                        <?php endif; ?>
                         <button type="button" class="imgpro-btn-link" id="imgpro-manage-subscription">
                             <?php esc_html_e('Manage Subscription', 'bandwidth-saver'); ?>
                         </button>

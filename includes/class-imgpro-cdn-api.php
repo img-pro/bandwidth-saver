@@ -276,30 +276,47 @@ class ImgPro_CDN_API {
     /**
      * Create new site account
      *
-     * @param string $email          User email.
-     * @param string $site_url       WordPress site URL.
-     * @param bool   $marketing_opt_in Marketing consent.
+     * Email is optional for free accounts. If the site_url already exists:
+     * - If existing site has NO email: returns existing site (reconnection)
+     * - If existing site HAS email: returns conflict (requires recovery)
+     *
+     * @param string|null $email          User email (optional for free tier).
+     * @param string      $site_url       WordPress site URL.
+     * @param bool        $marketing_opt_in Marketing consent.
      * @return array|WP_Error Site data array or error.
      */
     public function create_site($email, $site_url, $marketing_opt_in = false) {
-        if (empty($email) || empty($site_url)) {
-            return new WP_Error('missing_fields', __('Email and site URL are required', 'bandwidth-saver'));
+        if (empty($site_url)) {
+            return new WP_Error('missing_fields', __('Site URL is required', 'bandwidth-saver'));
         }
 
         // Public endpoint - clear any stale API key
         $this->set_api_key(null);
 
-        $response = $this->request('POST', '/api/sites', [
-            'email'            => $email,
+        $data = [
             'site_url'         => $site_url,
             'marketing_opt_in' => $marketing_opt_in,
-        ]);
+        ];
+
+        // Only include email if provided
+        if (!empty($email)) {
+            $data['email'] = $email;
+        }
+
+        $response = $this->request('POST', '/api/sites', $data);
 
         if (is_wp_error($response)) {
             return $response;
         }
 
         $site = $response['site'] ?? $response;
+
+        // Check if this was a reconnection (existing account without email)
+        $reconnected = !empty($response['reconnected']);
+        if ($reconnected) {
+            $site['_reconnected'] = true;
+        }
+
         $this->cache_site($site);
 
         return $site;

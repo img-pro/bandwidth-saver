@@ -3,7 +3,7 @@
  * Plugin Name: Bandwidth Saver: Image CDN
  * Plugin URI: https://github.com/img-pro/bandwidth-saver
  * Description: Instant image CDN. 100 GB/month free, no DNS changes, no external accounts.
- * Version: 0.2.3
+ * Version: 0.2.4
  * Author: ImgPro
  * Author URI: https://img.pro
  * License: GPLv2 or later
@@ -46,7 +46,7 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
 
 // Define plugin constants
 if (!defined('IMGPRO_CDN_VERSION')) {
-    define('IMGPRO_CDN_VERSION', '0.2.3');
+    define('IMGPRO_CDN_VERSION', '0.2.4');
 }
 if (!defined('IMGPRO_CDN_PLUGIN_DIR')) {
     define('IMGPRO_CDN_PLUGIN_DIR', plugin_dir_path(__FILE__));

@@ -362,7 +362,12 @@
                 } else {
                     // Revert toggle
                     $toggle.prop('checked', !isEnabled);
-                    showNotice('error', response.data.message || imgproCdnAdmin.i18n.settingsError);
+                    // Account exists with email - show recovery modal
+                    if (response.data.show_recovery) {
+                        showRecoveryVerificationModal(response.data.email_hint);
+                    } else {
+                        showNotice('error', response.data.message || imgproCdnAdmin.i18n.settingsError);
+                    }
                 }
             },
             error: function(xhr, status) {

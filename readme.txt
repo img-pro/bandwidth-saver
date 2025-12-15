@@ -4,7 +4,7 @@ Tags: images, performance, speed, cdn, cache
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 0.2.3
+Stable tag: 0.2.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,7 +18,7 @@ When your pages take too long to load, visitors leave. Search engines notice. Yo
 
 Bandwidth Saver fixes this by serving your images from servers close to your visitors — automatically. A visitor in Tokyo loads images from Asia. A visitor in London loads from Europe. Everyone gets faster pages.
 
-**The best part?** You don't need to understand how it works. Just activate the plugin, enter your email, and toggle it on. Your images start loading faster immediately.
+**The best part?** You don't need to understand how it works. Just activate the plugin and flip the switch. Your images start loading faster immediately.
 
 = What You Get =
 
@@ -34,12 +34,11 @@ Bandwidth Saver fixes this by serving your images from servers close to your vis
 
 Behind the scenes, Bandwidth Saver uses a global CDN (Content Delivery Network) with 300+ edge locations. But you don't need to know what that means or how to set it up.
 
-1. You activate the plugin and enter your email
-2. The plugin automatically rewrites image URLs on your pages
-3. Visitors load images from the nearest edge server
-4. Your original images stay exactly where they are
+1. Install the plugin from your WordPress dashboard
+2. Flip the switch to activate
+3. Images instantly load from 300+ global servers
 
-That's it. No DNS changes. No external accounts to manage. No settings to configure.
+That's it. No DNS changes. No external accounts. No settings to configure. Your original images stay exactly where they are.
 
 = Why People Choose This Over Other Speed Plugins =
 
@@ -82,10 +81,9 @@ All paid plans include custom domains (cdn.yoursite.com) with automatic SSL.
 
 1. Install and activate the plugin
 2. Go to **Settings → Bandwidth Saver**
-3. Enter your email
-4. Toggle the CDN on
+3. Toggle the CDN on
 
-Done. Your images are now loading faster.
+Done. Your images are now loading faster. No email required for the free tier.
 
 == Frequently Asked Questions ==
 
@@ -95,7 +93,7 @@ No. It does the opposite — it makes your images load faster. Your original ima
 
 = I'm not technical. Can I still use this? =
 
-Yes. That's exactly who this is for. You don't need to understand CDNs, DNS, or servers. Just activate, enter your email, and toggle it on.
+Yes. That's exactly who this is for. You don't need to understand CDNs, DNS, or servers. Just activate and toggle it on.
 
 = How do I know it's working? =
 
@@ -103,7 +101,7 @@ After enabling, visit your site and inspect any image. The URL will start with y
 
 = Is there really a free plan? =
 
-Yes. 100 GB of bandwidth per month, free forever. No credit card required. No trial period. Most small to medium sites never need to upgrade.
+Yes. 100 GB of bandwidth per month, free forever. No credit card required. No trial period. Most sites never need to upgrade.
 
 = What if I go over my bandwidth limit? =
 
@@ -150,7 +148,7 @@ The plugin does not add cookies, tracking pixels, or analytics to your site.
 = Managed Mode =
 
 * Your site URL is used to configure CDN routing
-* Your email address is used for account creation
+* Email is optional — only collected if you upgrade or request account recovery
 * Custom domain settings are sent if configured
 
 Images are cached and served through a global edge network.
@@ -172,11 +170,17 @@ This plugin connects to external services:
 **Bandwidth Saver API** (Managed mode only)
 
 * Purpose: Account management, usage tracking
-* Data sent: Site URL, email, custom domain (if configured)
+* Data sent: Site URL, email (if provided), custom domain (if configured)
 
 Self-hosted users connect only to their own Cloudflare account.
 
 == Changelog ==
+
+= 0.2.4 =
+* New: Frictionless activation — no email required for free tier
+* Improved: Toggle on directly from dashboard, account created automatically
+* Improved: Cleaner first-run experience with fewer steps
+* Fixed: Account card displays correctly when email is not set
 
 = 0.2.3 =
 * Improved: Clearer messaging focused on speed and SEO benefits
@@ -235,6 +239,9 @@ Self-hosted users connect only to their own Cloudflare account.
 * Initial release
 
 == Upgrade Notice ==
+
+= 0.2.4 =
+Frictionless activation: Just flip the switch, no email required. Simpler than ever.
 
 = 0.2.3 =
 Clearer messaging and improved onboarding experience. Recommended for all users.

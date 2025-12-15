@@ -133,6 +133,96 @@ class ImgPro_CDN_Admin_Ajax {
     }
 
     /**
+     * Auto-register a cloud account when toggling on for the first time
+     *
+     * This enables frictionless activation without requiring email upfront.
+     * Email is collected later when user upgrades via Stripe.
+     *
+     * @since 0.2.3
+     * @return true|WP_Error True on success, WP_Error on failure
+     */
+    private function auto_register_cloud_account() {
+        $site_url = get_site_url();
+
+        // Register without email (frictionless free activation)
+        $result = $this->api->create_site(null, $site_url, false);
+
+        if (is_wp_error($result)) {
+            $error_code = $result->get_error_code();
+
+            // Handle existing account with email - needs recovery
+            if ('conflict' === $error_code) {
+                // Clear any stale API key from singleton before calling public endpoint
+                $this->api->set_api_key(null);
+
+                // Automatically request recovery code
+                $recovery_result = $this->api->request_recovery($site_url);
+
+                if (!is_wp_error($recovery_result)) {
+                    // Check if this is a no-email account (no recovery needed)
+                    if (!empty($recovery_result['no_recovery_needed'])) {
+                        // This shouldn't happen since we just tried to register
+                        // But handle it gracefully - try again
+                        return new WP_Error('registration_failed', __('Registration failed. Please try again.', 'bandwidth-saver'));
+                    }
+
+                    // Recovery email sent
+                    return new WP_Error('account_exists', __('We found an existing account for this site. Please check your email for a verification code.', 'bandwidth-saver'), [
+                        'show_recovery' => true,
+                        'email_hint' => $recovery_result['email_hint'] ?? null,
+                    ]);
+                }
+
+                return new WP_Error('recovery_failed', __('An account exists but recovery failed. Please try again.', 'bandwidth-saver'));
+            }
+
+            // Other API errors
+            return $result;
+        }
+
+        // Success - save site data to settings
+        $this->save_site_data_to_settings($result);
+
+        return true;
+    }
+
+    /**
+     * Save site data from API response to plugin settings
+     *
+     * @since 0.2.3
+     * @param array $site Site data from API
+     * @return void
+     */
+    private function save_site_data_to_settings($site) {
+        $data = [
+            'setup_mode'           => ImgPro_CDN_Settings::MODE_CLOUD,
+            'cloud_api_key'        => $site['api_key'] ?? '',
+            'cloud_tier'           => $site['tier']['id'] ?? ImgPro_CDN_Settings::TIER_FREE,
+            'onboarding_completed' => true,
+        ];
+
+        // Only set email if provided
+        if (!empty($site['email'])) {
+            $data['cloud_email'] = $site['email'];
+        }
+
+        // Extract source domains if available
+        if (!empty($site['domains'])) {
+            $domains = [];
+            foreach ($site['domains'] as $domain_info) {
+                if (!empty($domain_info['domain'])) {
+                    $domains[] = $domain_info['domain'];
+                }
+            }
+            if (!empty($domains)) {
+                $data['source_urls'] = $domains;
+            }
+        }
+
+        $this->settings->update($data);
+    }
+
+    /**
      * AJAX handler for toggling CDN enabled state
      *
      * @since 0.1.2
@@ -157,10 +247,42 @@ class ImgPro_CDN_Admin_Ajax {
 
         $current_settings = $this->settings->get_all();
 
+        $auto_registered = false;
+
         // Check if the mode is properly configured before allowing enable
         if ($enabled && !ImgPro_CDN_Settings::is_mode_valid($mode, $current_settings)) {
-            wp_send_json_error(['message' => __('Please complete setup first before enabling.', 'bandwidth-saver')]);
-            return;
+            // For cloud mode: auto-register if not yet set up
+            if (ImgPro_CDN_Settings::MODE_CLOUD === $mode) {
+                $registration_result = $this->auto_register_cloud_account();
+                if (is_wp_error($registration_result)) {
+                    $error_data = $registration_result->get_error_data();
+
+                    // Check if this needs recovery flow (account with email)
+                    if (!empty($error_data['show_recovery'])) {
+                        wp_send_json_error([
+                            'message'       => $registration_result->get_error_message(),
+                            'code'          => $registration_result->get_error_code(),
+                            'show_recovery' => true,
+                            'email_hint'    => $error_data['email_hint'] ?? null,
+                        ]);
+                        return;
+                    }
+
+                    wp_send_json_error([
+                        'message' => $registration_result->get_error_message(),
+                        'code' => $registration_result->get_error_code(),
+                    ]);
+                    return;
+                }
+                // Registration succeeded - refresh settings and flag for page reload
+                $this->settings->clear_cache();
+                $current_settings = $this->settings->get_all();
+                $auto_registered = true;
+            } else {
+                // Cloudflare mode still requires manual setup
+                wp_send_json_error(['message' => __('Please complete setup first before enabling.', 'bandwidth-saver')]);
+                return;
+            }
         }
 
         // Determine the field key for this mode
@@ -193,7 +315,14 @@ class ImgPro_CDN_Admin_Ajax {
                 ? __('Image CDN enabled. Images now load from the global network.', 'bandwidth-saver')
                 : __('Image CDN disabled. Images now load from your server.', 'bandwidth-saver');
 
-            wp_send_json_success(['message' => $message]);
+            $response = ['message' => $message];
+
+            // If we just auto-registered, reload page to show full dashboard
+            if ($auto_registered) {
+                $response['redirect'] = admin_url('options-general.php?page=imgpro-cdn-settings&tab=cloud&activated=1');
+            }
+
+            wp_send_json_success($response);
         } else {
             wp_send_json_error(['message' => __('Could not save settings. Please try again.', 'bandwidth-saver')]);
         }

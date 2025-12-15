@@ -270,10 +270,15 @@
     box-shadow: 0 1px 2px rgba(0, 51, 255, 0.2);
 }
 
-.imgpro-btn-primary:hover {
+.imgpro-btn-primary:hover,
+.imgpro-btn-primary:focus,
+a.imgpro-btn-primary:hover,
+a.imgpro-btn-primary:focus,
+a.imgpro-btn-primary:visited {
     background: var(--imgpro-primary-700);
     border-color: var(--imgpro-primary-700);
     box-shadow: 0 2px 8px rgba(0, 51, 255, 0.25);
+    color: white;
 }
 
 .imgpro-btn-primary:active {
@@ -1020,6 +1025,7 @@
     justify-content: space-between;
     gap: var(--imgpro-space-6);
     padding: var(--imgpro-space-5) var(--imgpro-space-6);
+    margin-bottom: var(--imgpro-space-4);
     background: var(--imgpro-bg);
     border: 1px solid var(--imgpro-border);
     border-radius: var(--imgpro-radius-lg);

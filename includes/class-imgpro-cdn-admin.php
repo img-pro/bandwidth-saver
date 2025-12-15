@@ -1122,7 +1122,7 @@ class ImgPro_CDN_Admin {
      */
     private function render_cloud_tab($settings) {
         $tier = $settings['cloud_tier'] ?? ImgPro_CDN_Settings::TIER_NONE;
-        $has_subscription = in_array($tier, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true);
+        $has_subscription = in_array($tier, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE, ImgPro_CDN_Settings::TIER_PAST_DUE], true);
         ?>
         <div class="imgpro-tab-panel" role="tabpanel">
             <?php if (!$has_subscription): ?>

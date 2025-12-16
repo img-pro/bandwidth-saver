@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Bandwidth Saver: Image CDN
+ * Plugin Name: Free Image CDN – Bandwidth Saver
  * Plugin URI: https://github.com/img-pro/bandwidth-saver
  * Description: Instant image CDN. 100 GB/month free, no DNS changes, no external accounts.
  * Version: 0.2.4

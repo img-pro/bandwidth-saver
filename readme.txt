@@ -4,7 +4,7 @@ Tags: image cdn, cdn, speed, core web vitals, performance
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 0.2.4
+Stable tag: 0.2.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -187,6 +187,10 @@ This image CDN plugin connects to external services:
 Self-hosted users connect only to their own Cloudflare account.
 
 == Changelog ==
+
+= 0.2.5 =
+* Improved: Simplified Self-Host setup instructions (3 steps instead of 4)
+* Improved: Cleaner UI with single time estimate for setup process
 
 = 0.2.4 =
 * New: Frictionless activation — no email required for free image CDN tier

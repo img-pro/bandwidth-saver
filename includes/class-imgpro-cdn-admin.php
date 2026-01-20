@@ -1431,11 +1431,7 @@ class ImgPro_CDN_Admin {
                         </li>
                         <li>
                             <strong><?php esc_html_e('Deploy the Worker', 'bandwidth-saver'); ?></strong>
-                            <span><?php esc_html_e('One-click deploy from our GitHub repository', 'bandwidth-saver'); ?></span>
-                        </li>
-                        <li>
-                            <strong><?php esc_html_e('Add a Custom Domain', 'bandwidth-saver'); ?></strong>
-                            <span><?php esc_html_e('Point a subdomain to your Worker', 'bandwidth-saver'); ?></span>
+                            <span><?php esc_html_e('Follow the setup guide on GitHub', 'bandwidth-saver'); ?></span>
                         </li>
                         <li>
                             <strong><?php esc_html_e('Enter Domain Below', 'bandwidth-saver'); ?></strong>
@@ -1444,7 +1440,7 @@ class ImgPro_CDN_Admin {
                     </ol>
 
                     <div class="imgpro-setup-actions">
-                        <a href="https://github.com/img-pro/bandwidth-saver-worker#setup" target="_blank" class="imgpro-btn imgpro-btn-primary">
+                        <a href="https://github.com/img-pro/bandwidth-saver-worker#quick-start" target="_blank" class="imgpro-btn imgpro-btn-primary">
                             <?php esc_html_e('View Setup Guide', 'bandwidth-saver'); ?>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 8.667V12a1.333 1.333 0 01-1.333 1.333H4A1.333 1.333 0 012.667 12V5.333A1.333 1.333 0 014 4h3.333M10 2h4v4M6.667 9.333L14 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </a>

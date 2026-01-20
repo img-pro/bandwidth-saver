@@ -1431,11 +1431,7 @@ class ImgPro_CDN_Admin {
                         </li>
                         <li>
                             <strong><?php esc_html_e('Deploy the Worker', 'bandwidth-saver'); ?></strong>
-                            <span><?php esc_html_e('Follow the setup guide on GitHub (~10 min)', 'bandwidth-saver'); ?></span>
-                        </li>
-                        <li>
-                            <strong><?php esc_html_e('Add a Custom Domain', 'bandwidth-saver'); ?></strong>
-                            <span><?php esc_html_e('Point a subdomain to your Worker', 'bandwidth-saver'); ?></span>
+                            <span><?php esc_html_e('Follow the setup guide on GitHub', 'bandwidth-saver'); ?></span>
                         </li>
                         <li>
                             <strong><?php esc_html_e('Enter Domain Below', 'bandwidth-saver'); ?></strong>

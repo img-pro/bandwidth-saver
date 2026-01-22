@@ -423,6 +423,12 @@ class ImgPro_CDN_Rewriter {
      * Unlike images, video/audio may have multiple source elements that all
      * need to be rewritten, plus a poster attribute for videos.
      *
+     * IMPORTANT: Only transforms URLs that were marked as CDN URLs:
+     * - this.src only if data-imgpro-cdn is set on the element
+     * - this.poster only if data-imgpro-poster is set on the element
+     * - source children only if they have data-imgpro-cdn
+     * This prevents corrupting non-CDN URLs (e.g., YouTube embeds).
+     *
      * @since 1.0.0
      * @return string JavaScript onerror handler for media elements.
      */
@@ -430,20 +436,20 @@ class ImgPro_CDN_Rewriter {
         // Fallback logic for video/audio (same pattern as images):
         // 1. Check if not already in fallback state
         // 2. Mark as fallback='1' (trying origin)
-        // 3. Rewrite direct src if present (same pattern as images)
+        // 3. Rewrite direct src ONLY if data-imgpro-cdn is set
         // 4. Rewrite all child source elements with data-imgpro-cdn
-        // 5. Rewrite poster attribute if present (video only)
+        // 5. Rewrite poster ONLY if data-imgpro-poster is set
         // 6. Set new onerror to handle origin failure
         // 7. Call load() to retry with new sources
         $handler = "if (!this.dataset.fallback) { "
                  . "this.dataset.fallback = '1'; "
-                 // Rewrite direct src (same pattern as images)
-                 . "if (this.src) { var p = this.src.split('/').slice(3); this.src = 'https://' + p[0] + '/' + p.slice(1).join('/'); } "
-                 // Rewrite source children
+                 // Rewrite direct src only if marked as CDN
+                 . "if (this.src && this.dataset.imgproCdn) { var p = this.src.split('/').slice(3); this.src = 'https://' + p[0] + '/' + p.slice(1).join('/'); } "
+                 // Rewrite source children (only those with data-imgpro-cdn)
                  . "var sources = this.querySelectorAll('source[data-imgpro-cdn]'); "
                  . "for (var i = 0; i < sources.length; i++) { var sp = sources[i].src.split('/').slice(3); sources[i].src = 'https://' + sp[0] + '/' + sp.slice(1).join('/'); } "
-                 // Rewrite poster (same pattern)
-                 . "if (this.poster) { var pp = this.poster.split('/').slice(3); this.poster = 'https://' + pp[0] + '/' + pp.slice(1).join('/'); } "
+                 // Rewrite poster only if marked as CDN
+                 . "if (this.poster && this.dataset.imgproPoster) { var pp = this.poster.split('/').slice(3); this.poster = 'https://' + pp[0] + '/' + pp.slice(1).join('/'); } "
                  . "this.onerror = function() { this.dataset.fallback = '2'; this.onerror = null; }; "
                  . "this.load(); "
                  . "}";
@@ -625,6 +631,8 @@ class ImgPro_CDN_Rewriter {
                     $origin_poster = $this->get_true_origin($poster);
                     if ($this->should_rewrite($origin_poster)) {
                         $processor->set_attribute('poster', esc_url($this->build_cdn_url($origin_poster)));
+                        // Mark poster as CDN so onerror handler knows to transform it
+                        $processor->set_attribute('data-imgpro-poster', '1');
                     }
                 }
             }

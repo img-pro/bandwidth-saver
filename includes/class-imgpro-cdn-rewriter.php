@@ -436,22 +436,23 @@ class ImgPro_CDN_Rewriter {
         // Fallback logic for video/audio (same pattern as images):
         // 1. Check if not already in fallback state
         // 2. Mark as fallback='1' (trying origin)
-        // 3. Rewrite direct src ONLY if data-imgpro-cdn is set
-        // 4. Rewrite all child source elements with data-imgpro-cdn
-        // 5. Rewrite poster ONLY if data-imgpro-poster is set
-        // 6. Set new onerror to handle origin failure
-        // 7. Call load() to retry with new sources
+        // 3. Track if any URLs were transformed
+        // 4. Rewrite direct src ONLY if data-imgpro-cdn is set
+        // 5. Rewrite all child source elements with data-imgpro-cdn
+        // 6. Rewrite poster ONLY if data-imgpro-poster is set
+        // 7. Only call load() if something was transformed (avoid unnecessary retries)
         $handler = "if (!this.dataset.fallback) { "
                  . "this.dataset.fallback = '1'; "
+                 . "var changed = false; "
                  // Rewrite direct src only if marked as CDN
-                 . "if (this.src && this.dataset.imgproCdn) { var p = this.src.split('/').slice(3); this.src = 'https://' + p[0] + '/' + p.slice(1).join('/'); } "
+                 . "if (this.src && this.dataset.imgproCdn) { var p = this.src.split('/').slice(3); this.src = 'https://' + p[0] + '/' + p.slice(1).join('/'); changed = true; } "
                  // Rewrite source children (only those with data-imgpro-cdn)
                  . "var sources = this.querySelectorAll('source[data-imgpro-cdn]'); "
-                 . "for (var i = 0; i < sources.length; i++) { var sp = sources[i].src.split('/').slice(3); sources[i].src = 'https://' + sp[0] + '/' + sp.slice(1).join('/'); } "
+                 . "for (var i = 0; i < sources.length; i++) { var sp = sources[i].src.split('/').slice(3); sources[i].src = 'https://' + sp[0] + '/' + sp.slice(1).join('/'); changed = true; } "
                  // Rewrite poster only if marked as CDN
-                 . "if (this.poster && this.dataset.imgproPoster) { var pp = this.poster.split('/').slice(3); this.poster = 'https://' + pp[0] + '/' + pp.slice(1).join('/'); } "
-                 . "this.onerror = function() { this.dataset.fallback = '2'; this.onerror = null; }; "
-                 . "this.load(); "
+                 . "if (this.poster && this.dataset.imgproPoster) { var pp = this.poster.split('/').slice(3); this.poster = 'https://' + pp[0] + '/' + pp.slice(1).join('/'); changed = true; } "
+                 // Only reload if we actually changed something
+                 . "if (changed) { this.onerror = function() { this.dataset.fallback = '2'; this.onerror = null; }; this.load(); } "
                  . "}";
 
         return $handler;
@@ -704,7 +705,7 @@ class ImgPro_CDN_Rewriter {
         /**
          * Filter the list of allowed media extensions
          *
-         * @since 0.2.0
+         * @since 1.0.0
          * @param array $extensions List of file extensions (without dots)
          */
         $extensions = apply_filters('imgpro_media_extensions', [
@@ -718,9 +719,6 @@ class ImgPro_CDN_Rewriter {
             // HLS
             'm3u8', 'ts',
         ]);
-
-        // Backward compatibility: also apply old filter
-        $extensions = apply_filters('imgpro_image_extensions', $extensions);
 
         $path = wp_parse_url($url, PHP_URL_PATH);
 

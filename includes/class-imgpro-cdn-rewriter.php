@@ -193,6 +193,7 @@ class ImgPro_CDN_Rewriter {
      * plugins_loaded time, so we can't reliably determine request type here.
      *
      * @since 0.1.0
+     * @since 0.2.0 Added video and audio shortcode filters
      * @return void
      */
     public function init() {
@@ -211,10 +212,14 @@ class ImgPro_CDN_Rewriter {
         // Run late (priority 999) to override any lazy loading plugins that modify src
         add_filter('wp_get_attachment_image_attributes', [$this, 'rewrite_attributes'], 999, 3);
 
-        // Content filters
+        // Content filters (processes img, video, audio, source tags)
         add_filter('the_content', [$this, 'rewrite_content'], 999);
         add_filter('post_thumbnail_html', [$this, 'rewrite_content'], 999);
         add_filter('widget_text', [$this, 'rewrite_content'], 999);
+
+        // Video and audio shortcode filters (WordPress media embeds)
+        add_filter('wp_video_shortcode', [$this, 'rewrite_content'], 999);
+        add_filter('wp_audio_shortcode', [$this, 'rewrite_content'], 999);
     }
 
     /**
@@ -466,14 +471,15 @@ class ImgPro_CDN_Rewriter {
     /**
      * Rewrite content HTML
      *
-     * Processes images in HTML content that weren't processed by rewrite_attributes()
+     * Processes media elements in HTML content that weren't processed by rewrite_attributes()
      *
      * ARCHITECTURE:
-     * - ONLY processes images WITHOUT data-imgpro-cdn (not yet processed)
-     * - NEVER modifies images already processed by rewrite_attributes()
+     * - ONLY processes elements WITHOUT data-imgpro-cdn (not yet processed)
+     * - NEVER modifies elements already processed by rewrite_attributes()
      * - Uses WP_HTML_Tag_Processor for safe, spec-compliant HTML parsing (requires WP 6.2+)
      *
      * @since 0.1.0
+     * @since 0.2.0 Added video, audio, and source tag support
      * @param string $content HTML content.
      * @return string
      */
@@ -488,9 +494,19 @@ class ImgPro_CDN_Rewriter {
             return $content;
         }
 
-        // Early bail-out: Skip processing if no image tags present
+        // Early bail-out: Skip processing if no media tags present
         // This is a performance optimization for text-only content
-        if (false === stripos($content, '<img') && false === stripos($content, '<amp-img') && false === stripos($content, '<amp-anim')) {
+        $has_media_tags = false;
+        $tag_patterns = ['<img', '<amp-img', '<amp-anim', '<video', '<audio', '<source'];
+
+        foreach ($tag_patterns as $pattern) {
+            if (false !== stripos($content, $pattern)) {
+                $has_media_tags = true;
+                break;
+            }
+        }
+
+        if (!$has_media_tags) {
             return $content;
         }
 
@@ -508,21 +524,26 @@ class ImgPro_CDN_Rewriter {
     /**
      * Rewrite content using WP_HTML_Tag_Processor (modern approach)
      *
+     * Processes images, videos, audio, and source elements.
+     *
      * @since 0.1.0
+     * @since 0.2.0 Added video, audio, and source tag support
      * @param string $content HTML content.
      * @return string Modified content.
      */
     private function rewrite_content_with_tag_processor($content) {
         $processor = new WP_HTML_Tag_Processor($content);
 
-        // Process all image tags (img, amp-img, amp-anim)
-        $tag_names = ['IMG', 'AMP-IMG', 'AMP-ANIM'];
+        // All tags we process
+        $image_tags = ['IMG', 'AMP-IMG', 'AMP-ANIM'];
+        $media_tags = ['VIDEO', 'AUDIO', 'SOURCE'];
+        $all_tags = array_merge($image_tags, $media_tags);
 
         while ($processor->next_tag()) {
             $tag = $processor->get_tag();
 
-            // Skip if not an image tag
-            if (!in_array($tag, $tag_names, true)) {
+            // Skip if not a media tag
+            if (!in_array($tag, $all_tags, true)) {
                 continue;
             }
 
@@ -533,32 +554,35 @@ class ImgPro_CDN_Rewriter {
 
             // Get src attribute
             $src = $processor->get_attribute('src');
-            if (empty($src)) {
-                continue;
+
+            // Process src if present and valid
+            if (!empty($src)) {
+                $origin_url = $this->get_true_origin($src);
+
+                if ($this->should_rewrite($origin_url)) {
+                    $cdn_url = $this->build_cdn_url($origin_url);
+                    $processor->set_attribute('src', esc_url($cdn_url));
+                    $processor->set_attribute('data-imgpro-cdn', '1');
+
+                    // Only add onerror/onload handlers for images
+                    // Video/audio have native error handling and don't need our fallback
+                    if (in_array($tag, $image_tags, true)) {
+                        $processor->set_attribute('onload', $this->get_onload_handler());
+                        $processor->set_attribute('onerror', $this->get_onerror_handler());
+                    }
+                }
             }
 
-            // Get true origin URL (extracts if already CDN)
-            $origin_url = $this->get_true_origin($src);
-
-            // Skip if not a valid image URL
-            if (!$this->should_rewrite($origin_url)) {
-                continue;
+            // VIDEO tag: also process 'poster' attribute (thumbnail image)
+            if ($tag === 'VIDEO') {
+                $poster = $processor->get_attribute('poster');
+                if (!empty($poster)) {
+                    $origin_poster = $this->get_true_origin($poster);
+                    if ($this->should_rewrite($origin_poster)) {
+                        $processor->set_attribute('poster', esc_url($this->build_cdn_url($origin_poster)));
+                    }
+                }
             }
-
-            // Build CDN URL from origin
-            $cdn_url = $this->build_cdn_url($origin_url);
-
-            // Update src attribute to CDN URL
-            $processor->set_attribute('src', esc_url($cdn_url));
-
-            // Add data attribute for identification
-            $processor->set_attribute('data-imgpro-cdn', '1');
-
-            // Add onload handler (adds imgpro-loaded class for CSS visibility)
-            $processor->set_attribute('onload', $this->get_onload_handler());
-
-            // Add onerror fallback handler
-            $processor->set_attribute('onerror', $this->get_onerror_handler());
         }
 
         return $processor->get_updated_html();
@@ -583,6 +607,7 @@ class ImgPro_CDN_Rewriter {
      * Check if URL should be rewritten
      *
      * @since 0.1.0
+     * @since 0.2.0 Now supports video, audio, and HLS files
      * @param string $url URL to check.
      * @return bool
      */
@@ -605,8 +630,8 @@ class ImgPro_CDN_Rewriter {
             }
         }
 
-        // Must be an image
-        if (!$this->is_image_url($url)) {
+        // Must be a supported media file (images, video, audio, HLS)
+        if (!$this->is_media_url($url)) {
             return false;
         }
 
@@ -614,27 +639,35 @@ class ImgPro_CDN_Rewriter {
     }
 
     /**
-     * Check if URL is an image
+     * Check if URL is a supported media file
      *
-     * @since 0.1.0
+     * Supports images, video, audio, and HLS streaming files.
+     *
+     * @since 0.2.0
      * @param string $url URL to check.
-     * @return bool True if URL points to an image file.
+     * @return bool True if URL points to a supported media file.
      */
-    private function is_image_url($url) {
+    private function is_media_url($url) {
         /**
-         * Filter the list of allowed image extensions
+         * Filter the list of allowed media extensions
          *
+         * @since 0.2.0
          * @param array $extensions List of file extensions (without dots)
          */
-        $extensions = apply_filters('imgpro_image_extensions', [
-            'jpg',
-            'jpeg',
-            'png',
-            'gif',
-            'webp',
-            'avif',
-            'svg',
+        $extensions = apply_filters('imgpro_media_extensions', [
+            // Images
+            'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg',
+            'bmp', 'tiff', 'ico', 'heic', 'heif',
+            // Video
+            'mp4', 'm4v', 'webm', 'ogv', 'mov', 'mkv',
+            // Audio
+            'mp3', 'ogg', 'wav', 'm4a', 'flac', 'aac', 'weba',
+            // HLS
+            'm3u8', 'ts',
         ]);
+
+        // Backward compatibility: also apply old filter
+        $extensions = apply_filters('imgpro_image_extensions', $extensions);
 
         $path = wp_parse_url($url, PHP_URL_PATH);
 

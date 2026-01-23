@@ -28,11 +28,19 @@ class ImgPro_CDN_API {
     const BASE_URL = 'https://cloud.wp.img.pro';
 
     /**
-     * Cache TTL in seconds (1 hour)
+     * Cache TTL in seconds (1 hour) - for static data like tiers
      *
      * @var int
      */
     const CACHE_TTL = 3600;
+
+    /**
+     * Cache TTL for usage data in seconds (5 minutes)
+     * Usage data changes frequently, so shorter TTL keeps stats fresh
+     *
+     * @var int
+     */
+    const USAGE_CACHE_TTL = 300;
 
     /**
      * Request timeout in seconds
@@ -196,8 +204,9 @@ class ImgPro_CDN_API {
             $this->cache_site($response['site']);
         }
 
-        // Cache the full response
-        set_transient($cache_key, $response, self::CACHE_TTL);
+        // Cache the full response - use shorter TTL when usage data is included
+        $ttl = in_array('usage', $include, true) ? self::USAGE_CACHE_TTL : self::CACHE_TTL;
+        set_transient($cache_key, $response, $ttl);
 
         return $response;
     }

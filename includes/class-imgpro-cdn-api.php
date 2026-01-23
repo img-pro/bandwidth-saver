@@ -199,13 +199,13 @@ class ImgPro_CDN_API {
             return $response;
         }
 
-        // Cache the site data separately for get_site() compatibility
-        if (isset($response['site'])) {
-            $this->cache_site($response['site']);
-        }
-
         // Cache the full response - use shorter TTL when usage data is included
         $ttl = in_array('usage', $include, true) ? self::USAGE_CACHE_TTL : self::CACHE_TTL;
+
+        // Cache the site data separately for get_site() compatibility
+        if (isset($response['site'])) {
+            $this->cache_site($response['site'], $ttl);
+        }
         set_transient($cache_key, $response, $ttl);
 
         return $response;
@@ -1166,10 +1166,11 @@ class ImgPro_CDN_API {
      * Cache site data
      *
      * @param array $site Site data to cache.
+     * @param int   $ttl  Cache TTL in seconds.
      */
-    private function cache_site($site) {
+    private function cache_site($site, $ttl = self::CACHE_TTL) {
         $this->site_cache = $site;
-        set_transient('imgpro_cdn_site_data', $site, self::CACHE_TTL);
+        set_transient('imgpro_cdn_site_data', $site, $ttl);
     }
 
     /**

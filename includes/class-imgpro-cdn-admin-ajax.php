@@ -417,7 +417,6 @@ class ImgPro_CDN_Admin_Ajax {
         $data = [
             'cloud_tier' => $tier_id,
             'bandwidth_used' => $usage['bandwidth_used'],
-            'cache_used' => $usage['cache_used'],
             'cache_hits' => $usage['cache_hits'],
             'cache_misses' => $usage['cache_misses'],
             'stats_updated_at' => time(),
@@ -558,22 +557,16 @@ class ImgPro_CDN_Admin_Ajax {
         // Get updated settings for response
         $updated_settings = $this->settings->get_all();
         $bandwidth_limit = ImgPro_CDN_Settings::get_bandwidth_limit($updated_settings);
-        $cache_limit = ImgPro_CDN_Settings::get_cache_limit($updated_settings);
 
         wp_send_json_success([
             'bandwidth_used' => $updated_settings['bandwidth_used'] ?? 0,
             'bandwidth_limit' => $bandwidth_limit,
             'bandwidth_percentage' => ImgPro_CDN_Settings::get_bandwidth_percentage($updated_settings),
-            'cache_used' => $updated_settings['cache_used'] ?? 0,
-            'cache_limit' => $cache_limit,
-            'cache_percentage' => ImgPro_CDN_Settings::get_cache_percentage($updated_settings),
             'cache_hits' => $updated_settings['cache_hits'] ?? 0,
             'cache_misses' => $updated_settings['cache_misses'] ?? 0,
             'formatted' => [
                 'bandwidth_used' => ImgPro_CDN_Settings::format_bytes($updated_settings['bandwidth_used'] ?? 0),
                 'bandwidth_limit' => ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0),
-                'cache_used' => ImgPro_CDN_Settings::format_bytes($updated_settings['cache_used'] ?? 0),
-                'cache_limit' => ImgPro_CDN_Settings::format_bytes($cache_limit, 0),
             ]
         ]);
     }

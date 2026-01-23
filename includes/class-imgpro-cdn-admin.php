@@ -205,7 +205,6 @@ class ImgPro_CDN_Admin {
             'cloud_tier' => $tier_id,
             'setup_mode' => ImgPro_CDN_Settings::MODE_CLOUD,
             'bandwidth_used' => $usage['bandwidth_used'],
-            'cache_used' => $usage['cache_used'],
             'cache_hits' => $usage['cache_hits'],
             'cache_misses' => $usage['cache_misses'],
             'stats_updated_at' => time(),
@@ -284,10 +283,6 @@ class ImgPro_CDN_Admin {
         // Update usage stats
         if ($usage['bandwidth_used'] !== ($settings['bandwidth_used'] ?? 0)) {
             $update_data['bandwidth_used'] = $usage['bandwidth_used'];
-            $settings_changed = true;
-        }
-        if ($usage['cache_used'] !== ($settings['cache_used'] ?? 0)) {
-            $update_data['cache_used'] = $usage['cache_used'];
             $settings_changed = true;
         }
         // Update custom domain if present

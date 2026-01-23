@@ -945,7 +945,6 @@ class ImgPro_CDN_API {
         return [
             'bandwidth_used'   => $usage['bandwidth']['used_bytes'] ?? 0,
             'bandwidth_limit'  => $usage['bandwidth']['limit_bytes'] ?? 0,
-            'cache_used'       => 0, // Cache usage tracking deprecated
             'cache_limit'      => $usage['cache']['limit_bytes'] ?? 0,
             'cache_hits'       => $usage['cache_hits'] ?? 0,
             'cache_misses'     => $usage['cache_misses'] ?? 0,

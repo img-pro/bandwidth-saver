@@ -237,10 +237,9 @@ class ImgPro_CDN_Settings {
         'custom_domain_status' => '', // pending_dns, pending_ssl, active, error
 
         // Usage stats (synced from Cloud API)
-        // Bandwidth is primary metric (monthly), Cache is secondary (LRU-managed)
+        // Bandwidth is primary metric (monthly reset)
         'bandwidth_used'     => 0,
         'bandwidth_limit'    => 0,
-        'cache_used'         => 0,
         'cache_limit'        => 0,
         'cache_hits'         => 0,
         'cache_misses'       => 0,
@@ -404,9 +403,6 @@ class ImgPro_CDN_Settings {
         }
         if (isset($settings['bandwidth_limit'])) {
             $validated['bandwidth_limit'] = absint($settings['bandwidth_limit']);
-        }
-        if (isset($settings['cache_used'])) {
-            $validated['cache_used'] = absint($settings['cache_used']);
         }
         if (isset($settings['cache_limit'])) {
             $validated['cache_limit'] = absint($settings['cache_limit']);
@@ -916,22 +912,6 @@ class ImgPro_CDN_Settings {
             default:
                 return 0;
         }
-    }
-
-    /**
-     * Get cache usage percentage
-     *
-     * @since 0.2.0
-     * @param array $settings The settings array to check against.
-     * @return float Percentage of cache used (0-100).
-     */
-    public static function get_cache_percentage($settings) {
-        $limit = self::get_cache_limit($settings);
-        if ($limit <= 0) {
-            return 0;
-        }
-        $used = $settings['cache_used'] ?? 0;
-        return min(100, ($used / $limit) * 100);
     }
 
     /**

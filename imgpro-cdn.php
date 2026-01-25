@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Free Image CDN – Bandwidth Saver
+ * Plugin Name: Bandwidth Saver: Unlimited Media CDN
  * Plugin URI: https://github.com/img-pro/bandwidth-saver
- * Description: Instant media CDN for images, video, and audio. 100 GB/month free, no DNS changes, no external accounts.
+ * Description: Unlimited media CDN for images, video, audio, and HLS streaming. $19.99/mo for unlimited bandwidth and domains.
  * Version: 1.0.0
  * Author: ImgPro
  * Author URI: https://img.pro
@@ -89,7 +89,7 @@ register_deactivation_hook(__FILE__, ['ImgPro_CDN_Core', 'deactivate']);
  */
 function imgpro_cdn_add_version_html() {
     if (!is_admin()) {
-        echo "\n<!-- Image CDN by ImgPro v" . esc_attr(IMGPRO_CDN_VERSION) . " -->\n";
+        echo "\n<!-- Media CDN by ImgPro v" . esc_attr(IMGPRO_CDN_VERSION) . " -->\n";
     }
 }
 add_action('wp_footer', 'imgpro_cdn_add_version_html', 999);

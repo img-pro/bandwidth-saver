@@ -292,8 +292,8 @@ class ImgPro_CDN_Admin_Ajax {
         $current_enabled = ImgPro_CDN_Settings::is_mode_enabled($mode, $current_settings);
         if ($current_enabled === $enabled) {
             $message = $enabled
-                ? __('Image CDN is active. Images are loading from Cloudflare.', 'bandwidth-saver')
-                : __('Image CDN is disabled. Images are loading from your server.', 'bandwidth-saver');
+                ? __('Media CDN is active. Media is loading from Cloudflare.', 'bandwidth-saver')
+                : __('Media CDN is disabled. Media is loading from your server.', 'bandwidth-saver');
 
             wp_send_json_success(['message' => $message]);
             return;
@@ -312,8 +312,8 @@ class ImgPro_CDN_Admin_Ajax {
 
         if (false !== $result) {
             $message = $enabled
-                ? __('Image CDN enabled. Images now load from the global network.', 'bandwidth-saver')
-                : __('Image CDN disabled. Images now load from your server.', 'bandwidth-saver');
+                ? __('Media CDN enabled. Media now loads from the global network.', 'bandwidth-saver')
+                : __('Media CDN disabled. Media now loads from your server.', 'bandwidth-saver');
 
             $response = ['message' => $message];
 
@@ -557,6 +557,7 @@ class ImgPro_CDN_Admin_Ajax {
         // Get updated settings for response
         $updated_settings = $this->settings->get_all();
         $bandwidth_limit = ImgPro_CDN_Settings::get_bandwidth_limit($updated_settings);
+        $is_unlimited = $bandwidth_limit < 0;
 
         wp_send_json_success([
             'bandwidth_used' => $updated_settings['bandwidth_used'] ?? 0,
@@ -564,9 +565,10 @@ class ImgPro_CDN_Admin_Ajax {
             'bandwidth_percentage' => ImgPro_CDN_Settings::get_bandwidth_percentage($updated_settings),
             'cache_hits' => $updated_settings['cache_hits'] ?? 0,
             'cache_misses' => $updated_settings['cache_misses'] ?? 0,
+            'is_unlimited' => $is_unlimited,
             'formatted' => [
                 'bandwidth_used' => ImgPro_CDN_Settings::format_bytes($updated_settings['bandwidth_used'] ?? 0),
-                'bandwidth_limit' => ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0),
+                'bandwidth_limit' => $is_unlimited ? __('Unlimited', 'bandwidth-saver') : ImgPro_CDN_Settings::format_bytes($bandwidth_limit, 0),
             ]
         ]);
     }
@@ -597,17 +599,9 @@ class ImgPro_CDN_Admin_Ajax {
         ImgPro_CDN_Security::check_permission();
         ImgPro_CDN_Security::check_rate_limit('checkout');
 
-        $tier_id = isset($_POST['tier_id']) ? sanitize_text_field(wp_unslash($_POST['tier_id'])) : 'pro';
-
-        // Validate tier_id is a paid tier
-        $valid_tiers = ['lite', 'pro', 'business'];
-        if (!in_array($tier_id, $valid_tiers, true)) {
-            wp_send_json_error([
-                'message' => __('Invalid plan selected. Please try again.', 'bandwidth-saver'),
-                'code' => 'invalid_tier'
-            ]);
-            return;
-        }
+        // Always upgrade to unlimited tier (single paid tier model)
+        // tier_id parameter kept for backwards compatibility but ignored
+        $tier_id = 'unlimited';
 
         // SECURITY: Use get_api_key() to decrypt the stored API key
         $api_key = $this->settings->get_api_key();
@@ -784,7 +778,7 @@ class ImgPro_CDN_Admin_Ajax {
 
         // Enable CDN if valid subscription
         $current_tier_id = $this->api->get_tier_id($site);
-        if (in_array($current_tier_id, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
+        if (in_array($current_tier_id, [ImgPro_CDN_Settings::TIER_FREE, ImgPro_CDN_Settings::TIER_UNLIMITED, ImgPro_CDN_Settings::TIER_LITE, ImgPro_CDN_Settings::TIER_PRO, ImgPro_CDN_Settings::TIER_BUSINESS, ImgPro_CDN_Settings::TIER_ACTIVE], true)) {
             $this->settings->update([
                 'cloud_enabled' => true,
                 'onboarding_completed' => true,
@@ -798,10 +792,11 @@ class ImgPro_CDN_Admin_Ajax {
         if (!empty($pending_tier_id)) {
             // Tier priority order (higher = better)
             $tier_priority = [
-                ImgPro_CDN_Settings::TIER_FREE     => 1,
-                ImgPro_CDN_Settings::TIER_LITE     => 2,
-                ImgPro_CDN_Settings::TIER_PRO      => 3,
-                ImgPro_CDN_Settings::TIER_BUSINESS => 4,
+                ImgPro_CDN_Settings::TIER_FREE      => 1,
+                ImgPro_CDN_Settings::TIER_LITE      => 2,
+                ImgPro_CDN_Settings::TIER_PRO       => 3,
+                ImgPro_CDN_Settings::TIER_BUSINESS  => 4,
+                ImgPro_CDN_Settings::TIER_UNLIMITED => 5,
             ];
 
             $current_priority = $tier_priority[$current_tier_id] ?? 0;
@@ -1060,7 +1055,7 @@ class ImgPro_CDN_Admin_Ajax {
         ]);
 
         wp_send_json_success([
-            'message' => __('CDN domain removed. The Image CDN has been disabled.', 'bandwidth-saver')
+            'message' => __('CDN domain removed. The Media CDN has been disabled.', 'bandwidth-saver')
         ]);
     }
 
@@ -1121,6 +1116,7 @@ class ImgPro_CDN_Admin_Ajax {
             $tier = $settings['cloud_tier'] ?? '';
             $tier_valid = in_array($tier, [
                 ImgPro_CDN_Settings::TIER_FREE,
+                ImgPro_CDN_Settings::TIER_UNLIMITED,
                 ImgPro_CDN_Settings::TIER_LITE,
                 ImgPro_CDN_Settings::TIER_PRO,
                 ImgPro_CDN_Settings::TIER_BUSINESS,
@@ -1225,6 +1221,9 @@ class ImgPro_CDN_Admin_Ajax {
             'total_requests' => isset($insights['recent']['requests'])
                 ? $insights['recent']['requests']
                 : null,
+            // New request-focused fields (v1.0.0+)
+            'requests' => isset($insights['requests']) ? $insights['requests'] : null,
+            'period' => isset($insights['period']) ? $insights['period'] : null,
         ];
 
         // Extract daily array
@@ -1289,6 +1288,9 @@ class ImgPro_CDN_Admin_Ajax {
             'total_requests' => isset($insights['recent']['requests'])
                 ? $insights['recent']['requests']
                 : null,
+            // New request-focused fields (v1.0.0+)
+            'requests' => isset($insights['requests']) ? $insights['requests'] : null,
+            'period' => isset($insights['period']) ? $insights['period'] : null,
         ];
 
         wp_send_json_success($transformed);
@@ -1410,11 +1412,12 @@ class ImgPro_CDN_Admin_Ajax {
         }, $source_urls);
         $this->settings->update(['source_urls' => $domain_list]);
 
+        // Single-tier model: all users get unlimited source URLs
         wp_send_json_success([
             'source_urls' => $source_urls,
             'count' => $full_response['count'] ?? count($source_urls),
-            'max_domains' => $full_response['max_domains'] ?? 1,
-            'tier_name' => $full_response['tier_name'] ?? 'Free'
+            'max_domains' => -1, // Unlimited for all users
+            'tier_name' => $full_response['tier_name'] ?? 'Media CDN'
         ]);
     }
 

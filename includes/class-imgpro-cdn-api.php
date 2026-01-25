@@ -335,10 +335,10 @@ class ImgPro_CDN_API {
      * Create Stripe checkout session for upgrade
      *
      * @param string $api_key Site API key.
-     * @param string $tier_id Target tier ID (default: 'pro').
+     * @param string $tier_id Target tier ID (default: 'unlimited').
      * @return array|WP_Error Checkout data with URL or error.
      */
-    public function create_checkout($api_key, $tier_id = 'pro') {
+    public function create_checkout($api_key, $tier_id = 'unlimited') {
         if (empty($api_key)) {
             return new WP_Error('missing_api_key', __('API key is required', 'bandwidth-saver'));
         }
@@ -828,60 +828,38 @@ class ImgPro_CDN_API {
     /**
      * Get fallback tiers when API is unavailable
      *
-     * Bandwidth is the primary metric (resets monthly).
-     * Cache is secondary (LRU-managed, auto-regulated).
+     * Returns Trial + Unlimited tiers for the new pricing model.
      *
      * @return array Fallback tiers.
      */
     private function get_fallback_tiers() {
+        // Single-tier model: all users get the same features regardless of payment status
         return [
             [
                 'id' => 'free',
-                'name' => 'Free',
-                'description' => 'Get started',
+                'name' => 'Media CDN',
+                'description' => 'Media CDN Service',
                 'highlight' => false,
                 'price' => ['cents' => 0, 'formatted' => 'Free', 'period' => null],
                 'limits' => [
-                    'bandwidth' => ['bytes' => 107374182400, 'formatted' => '100 GB', 'unlimited' => false],
-                    'cache' => ['bytes' => 5368709120, 'formatted' => '5 GB'],
+                    'bandwidth' => ['bytes' => null, 'formatted' => 'Unlimited', 'unlimited' => true],
+                    'cache' => ['bytes' => null, 'formatted' => 'Unlimited', 'unlimited' => true],
+                    'domains' => ['max' => null, 'unlimited' => true],
                 ],
-                'features' => ['custom_domain' => false, 'priority_support' => false],
+                'features' => ['custom_domain' => true, 'priority_support' => false, 'video_support' => true, 'audio_support' => true],
             ],
             [
-                'id' => 'lite',
-                'name' => 'Lite',
-                'description' => 'Small sites',
-                'highlight' => false,
-                'price' => ['cents' => 499, 'formatted' => '$4.99', 'period' => '/mo'],
-                'limits' => [
-                    'bandwidth' => ['bytes' => 268435456000, 'formatted' => '250 GB', 'unlimited' => false],
-                    'cache' => ['bytes' => 26843545600, 'formatted' => '25 GB'],
-                ],
-                'features' => ['custom_domain' => true, 'priority_support' => false],
-            ],
-            [
-                'id' => 'pro',
-                'name' => 'Pro',
-                'description' => 'Best for most sites',
+                'id' => 'unlimited',
+                'name' => 'Media CDN',
+                'description' => 'Media CDN Service',
                 'highlight' => true,
-                'price' => ['cents' => 1499, 'formatted' => '$14.99', 'period' => '/mo'],
+                'price' => ['cents' => 1999, 'formatted' => '$19.99', 'period' => '/mo'],
                 'limits' => [
-                    'bandwidth' => ['bytes' => 2199023255552, 'formatted' => '2 TB', 'unlimited' => false],
-                    'cache' => ['bytes' => 161061273600, 'formatted' => '150 GB'],
+                    'bandwidth' => ['bytes' => null, 'formatted' => 'Unlimited', 'unlimited' => true],
+                    'cache' => ['bytes' => null, 'formatted' => 'Unlimited', 'unlimited' => true],
+                    'domains' => ['max' => null, 'unlimited' => true],
                 ],
-                'features' => ['custom_domain' => true, 'priority_support' => false],
-            ],
-            [
-                'id' => 'business',
-                'name' => 'Business',
-                'description' => 'High-traffic sites',
-                'highlight' => false,
-                'price' => ['cents' => 4900, 'formatted' => '$49', 'period' => '/mo'],
-                'limits' => [
-                    'bandwidth' => ['bytes' => 10995116277760, 'formatted' => '10 TB', 'unlimited' => false],
-                    'cache' => ['bytes' => 1099511627776, 'formatted' => '1 TB'],
-                ],
-                'features' => ['custom_domain' => true, 'priority_support' => true],
+                'features' => ['custom_domain' => true, 'priority_support' => true, 'video_support' => true, 'audio_support' => true],
             ],
         ];
     }
@@ -901,15 +879,15 @@ class ImgPro_CDN_API {
             return $this->format_pricing($site['tier']['price']);
         }
 
-        // Fallback defaults (Pro tier pricing)
+        // Fallback defaults (Unlimited tier pricing)
         return [
-            'amount'    => 1499,
+            'amount'    => 1999,
             'currency'  => 'USD',
             'interval'  => 'month',
             'formatted' => [
-                'amount' => '$14.99',
+                'amount' => '$19.99',
                 'period' => '/mo',
-                'full'   => '$14.99/mo',
+                'full'   => '$19.99/mo',
             ],
         ];
     }

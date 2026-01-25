@@ -2001,9 +2001,21 @@ a.imgpro-btn-primary:visited {
    Uses .imgpro-card base with account-specific modifiers.
    ========================================================================== */
 
-/* Base account card - extends .imgpro-card */
+/* Base account card */
 .imgpro-account-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--imgpro-bg);
+    border: 1px solid var(--imgpro-border);
+    border-radius: var(--imgpro-radius-lg);
+    box-shadow: var(--imgpro-card-shadow);
+    overflow: hidden;
     margin-bottom: var(--imgpro-space-6);
+}
+
+/* Active subscription variant - subtle green accent */
+.imgpro-account-card--active {
+    border-color: rgba(16, 185, 129, 0.3);
 }
 
 /* Account card main content area */
@@ -2019,76 +2031,42 @@ a.imgpro-btn-primary:visited {
 .imgpro-account-card__content {
     display: flex;
     flex-direction: column;
-    gap: var(--imgpro-space-1);
+    gap: var(--imgpro-space-2);
     flex: 1;
     min-width: 0;
 }
 
-/* Free tier - upsell variant */
-.imgpro-account-card--free {
-    background: var(--imgpro-bg);
-    border: 1px solid var(--imgpro-border);
-    border-radius: var(--imgpro-radius-lg);
-    box-shadow: var(--imgpro-card-shadow);
-    overflow: hidden;
+/* Status display (for active subscriptions) */
+.imgpro-account-card__status {
+    display: flex;
+    align-items: center;
+    gap: var(--imgpro-space-2);
 }
 
+.imgpro-account-card__status-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.imgpro-account-card__status-text {
+    font-size: var(--imgpro-text-base);
+    font-weight: 600;
+    color: #059669;
+}
+
+/* Headline (for pending subscriptions) */
 .imgpro-account-card__headline {
     font-size: var(--imgpro-text-base);
     font-weight: 600;
     color: var(--imgpro-text);
 }
 
+/* Description */
 .imgpro-account-card__description {
     font-size: var(--imgpro-text-sm);
     color: var(--imgpro-text-secondary);
-}
-
-/* Paid tier variant */
-.imgpro-account-card--paid {
-    display: flex;
-    flex-direction: column;
-    background: var(--imgpro-bg);
-    border: 1px solid var(--imgpro-border);
-    border-radius: var(--imgpro-radius-lg);
-    box-shadow: var(--imgpro-card-shadow);
-    overflow: hidden;
-}
-
-.imgpro-account-card--paid .imgpro-account-card__content {
-    gap: var(--imgpro-space-2);
-}
-
-/* Plan display */
-.imgpro-account-card__plan {
-    display: flex;
-    align-items: center;
-    gap: var(--imgpro-space-2);
-}
-
-.imgpro-account-card__tier {
-    font-size: var(--imgpro-text-lg);
-    font-weight: 700;
-    color: var(--imgpro-text);
-}
-
-.imgpro-account-card__plan-label {
-    font-size: var(--imgpro-text-lg);
-    font-weight: 400;
-    color: var(--imgpro-text-muted);
-}
-
-/* Limits row */
-.imgpro-account-card__limits {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--imgpro-space-2);
-}
-
-.imgpro-account-card__limit {
-    font-size: var(--imgpro-text-sm);
-    color: var(--imgpro-text-secondary);
+    line-height: 1.5;
 }
 
 /* Actions */
@@ -2108,24 +2086,38 @@ a.imgpro-btn-primary:visited {
     color: var(--imgpro-text-muted);
 }
 
+/* Price display in footer */
+.imgpro-account-card__price {
+    font-weight: 500;
+    color: var(--imgpro-text-secondary);
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     .imgpro-account-card__main {
         flex-direction: column;
         align-items: stretch;
         text-align: center;
+        gap: var(--imgpro-space-4);
+    }
+
+    .imgpro-account-card__status {
+        justify-content: center;
     }
 
     .imgpro-account-card__footer {
         justify-content: center;
-    }
-
-    .imgpro-account-card__limits {
-        justify-content: center;
+        flex-wrap: wrap;
     }
 
     .imgpro-account-card__actions {
         align-self: center;
+        width: 100%;
+    }
+
+    .imgpro-account-card__actions .imgpro-btn {
+        width: 100%;
+        justify-content: center;
     }
 }
 

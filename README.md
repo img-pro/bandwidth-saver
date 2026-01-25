@@ -1,133 +1,150 @@
-# Bandwidth Saver: Image CDN
+# Bandwidth Saver: Unlimited Media CDN
 
-[![WordPress Plugin Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://wordpress.org/plugins/bandwidth-saver/)
+[![WordPress Plugin Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://wordpress.org/plugins/bandwidth-saver/)
 [![Requires WordPress Version](https://img.shields.io/badge/wordpress-6.2%2B-blue.svg)](https://wordpress.org/download/)
 [![Requires PHP Version](https://img.shields.io/badge/php-7.4%2B-purple.svg)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-red.svg)](LICENSE)
 
-**Faster images without touching DNS. Rewrites image URLs to load through Cloudflare. No configuration needed.**
+**Unlimited media CDN for WordPress. Serve images, video, audio, and HLS streams from 300+ global edge servers.**
 
 ## Overview
 
-WordPress images often load slowly, especially on shared hosting. Large sites with thousands of images can grind to a halt without a CDN. But setting up Cloudflare usually means editing DNS records, configuring caching rules, and navigating technical steps that many site owners prefer to avoid.
+Heavy media files slow down your WordPress site. When videos buffer and images lag, visitors leave, Core Web Vitals fail, and Google ranks you lower.
 
-**Bandwidth Saver** solves this by delivering your existing WordPress images through Cloudflare's global edge network. No DNS changes. No Cloudflare account needed. No configuration. Just activate and go.
+**Bandwidth Saver** delivers all your media through Cloudflare's global edge network. No DNS changes. No external accounts. No configuration. Images, videos, audio files, and HLS streams load from the nearest server to each visitor.
 
-Safe to try on any site. Does not touch your database or existing files. You can disable it at any time and your site instantly returns to normal. If Cloudflare ever has an issue, WordPress automatically loads your original images.
+Safe to try on any site. Does not touch your database or existing files. Disable at any time and your site instantly returns to normal. If Cloudflare ever has an issue, WordPress automatically loads your original media.
 
 ## How It Works
 
-1. You upload images to WordPress as usual
-2. The plugin rewrites image URLs on your frontend pages
-3. When a visitor requests an image, a Cloudflare Worker fetches it from your site and stores it in R2
-4. Future requests serve the cached image from Cloudflare's edge
+1. You upload media to WordPress as usual
+2. The plugin rewrites media URLs on your frontend pages
+3. When a visitor requests media, a Cloudflare Worker fetches it from your site and caches it in R2
+4. Future requests serve cached media from Cloudflare's edge (300+ locations worldwide)
 
-**Your original images stay on your server.** WordPress keeps full control. The plugin only changes how images are delivered to visitors.
+**Your original files stay on your server.** WordPress keeps full control. The plugin only changes how media is delivered to visitors.
 
-Image URLs are rewritten on the frontend only. Your Media Library URLs stay exactly the same.
+## Supported Media Types
 
-The first request to each image may be slightly slower while Cloudflare caches it. Future requests are extremely fast and come from the nearest Cloudflare edge.
-
-## What This Plugin Does
-
-- Rewrites image URLs on your frontend pages (your Media Library URLs stay exactly the same)
-- Delivers cached images from Cloudflare's global edge network
-- Falls back to your original images automatically if Cloudflare is unavailable
-- Works with lazy loading, responsive image sizes, and srcset
-- Works with any theme or page builder without modifying templates or file structures
-- Designed to handle large, image-heavy websites with ease
-
-The plugin simply delivers whatever WordPress outputs, including images processed by optimization plugins.
-
-## What This Plugin Does NOT Do
-
-- Does not move or delete your images
-- Does not optimize or compress images
-- Does not replace your existing image plugins
-- Does not cache HTML, CSS, or JavaScript
-- Does not require DNS changes or Cloudflare proxy
-- Does not touch your database
+| Type | Formats | Features |
+|------|---------|----------|
+| **Images** | JPG, PNG, GIF, WebP, AVIF, SVG | Responsive srcset, lazy loading |
+| **Video** | MP4, WebM, MOV | Range requests, seeking support |
+| **Audio** | MP3, WAV, OGG, FLAC | Streaming playback |
+| **HLS** | M3U8, TS | Adaptive bitrate streaming |
 
 ## Two Ways to Use
 
-### Managed (Recommended for most users)
+### Managed (Recommended)
 
-One click setup. We handle the Cloudflare Worker and R2 storage. No Cloudflare account needed.
+One-click setup. We handle the Cloudflare infrastructure.
 
-| Plan | Bandwidth | Price | Features |
-|------|-----------|-------|----------|
-| Free | 100 GB/mo | $0 | — |
-| Lite | 250 GB/mo | $4.99/mo | Custom domain |
-| Pro | 2 TB/mo | $14.99/mo | Custom domain |
-| Business | 10 TB/mo | $49/mo | Custom domain, priority support |
+| Plan | Price | Features |
+|------|-------|----------|
+| **Unlimited** | $19.99/mo | Unlimited bandwidth, unlimited domains, custom domain (CNAME), priority support |
 
-Bandwidth resets monthly.
+**7-day money-back guarantee. Cancel anytime.**
 
 ### Self-Hosted (Free)
 
-For technical users who prefer running Cloudflare on their own account. You control the infrastructure and pay Cloudflare directly (usually $0/month on their free tier).
+For developers who want full control. Deploy the open-source worker on your own Cloudflare account.
 
-Requires: Cloudflare account, Worker deployment, custom domain setup.
+- Your media, your infrastructure
+- Zero external dependencies
+- Pay Cloudflare directly (usually $0/month on free tier)
+
+**Requirements:**
+- Cloudflare account (free tier works)
+- Worker deployment ([see worker repo](https://github.com/img-pro/bandwidth-saver-worker))
+- Custom domain pointing to your Worker
 
 ## Requirements
 
 - WordPress 6.2 or higher
 - PHP 7.4 or higher
 
-**For Self-Hosted only:**
-- Cloudflare account (free tier works)
-- Cloudflare Worker deployed ([see worker repo](https://github.com/img-pro/bandwidth-saver-worker))
-- Custom domain pointing to your Worker
-
 ## Installation
 
-### Managed Setup (Under 1 Minute)
+### Managed Setup (60 Seconds)
 
 1. Install and activate the plugin
 2. Go to **Settings > Bandwidth Saver**
-3. Click the **Managed** tab
-4. Click **Activate Now** and complete checkout
-5. Done. Images now load from Cloudflare.
+3. Toggle the CDN switch on
+4. Upgrade to Unlimited for $19.99/mo
 
-### Self-Hosted Setup (About 15 Minutes)
+Done. Media now loads from 300+ global CDN servers.
 
-For technical users who prefer running Cloudflare on their own account:
+### Self-Hosted Setup
 
-1. Create a free [Cloudflare account](https://cloudflare.com) if you do not have one
-2. Deploy the worker from [our GitHub repository](https://github.com/img-pro/bandwidth-saver-worker)
+1. Create a free [Cloudflare account](https://cloudflare.com)
+2. Deploy the worker from [bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker)
 3. Add a custom domain to your Worker (e.g., cdn.yoursite.com)
 4. Enter your CDN domain in **Settings > Bandwidth Saver > Self-Host**
 
 Detailed guide: [github.com/img-pro/bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker#setup)
 
+## Technical Details
+
+### URL Rewriting
+
+The plugin intercepts the final HTML output and rewrites media URLs:
+
+```
+Before: https://yoursite.com/wp-content/uploads/2024/01/video.mp4
+After:  https://cdn.img.pro/yoursite.com/wp-content/uploads/2024/01/video.mp4
+```
+
+Rewriting happens at render time. Database URLs remain unchanged.
+
+### Range Requests
+
+Video and audio files support HTTP range requests for:
+- Seeking to any position without downloading the entire file
+- Resumable downloads
+- Efficient bandwidth usage
+
+### HLS Streaming
+
+M3U8 playlists are served with correct MIME types. TS segments are cached at the edge for low-latency adaptive streaming.
+
+### Cache Behavior
+
+- Media is cached on first request
+- Cache persists until explicitly purged
+- Stale-while-revalidate for uninterrupted delivery
+- Automatic fallback to origin if cache unavailable
+
+### Request Tracking
+
+Usage is tracked by request count (not bandwidth). View analytics in **Settings > Bandwidth Saver**.
+
 ## Compatibility
 
-**Works With:**
+**WordPress:**
 - WordPress 6.2+
 - PHP 7.4, 8.0, 8.1, 8.2, 8.3
 - Multisite installations
-- All page builders (Gutenberg, Elementor, Beaver Builder, Divi, Bricks, etc.)
-- All image optimization plugins (ShortPixel, Imagify, Smush, EWWW, etc.)
-- WooCommerce product images
+
+**Page Builders:**
+- Gutenberg
+- Elementor
+- Beaver Builder
+- Divi
+- Bricks
+- Oxygen
+
+**Media Plugins:**
+- ShortPixel, Imagify, Smush, EWWW (image optimization)
+- Plyr, VideoJS, native HTML5 video (video players)
+- Any plugin that outputs standard media URLs
+
+**E-commerce:**
+- WooCommerce product images, galleries, videos
+
+**Other:**
 - Jetpack (REST API compatible)
-- All image formats (JPG, PNG, GIF, WebP, AVIF, SVG)
-- Lazy loading and srcset
-
-## Privacy
-
-**What the plugin collects:**
-The plugin itself does not add cookies, tracking scripts, or analytics to your site.
-
-**What Cloudflare logs:**
-When images are delivered through Cloudflare, standard CDN request metadata is logged by Cloudflare (IP addresses, timestamps, request headers, etc.). This is standard for any CDN service.
-
-**For Managed users:** Images are cached on Cloudflare infrastructure managed by ImgPro. Your site URL and admin email are stored for account management. Review [Cloudflare's privacy policy](https://www.cloudflare.com/privacypolicy/).
-
-**For Self-Hosted users:** Images are stored in your own Cloudflare account. You have full control over your data and logs.
-
-## Content Responsibility
-
-You are responsible for the images you upload. Illegal or abusive content may lead to account review. High-volume or high-risk sites should use the Self-Hosted option for full control.
+- Lazy loading (native and plugin-based)
+- Responsive images (srcset/sizes)
 
 ## Security
 
@@ -143,37 +160,66 @@ You are responsible for the images you upload. Illegal or abusive content may le
 
 ```
 bandwidth-saver/
-├── imgpro-cdn.php                      # Main plugin file
-├── readme.txt                          # WordPress.org readme
-├── LICENSE                             # GPL v2 license
-├── uninstall.php                       # Clean uninstall
+├── imgpro-cdn.php                        # Main plugin file
+├── readme.txt                            # WordPress.org readme
+├── LICENSE                               # GPL v2 license
+├── uninstall.php                         # Clean uninstall
 ├── includes/
-│   ├── class-imgpro-cdn-core.php      # Core functionality
-│   ├── class-imgpro-cdn-settings.php  # Settings management
-│   ├── class-imgpro-cdn-rewriter.php  # URL rewriting
-│   ├── class-imgpro-cdn-admin.php     # Admin interface
-│   └── class-imgpro-cdn-admin-ajax.php # AJAX handlers
+│   ├── class-imgpro-cdn-core.php        # Core functionality
+│   ├── class-imgpro-cdn-settings.php    # Settings management
+│   ├── class-imgpro-cdn-rewriter.php    # URL rewriting
+│   ├── class-imgpro-cdn-admin.php       # Admin interface
+│   ├── class-imgpro-cdn-admin-ajax.php  # AJAX handlers
+│   ├── class-imgpro-cdn-api.php         # API client
+│   ├── class-imgpro-cdn-crypto.php      # Encryption utilities
+│   ├── class-imgpro-cdn-security.php    # Security utilities
+│   ├── class-imgpro-cdn-plan-selector.php # Plan selection UI
+│   └── class-imgpro-cdn-onboarding.php  # Onboarding flow
 ├── admin/
 │   ├── css/
-│   │   └── imgpro-cdn-admin.css       # Admin styles
+│   │   └── imgpro-cdn-admin.css         # Admin styles
 │   └── js/
-│       └── imgpro-cdn-admin.js        # Admin JavaScript
+│       └── imgpro-cdn-admin.js          # Admin JavaScript
 └── assets/
     ├── css/
-    │   └── imgpro-cdn-frontend.css    # Frontend styles
+    │   └── imgpro-cdn-frontend.css      # Frontend styles
     └── js/
-        └── imgpro-cdn.js              # Frontend JavaScript
+        └── imgpro-cdn.js                # Frontend JavaScript
 ```
+
+## Privacy
+
+**What the plugin collects:**
+The plugin does not add cookies, tracking scripts, or analytics to your site.
+
+**For Managed users:**
+- Site URL is used to configure CDN routing
+- Email is collected when you upgrade to a paid plan
+- Custom domain settings are sent if configured
+- Media is cached on Cloudflare infrastructure
+
+Review [Cloudflare's privacy policy](https://www.cloudflare.com/privacypolicy/).
+
+**For Self-Hosted users:**
+No data is sent to us. Media is stored in your own Cloudflare account.
+
+## Fair Use
+
+This service is provided on a fair use basis. While we don't impose hard limits, we reserve the right to contact users with exceptionally high usage to discuss dedicated plans or custom arrangements.
+
+**File size limit:** 500 MB per file. Contact us for larger files or specialized requirements.
+
+**Service integrity:** We aim to provide reliable service for legitimate WordPress media delivery. Abuse, excessive automated requests, or use that degrades service for others may result in account review.
 
 ## Support
 
 - **WordPress.org Support Forum:** [wordpress.org/support/plugin/bandwidth-saver](https://wordpress.org/support/plugin/bandwidth-saver/)
 - **GitHub Issues:** [github.com/img-pro/bandwidth-saver/issues](https://github.com/img-pro/bandwidth-saver/issues)
-- **Worker Setup Guide:** [github.com/img-pro/bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker)
+- **Self-Host Guide:** [github.com/img-pro/bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker)
 
 ## Contributing
 
-Contributions are welcome! Please:
+Contributions welcome. Please:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -189,10 +235,10 @@ Contributions are welcome! Please:
 
 ## License
 
-This plugin is licensed under GPL v2 or later.
+GPL v2 or later.
 
 ```
-Bandwidth Saver: Image CDN by ImgPro
+Bandwidth Saver: Unlimited Media CDN by ImgPro
 Copyright (C) 2025 ImgPro
 
 This program is free software; you can redistribute it and/or modify
@@ -204,6 +250,7 @@ the Free Software Foundation; either version 2 of the License, or
 ## Related Projects
 
 - **Cloudflare Worker:** [bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker)
+- **Billing API:** [bandwidth-saver-billing](https://github.com/img-pro/bandwidth-saver-billing)
 
 ## Credits
 
@@ -212,7 +259,7 @@ Built for the WordPress community.
 **Powered by:**
 - Cloudflare R2 (object storage)
 - Cloudflare Workers (edge compute)
-- Cloudflare CDN (global delivery)
+- Cloudflare CDN (300+ global locations)
 
 ---
 

@@ -2,7 +2,8 @@
 /**
  * ImgPro CDN Plan Selector Component
  *
- * Unified plan selection UI used throughout the plugin.
+ * Single-tier subscription UI. Shows payment prompt for unpaid users
+ * and subscription status for active subscribers.
  *
  * @package ImgPro_CDN
  * @since   0.1.7
@@ -51,17 +52,8 @@ class ImgPro_CDN_Plan_Selector {
      * @return void
      */
     public function render($context = 'modal', $current_tier = '') {
-        $tiers = $this->api->get_tiers();
         $all_settings = $this->settings->get_all();
-
-        if (empty($current_tier)) {
-            $current_tier = $all_settings['cloud_tier'] ?? '';
-        }
-
-        // Filter to only paid tiers for upgrade context
-        $paid_tiers = array_filter($tiers, function($tier) {
-            return $tier['price']['cents'] > 0;
-        });
+        $is_paid = ImgPro_CDN_Settings::is_paid($all_settings);
 
         $wrapper_class = 'imgpro-plan-selector';
         if ('modal' === $context) {
@@ -70,10 +62,10 @@ class ImgPro_CDN_Plan_Selector {
             $wrapper_class .= ' imgpro-plan-selector--onboarding';
         }
         ?>
-        <div class="<?php echo esc_attr($wrapper_class); ?>" data-current-tier="<?php echo esc_attr($current_tier); ?>">
+        <div class="<?php echo esc_attr($wrapper_class); ?>">
             <?php if ('modal' === $context): ?>
             <div class="imgpro-plan-selector__header">
-                <h2><?php esc_html_e('Upgrade your plan', 'bandwidth-saver'); ?></h2>
+                <h2><?php echo $is_paid ? esc_html__('Subscription Active', 'bandwidth-saver') : esc_html__('Activate Your Subscription', 'bandwidth-saver'); ?></h2>
                 <button type="button" class="imgpro-plan-selector__close" aria-label="<?php esc_attr_e('Close', 'bandwidth-saver'); ?>">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -83,24 +75,16 @@ class ImgPro_CDN_Plan_Selector {
             </div>
             <?php endif; ?>
 
-            <div class="imgpro-plan-selector__grid">
-                <?php foreach ($paid_tiers as $tier): ?>
-                    <?php $this->render_tier_card($tier, $current_tier); ?>
-                <?php endforeach; ?>
-            </div>
+            <?php if ($is_paid): ?>
+                <?php $this->render_subscription_active(); ?>
+            <?php else: ?>
+                <?php $this->render_subscription_card(); ?>
+            <?php endif; ?>
 
+            <?php if (!$is_paid): ?>
             <div class="imgpro-plan-selector__footer">
-                <div class="imgpro-plan-selector__selected">
-                    <span class="imgpro-plan-selector__selected-label"><?php esc_html_e('Selected:', 'bandwidth-saver'); ?></span>
-                    <span class="imgpro-plan-selector__selected-plan" id="imgpro-selected-plan-name">
-                        <?php esc_html_e('Pro', 'bandwidth-saver'); ?>
-                    </span>
-                    <span class="imgpro-plan-selector__selected-price" id="imgpro-selected-plan-price">
-                        <?php esc_html_e('$14.99/mo', 'bandwidth-saver'); ?>
-                    </span>
-                </div>
-                <button type="button" class="imgpro-btn imgpro-btn-primary imgpro-btn-lg" id="imgpro-plan-checkout" disabled>
-                    <span class="imgpro-btn-text"><?php esc_html_e('Continue to Checkout', 'bandwidth-saver'); ?></span>
+                <button type="button" class="imgpro-btn imgpro-btn-primary imgpro-btn-lg imgpro-btn-full" id="imgpro-plan-checkout" data-tier-id="unlimited">
+                    <span class="imgpro-btn-text"><?php esc_html_e('Activate Subscription', 'bandwidth-saver'); ?></span>
                     <span class="imgpro-btn-loading">
                         <svg class="imgpro-spinner" width="20" height="20" viewBox="0 0 20 20">
                             <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="50" stroke-linecap="round"/>
@@ -113,9 +97,8 @@ class ImgPro_CDN_Plan_Selector {
                 </button>
             </div>
 
-            <?php if ('free' === $current_tier || empty($current_tier)): ?>
             <p class="imgpro-plan-selector__hint">
-                <?php esc_html_e('All plans include a 7-day money-back guarantee.', 'bandwidth-saver'); ?>
+                <?php esc_html_e('7-day money-back guarantee. Cancel anytime.', 'bandwidth-saver'); ?>
             </p>
             <?php endif; ?>
         </div>
@@ -123,54 +106,25 @@ class ImgPro_CDN_Plan_Selector {
     }
 
     /**
-     * Render a single tier card
+     * Render the subscription card for unpaid users
      *
-     * @param array  $tier         Tier data.
-     * @param string $current_tier Current tier ID.
      * @return void
      */
-    private function render_tier_card($tier, $current_tier) {
-        $is_current = ($tier['id'] === $current_tier);
-        $is_highlighted = !empty($tier['highlight']);
-        $is_downgrade = $this->is_downgrade($tier['id'], $current_tier);
-
-        $card_classes = ['imgpro-plan-card'];
-        if ($is_current) {
-            $card_classes[] = 'imgpro-plan-card--current';
-        }
-        if ($is_highlighted && !$is_current) {
-            $card_classes[] = 'imgpro-plan-card--highlight';
-        }
-        if ($is_downgrade) {
-            $card_classes[] = 'imgpro-plan-card--downgrade';
-        }
-
-        $price_display = $tier['price']['formatted'];
-        $period = $tier['price']['period'] ?? '';
+    private function render_subscription_card() {
         ?>
-        <div class="<?php echo esc_attr(implode(' ', $card_classes)); ?>"
-             data-tier-id="<?php echo esc_attr($tier['id']); ?>"
-             data-tier-name="<?php echo esc_attr($tier['name']); ?>"
-             data-tier-price="<?php echo esc_attr($price_display . $period); ?>">
-
-            <?php if ($is_highlighted && !$is_current): ?>
-                <div class="imgpro-plan-card__badge"><?php esc_html_e('Popular', 'bandwidth-saver'); ?></div>
-            <?php elseif ($is_current): ?>
-                <div class="imgpro-plan-card__badge imgpro-plan-card__badge--current"><?php esc_html_e('Current', 'bandwidth-saver'); ?></div>
-            <?php endif; ?>
+        <div class="imgpro-plan-card imgpro-plan-card--single"
+             data-tier-id="unlimited"
+             data-tier-name="Unlimited"
+             data-tier-price="$19.99/mo">
 
             <div class="imgpro-plan-card__header">
-                <h3 class="imgpro-plan-card__name"><?php echo esc_html($tier['name']); ?></h3>
-                <?php if (!empty($tier['description'])): ?>
-                    <p class="imgpro-plan-card__description"><?php echo esc_html($tier['description']); ?></p>
-                <?php endif; ?>
+                <h3 class="imgpro-plan-card__name"><?php esc_html_e('Media CDN', 'bandwidth-saver'); ?></h3>
+                <p class="imgpro-plan-card__description"><?php esc_html_e('Support the service you\'re already using.', 'bandwidth-saver'); ?></p>
             </div>
 
             <div class="imgpro-plan-card__price">
-                <span class="imgpro-plan-card__amount"><?php echo esc_html($price_display); ?></span>
-                <?php if ($period): ?>
-                    <span class="imgpro-plan-card__period"><?php echo esc_html($period); ?></span>
-                <?php endif; ?>
+                <span class="imgpro-plan-card__amount">$19.99</span>
+                <span class="imgpro-plan-card__period">/mo</span>
             </div>
 
             <ul class="imgpro-plan-card__features">
@@ -178,82 +132,64 @@ class ImgPro_CDN_Plan_Selector {
                     <svg class="imgpro-plan-card__feature-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span>
-                        <strong><?php echo esc_html($tier['limits']['bandwidth']['formatted']); ?></strong>
-                        <?php if (empty($tier['limits']['bandwidth']['unlimited'])): ?>
-                            <?php esc_html_e('bandwidth/mo', 'bandwidth-saver'); ?>
-                        <?php else: ?>
-                            <?php esc_html_e('bandwidth', 'bandwidth-saver'); ?>
-                        <?php endif; ?>
-                    </span>
+                    <span><?php esc_html_e('300+ global edge servers', 'bandwidth-saver'); ?></span>
                 </li>
-                <?php if (!empty($tier['features']['custom_domain'])): ?>
                 <li class="imgpro-plan-card__feature">
                     <svg class="imgpro-plan-card__feature-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span><?php esc_html_e('Custom domain', 'bandwidth-saver'); ?></span>
+                    <span><?php esc_html_e('Images, video, audio & HLS streaming', 'bandwidth-saver'); ?></span>
                 </li>
-                <?php else: ?>
-                <li class="imgpro-plan-card__feature imgpro-plan-card__feature--disabled">
+                <li class="imgpro-plan-card__feature">
                     <svg class="imgpro-plan-card__feature-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span><?php esc_html_e('Custom domain', 'bandwidth-saver'); ?></span>
+                    <span><?php esc_html_e('Custom domain (cdn.yoursite.com)', 'bandwidth-saver'); ?></span>
                 </li>
-                <?php endif; ?>
-                <?php if (!empty($tier['features']['priority_support'])): ?>
+                <li class="imgpro-plan-card__feature">
+                    <svg class="imgpro-plan-card__feature-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span><?php esc_html_e('Unlimited sites and requests', 'bandwidth-saver'); ?></span>
+                </li>
                 <li class="imgpro-plan-card__feature">
                     <svg class="imgpro-plan-card__feature-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     <span><?php esc_html_e('Priority support', 'bandwidth-saver'); ?></span>
                 </li>
-                <?php endif; ?>
             </ul>
-
-            <div class="imgpro-plan-card__action">
-                <?php if ($is_current): ?>
-                    <span class="imgpro-plan-card__current-label">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <?php esc_html_e('Current plan', 'bandwidth-saver'); ?>
-                    </span>
-                <?php elseif ($is_downgrade): ?>
-                    <button type="button" class="imgpro-btn imgpro-btn-secondary imgpro-plan-card__select" data-tier="<?php echo esc_attr($tier['id']); ?>">
-                        <?php esc_html_e('Downgrade', 'bandwidth-saver'); ?>
-                    </button>
-                <?php else: ?>
-                    <button type="button" class="imgpro-btn <?php echo esc_attr( $is_highlighted ? 'imgpro-btn-primary' : 'imgpro-btn-secondary' ); ?> imgpro-plan-card__select" data-tier="<?php echo esc_attr($tier['id']); ?>">
-                        <?php esc_html_e('Select', 'bandwidth-saver'); ?>
-                    </button>
-                <?php endif; ?>
-            </div>
         </div>
         <?php
     }
 
     /**
-     * Check if selecting a tier would be a downgrade
+     * Render the subscription active confirmation
      *
-     * @param string $target_tier  Target tier ID.
-     * @param string $current_tier Current tier ID.
-     * @return bool
+     * @return void
      */
-    private function is_downgrade($target_tier, $current_tier) {
-        $tier_order = ['free' => 0, 'lite' => 1, 'pro' => 2, 'business' => 3];
-
-        $target_order = $tier_order[$target_tier] ?? 0;
-        $current_order = $tier_order[$current_tier] ?? 0;
-
-        return $target_order < $current_order;
+    private function render_subscription_active() {
+        ?>
+        <div class="imgpro-plan-active">
+            <div class="imgpro-plan-active__icon">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                    <circle cx="24" cy="24" r="24" fill="#10b981" fill-opacity="0.1"/>
+                    <path d="M32 18L21 29L16 24" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h3 class="imgpro-plan-active__title"><?php esc_html_e('Subscription Active', 'bandwidth-saver'); ?></h3>
+            <p class="imgpro-plan-active__description">
+                <?php esc_html_e('Thank you for supporting the Media CDN. Your subscription keeps the service running.', 'bandwidth-saver'); ?>
+            </p>
+            <button type="button" class="imgpro-btn imgpro-btn-secondary" id="imgpro-manage-subscription">
+                <?php esc_html_e('Manage Subscription', 'bandwidth-saver'); ?>
+            </button>
+        </div>
+        <?php
     }
 
     /**
      * Render the modal overlay wrapper
-     *
-     * Call this once in the admin page, then use JavaScript to show/hide.
      *
      * @return void
      */
@@ -266,75 +202,19 @@ class ImgPro_CDN_Plan_Selector {
             </div>
         </div>
         <?php
-        $this->render_upgrade_confirm_modal();
     }
 
     /**
-     * Render the upgrade confirmation modal
-     *
-     * @return void
-     */
-    private function render_upgrade_confirm_modal() {
-        ?>
-        <div class="imgpro-confirm-modal" id="imgpro-upgrade-confirm-modal" style="display: none;" role="dialog" aria-modal="true">
-            <div class="imgpro-confirm-modal__backdrop"></div>
-            <div class="imgpro-confirm-modal__content">
-                <!-- Header -->
-                <div class="imgpro-confirm-modal__header">
-                    <div class="imgpro-confirm-modal__badge"><?php esc_html_e('Upgrade to', 'bandwidth-saver'); ?></div>
-                    <h2 class="imgpro-confirm-modal__title" id="imgpro-confirm-tier-name"></h2>
-                    <div class="imgpro-confirm-modal__price">
-                        <span class="imgpro-confirm-modal__price-amount" id="imgpro-confirm-tier-price-amount"></span>
-                        <span class="imgpro-confirm-modal__price-period" id="imgpro-confirm-tier-price-period"></span>
-                    </div>
-                </div>
-
-                <!-- Upgrade multiplier hero -->
-                <div class="imgpro-confirm-modal__hero" id="imgpro-confirm-hero">
-                    <div class="imgpro-confirm-modal__multiplier" id="imgpro-confirm-multiplier"></div>
-                    <div class="imgpro-confirm-modal__comparison" id="imgpro-confirm-comparison"></div>
-                </div>
-
-                <!-- Features checklist -->
-                <ul class="imgpro-confirm-modal__checklist" id="imgpro-confirm-checklist"></ul>
-
-                <!-- Footer -->
-                <div class="imgpro-confirm-modal__footer">
-                    <p class="imgpro-confirm-modal__note">
-                        <?php esc_html_e('Billed monthly. Cancel anytime.', 'bandwidth-saver'); ?>
-                    </p>
-                    <div class="imgpro-confirm-modal__actions">
-                        <button type="button" class="imgpro-btn imgpro-btn-ghost" id="imgpro-upgrade-cancel">
-                            <?php esc_html_e('Cancel', 'bandwidth-saver'); ?>
-                        </button>
-                        <button type="button" class="imgpro-btn imgpro-btn-primary" id="imgpro-upgrade-confirm">
-                            <span class="imgpro-btn-text"><?php esc_html_e('Upgrade', 'bandwidth-saver'); ?> <span id="imgpro-confirm-btn-tier"></span> →</span>
-                            <span class="imgpro-btn-loading">
-                                <svg class="imgpro-spinner" width="16" height="16" viewBox="0 0 20 20">
-                                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="50" stroke-linecap="round"/>
-                                </svg>
-                                <?php esc_html_e('Upgrading...', 'bandwidth-saver'); ?>
-                            </span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
-
-    /**
-     * Render a compact upgrade CTA that opens the plan selector
+     * Render a compact subscription CTA that opens the plan selector
      *
      * @param string $context Context for styling: 'card', 'inline', 'alert'.
      * @return void
      */
     public function render_upgrade_cta($context = 'card') {
         $all_settings = $this->settings->get_all();
-        $current_tier = $all_settings['cloud_tier'] ?? 'free';
 
-        // Don't show upgrade CTA if already on highest tier
-        if ('business' === $current_tier) {
+        // Don't show CTA if already paid
+        if (ImgPro_CDN_Settings::is_paid($all_settings)) {
             return;
         }
 
@@ -347,16 +227,16 @@ class ImgPro_CDN_Plan_Selector {
             <?php if ('card' === $context): ?>
                 <div class="imgpro-upgrade-cta__icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                     </svg>
                 </div>
                 <div class="imgpro-upgrade-cta__content">
-                    <h4><?php esc_html_e('Need more capacity?', 'bandwidth-saver'); ?></h4>
-                    <p><?php esc_html_e('Upgrade for more bandwidth and features.', 'bandwidth-saver'); ?></p>
+                    <h4><?php esc_html_e('Support This Service', 'bandwidth-saver'); ?></h4>
+                    <p><?php esc_html_e('Activate your subscription to keep the CDN running.', 'bandwidth-saver'); ?></p>
                 </div>
             <?php endif; ?>
             <button type="button" class="imgpro-btn imgpro-btn-primary imgpro-open-plan-selector">
-                <?php esc_html_e('See upgrade options', 'bandwidth-saver'); ?>
+                <?php esc_html_e('Activate Subscription', 'bandwidth-saver'); ?>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M3.333 8h9.334M8 3.333L12.667 8 8 12.667" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>

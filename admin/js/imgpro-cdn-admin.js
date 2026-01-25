@@ -1828,19 +1828,19 @@
 
         // Total Requests (last 7 days)
         var totalRequests = data.total_requests;
-        if (totalRequests !== undefined) {
+        if (totalRequests != null) {
             $('#imgpro-stat-total-requests').text(totalRequests.toLocaleString());
         }
 
         // Cached (cache hits)
         var cached = data.cache_hits;
-        if (cached !== undefined) {
+        if (cached != null) {
             $('#imgpro-stat-cached').text(cached.toLocaleString());
         }
 
         // CDN Hit Rate
         var cacheHitRate = data.cache_hit_rate;
-        if (cacheHitRate !== undefined) {
+        if (cacheHitRate != null) {
             $('#imgpro-stat-cache-hit-rate').text(Math.round(cacheHitRate * 100) + '%');
         }
 
@@ -1850,20 +1850,20 @@
         var requestsData = data.requests || {};
         if (requestsData.formatted) {
             $('#imgpro-requests-total').text(requestsData.formatted);
-        } else if (requestsData.this_period !== undefined) {
+        } else if (requestsData.this_period != null) {
             $('#imgpro-requests-total').text(requestsData.this_period.toLocaleString());
         }
 
         // Avg. Daily Requests
         if (requestsData.avg_daily_formatted) {
             $('#imgpro-requests-avg-daily').text(requestsData.avg_daily_formatted);
-        } else if (requestsData.avg_daily !== undefined) {
+        } else if (requestsData.avg_daily != null) {
             $('#imgpro-requests-avg-daily').text(requestsData.avg_daily.toLocaleString());
         }
 
         // Days Until Reset
         var periodData = data.period || {};
-        if (periodData.days_remaining !== undefined) {
+        if (periodData.days_remaining != null) {
             $('#imgpro-insight-days').text(periodData.days_remaining);
         }
     }

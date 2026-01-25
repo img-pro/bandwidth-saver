@@ -150,7 +150,7 @@ class ImgPro_CDN_Plan_Selector {
                     <svg class="imgpro-plan-card__feature-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span><?php esc_html_e('Unlimited sites and requests', 'bandwidth-saver'); ?></span>
+                    <span><?php esc_html_e('Unlimited requests', 'bandwidth-saver'); ?></span>
                 </li>
                 <li class="imgpro-plan-card__feature">
                     <svg class="imgpro-plan-card__feature-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">

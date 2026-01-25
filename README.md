@@ -41,7 +41,7 @@ One-click setup. We handle the Cloudflare infrastructure.
 
 | Plan | Price | Features |
 |------|-------|----------|
-| **Unlimited** | $19.99/mo | Unlimited bandwidth, unlimited domains, custom domain (CNAME), priority support |
+| **Unlimited** | $19.99/mo | Unlimited bandwidth, custom domain (CNAME), priority support |
 
 **7-day money-back guarantee. Cancel anytime.**
 

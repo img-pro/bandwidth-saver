@@ -47,7 +47,6 @@ That's it. Your original files stay exactly where they are on your server. The p
 
 **Unlimited** ($19.99/mo)
 * Unlimited bandwidth
-* Unlimited domains
 * Custom CDN domain (cdn.yoursite.com)
 * Priority support
 * Images, video, audio, and HLS streaming
@@ -194,7 +193,7 @@ We aim to provide reliable service for legitimate WordPress media delivery. Abus
 * New: HLS streaming support (M3U8 and TS segments)
 * New: Request-based analytics (bandwidth tracking deprecated)
 * Improved: Media-focused messaging and UI
-* Improved: Unlimited bandwidth and domains for paid tier
+* Improved: Unlimited bandwidth for paid tier
 
 = 0.2.5 =
 * Improved: Simplified Self-Host setup instructions (3 steps instead of 4)

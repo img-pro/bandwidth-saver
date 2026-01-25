@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Bandwidth Saver: Unlimited Media CDN
  * Plugin URI: https://github.com/img-pro/bandwidth-saver
- * Description: Unlimited media CDN for images, video, audio, and HLS streaming. $19.99/mo for unlimited bandwidth and domains.
+ * Description: Unlimited media CDN for images, video, audio, and HLS streaming. $19.99/mo for unlimited bandwidth.
  * Version: 1.0.0
  * Author: ImgPro
  * Author URI: https://img.pro

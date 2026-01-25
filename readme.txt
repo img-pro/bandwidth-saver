@@ -4,7 +4,7 @@ Tags: media cdn, cdn, video cdn, image cdn, hls streaming
 Requires at least: 6.2
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -186,7 +186,7 @@ We aim to provide reliable service for legitimate WordPress media delivery. Abus
 
 == Changelog ==
 
-= 1.0.0 =
+= 1.0 =
 * New: Rebranded as "Bandwidth Saver: Unlimited Media CDN"
 * New: Simplified pricing - single Unlimited tier at $19.99/mo
 * New: Video and audio CDN support with range requests
@@ -213,7 +213,7 @@ We aim to provide reliable service for legitimate WordPress media delivery. Abus
 
 == Upgrade Notice ==
 
-= 1.0.0 =
+= 1.0 =
 Major update: Now supports video, audio, and HLS streaming. New simplified pricing at $19.99/mo for unlimited bandwidth.
 
 == Support ==

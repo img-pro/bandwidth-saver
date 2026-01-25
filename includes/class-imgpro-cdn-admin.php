@@ -476,7 +476,7 @@ class ImgPro_CDN_Admin {
                 'cache_misses' => $insights['recent']['cache_misses'] ?? null,
                 'days_remaining' => $insights['period']['days_remaining'] ?? null,
                 'total_requests' => $insights['recent']['requests'] ?? null,
-                // New request-focused fields (v1.0.0+)
+                // New request-focused fields (v1.0+)
                 'requests' => $insights['requests'] ?? null,
                 'period' => $insights['period'] ?? null,
             ],

@@ -1221,7 +1221,7 @@ class ImgPro_CDN_Admin_Ajax {
             'total_requests' => isset($insights['recent']['requests'])
                 ? $insights['recent']['requests']
                 : null,
-            // New request-focused fields (v1.0.0+)
+            // New request-focused fields (v1.0+)
             'requests' => isset($insights['requests']) ? $insights['requests'] : null,
             'period' => isset($insights['period']) ? $insights['period'] : null,
         ];
@@ -1288,7 +1288,7 @@ class ImgPro_CDN_Admin_Ajax {
             'total_requests' => isset($insights['recent']['requests'])
                 ? $insights['recent']['requests']
                 : null,
-            // New request-focused fields (v1.0.0+)
+            // New request-focused fields (v1.0+)
             'requests' => isset($insights['requests']) ? $insights['requests'] : null,
             'period' => isset($insights['period']) ? $insights['period'] : null,
         ];

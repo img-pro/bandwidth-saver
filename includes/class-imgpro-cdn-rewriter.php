@@ -429,7 +429,7 @@ class ImgPro_CDN_Rewriter {
      * - source children only if they have data-imgpro-cdn
      * This prevents corrupting non-CDN URLs (e.g., YouTube embeds).
      *
-     * @since 1.0.0
+     * @since 1.0
      * @return string JavaScript onerror handler for media elements.
      */
     private function get_media_onerror_handler() {
@@ -705,7 +705,7 @@ class ImgPro_CDN_Rewriter {
         /**
          * Filter the list of allowed media extensions
          *
-         * @since 1.0.0
+         * @since 1.0
          * @param array $extensions List of file extensions (without dots)
          */
         $extensions = apply_filters('imgpro_media_extensions', [

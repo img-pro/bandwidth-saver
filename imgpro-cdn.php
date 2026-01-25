@@ -3,7 +3,7 @@
  * Plugin Name: Bandwidth Saver: Unlimited Media CDN
  * Plugin URI: https://github.com/img-pro/bandwidth-saver
  * Description: Unlimited media CDN for images, video, audio, and HLS streaming. $19.99/mo for unlimited bandwidth.
- * Version: 1.0.0
+ * Version: 1.0
  * Author: ImgPro
  * Author URI: https://img.pro
  * License: GPLv2 or later
@@ -46,7 +46,7 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
 
 // Define plugin constants
 if (!defined('IMGPRO_CDN_VERSION')) {
-    define('IMGPRO_CDN_VERSION', '1.0.0');
+    define('IMGPRO_CDN_VERSION', '1.0');
 }
 if (!defined('IMGPRO_CDN_PLUGIN_DIR')) {
     define('IMGPRO_CDN_PLUGIN_DIR', plugin_dir_path(__FILE__));

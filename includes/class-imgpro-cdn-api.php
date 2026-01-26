@@ -25,7 +25,7 @@ class ImgPro_CDN_API {
      *
      * @var string
      */
-    const BASE_URL = 'https://cloud.wp.img.pro';
+    const BASE_URL = 'https://billing.bandwidth-saver.com';
 
     /**
      * Cache TTL in seconds (1 hour) - for static data like tiers

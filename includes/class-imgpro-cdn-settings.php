@@ -199,7 +199,7 @@ class ImgPro_CDN_Settings {
      * @since 0.1.3
      * @var string
      */
-    const API_BASE_URL = 'https://cloud.wp.img.pro';
+    const API_BASE_URL = 'https://billing.bandwidth-saver.com';
 
     /**
      * Default CDN domain for Cloud (Managed) mode

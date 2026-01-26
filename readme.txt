@@ -137,9 +137,8 @@ No. Unlike other CDN services, this media CDN works immediately without any DNS 
 
 1. Speed up your media in 60 seconds with the unlimited media CDN
 2. Track your CDN requests and performance
-3. Simple unlimited pricing at $19.99/mo
-4. Multi-site support and custom CDN domains
-5. Self-host option for full control
+3. Multi-site support and custom CDN domains
+4. Self-host option for full control
 
 == Privacy ==
 

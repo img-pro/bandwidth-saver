@@ -57,7 +57,7 @@ All plans include a 7-day money-back guarantee.
 
 For developers who want full control, you can deploy the open-source worker on your own Cloudflare account. Your media, your infrastructure, zero external dependencies.
 
-[Self-hosted CDN setup guide on GitHub](https://github.com/img-pro/unlimited-cdn-worker)
+[Self-hosted CDN setup guide on GitHub](https://github.com/img-pro/unlimited-cdn)
 
 = Works With Any WordPress Theme or Plugin =
 
@@ -218,4 +218,4 @@ Major update: Now supports video, audio, and HLS streaming. New simplified prici
 == Support ==
 
 * [Support Forum](https://wordpress.org/support/plugin/bandwidth-saver/)
-* [Self-Host Guide](https://github.com/img-pro/unlimited-cdn-worker)
+* [Self-Host Guide](https://github.com/img-pro/unlimited-cdn)

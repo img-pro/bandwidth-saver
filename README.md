@@ -55,7 +55,7 @@ For developers who want full control. Deploy the open-source worker on your own 
 
 **Requirements:**
 - Cloudflare account (free tier works)
-- Worker deployment ([see worker repo](https://github.com/img-pro/unlimited-cdn-worker))
+- Worker deployment ([see worker repo](https://github.com/img-pro/unlimited-cdn))
 - Custom domain pointing to your Worker
 
 ## Requirements
@@ -77,11 +77,11 @@ Done. Media now loads from 300+ global CDN servers.
 ### Self-Hosted Setup
 
 1. Create a free [Cloudflare account](https://cloudflare.com)
-2. Deploy the worker from [unlimited-cdn-worker](https://github.com/img-pro/unlimited-cdn-worker)
+2. Deploy the worker from [unlimited-cdn](https://github.com/img-pro/unlimited-cdn)
 3. Add a custom domain to your Worker (e.g., cdn.yoursite.com)
 4. Enter your CDN domain in **Settings > Unlimited CDN > Self-Host**
 
-Detailed guide: [github.com/img-pro/unlimited-cdn-worker](https://github.com/img-pro/unlimited-cdn-worker#setup)
+Detailed guide: [github.com/img-pro/unlimited-cdn](https://github.com/img-pro/unlimited-cdn#setup)
 
 ## Technical Details
 
@@ -214,8 +214,8 @@ This service is provided on a fair use basis. While we don't impose hard limits,
 ## Support
 
 - **WordPress.org Support Forum:** [wordpress.org/support/plugin/bandwidth-saver](https://wordpress.org/support/plugin/bandwidth-saver/)
-- **GitHub Issues:** [github.com/img-pro/unlimited-cdn/issues](https://github.com/img-pro/unlimited-cdn/issues)
-- **Self-Host Guide:** [github.com/img-pro/unlimited-cdn-worker](https://github.com/img-pro/unlimited-cdn-worker)
+- **GitHub Issues:** [github.com/img-pro/unlimited-cdn-wp/issues](https://github.com/img-pro/unlimited-cdn-wp/issues)
+- **Self-Host Guide:** [github.com/img-pro/unlimited-cdn](https://github.com/img-pro/unlimited-cdn)
 
 ## Contributing
 
@@ -249,7 +249,7 @@ the Free Software Foundation; either version 2 of the License, or
 
 ## Related Projects
 
-- **Cloudflare Worker:** [unlimited-cdn-worker](https://github.com/img-pro/unlimited-cdn-worker)
+- **Cloudflare Worker:** [unlimited-cdn](https://github.com/img-pro/unlimited-cdn)
 - **Billing API:** [unlimited-cdn-billing](https://github.com/img-pro/unlimited-cdn-billing)
 
 ## Credits

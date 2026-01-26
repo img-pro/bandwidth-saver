@@ -1,4 +1,4 @@
-# Bandwidth Saver: Unlimited Media CDN
+# Unlimited CDN - Image, Audio & Video Delivery
 
 [![WordPress Plugin Version](https://img.shields.io/badge/version-1.0-blue.svg)](https://wordpress.org/plugins/bandwidth-saver/)
 [![Requires WordPress Version](https://img.shields.io/badge/wordpress-6.2%2B-blue.svg)](https://wordpress.org/download/)
@@ -11,7 +11,7 @@
 
 Heavy media files slow down your WordPress site. When videos buffer and images lag, visitors leave, Core Web Vitals fail, and Google ranks you lower.
 
-**Bandwidth Saver** delivers all your media through Cloudflare's global edge network. No DNS changes. No external accounts. No configuration. Images, videos, audio files, and HLS streams load from the nearest server to each visitor.
+**Unlimited CDN** delivers all your media through Cloudflare's global edge network. No DNS changes. No external accounts. No configuration. Images, videos, audio files, and HLS streams load from the nearest server to each visitor.
 
 Safe to try on any site. Does not touch your database or existing files. Disable at any time and your site instantly returns to normal. If Cloudflare ever has an issue, WordPress automatically loads your original media.
 
@@ -55,7 +55,7 @@ For developers who want full control. Deploy the open-source worker on your own 
 
 **Requirements:**
 - Cloudflare account (free tier works)
-- Worker deployment ([see worker repo](https://github.com/img-pro/bandwidth-saver-worker))
+- Worker deployment ([see worker repo](https://github.com/img-pro/unlimited-cdn-worker))
 - Custom domain pointing to your Worker
 
 ## Requirements
@@ -68,7 +68,7 @@ For developers who want full control. Deploy the open-source worker on your own 
 ### Managed Setup (60 Seconds)
 
 1. Install and activate the plugin
-2. Go to **Settings > Bandwidth Saver**
+2. Go to **Settings > Unlimited CDN**
 3. Toggle the CDN switch on
 4. Upgrade to Unlimited for $19.99/mo
 
@@ -77,11 +77,11 @@ Done. Media now loads from 300+ global CDN servers.
 ### Self-Hosted Setup
 
 1. Create a free [Cloudflare account](https://cloudflare.com)
-2. Deploy the worker from [bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker)
+2. Deploy the worker from [unlimited-cdn-worker](https://github.com/img-pro/unlimited-cdn-worker)
 3. Add a custom domain to your Worker (e.g., cdn.yoursite.com)
-4. Enter your CDN domain in **Settings > Bandwidth Saver > Self-Host**
+4. Enter your CDN domain in **Settings > Unlimited CDN > Self-Host**
 
-Detailed guide: [github.com/img-pro/bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker#setup)
+Detailed guide: [github.com/img-pro/unlimited-cdn-worker](https://github.com/img-pro/unlimited-cdn-worker#setup)
 
 ## Technical Details
 
@@ -116,7 +116,7 @@ M3U8 playlists are served with correct MIME types. TS segments are cached at the
 
 ### Request Tracking
 
-Usage is tracked by request count (not bandwidth). View analytics in **Settings > Bandwidth Saver**.
+Usage is tracked by request count (not bandwidth). View analytics in **Settings > Unlimited CDN**.
 
 ## Compatibility
 
@@ -214,8 +214,8 @@ This service is provided on a fair use basis. While we don't impose hard limits,
 ## Support
 
 - **WordPress.org Support Forum:** [wordpress.org/support/plugin/bandwidth-saver](https://wordpress.org/support/plugin/bandwidth-saver/)
-- **GitHub Issues:** [github.com/img-pro/bandwidth-saver/issues](https://github.com/img-pro/bandwidth-saver/issues)
-- **Self-Host Guide:** [github.com/img-pro/bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker)
+- **GitHub Issues:** [github.com/img-pro/unlimited-cdn/issues](https://github.com/img-pro/unlimited-cdn/issues)
+- **Self-Host Guide:** [github.com/img-pro/unlimited-cdn-worker](https://github.com/img-pro/unlimited-cdn-worker)
 
 ## Contributing
 
@@ -238,7 +238,7 @@ Contributions welcome. Please:
 GPL v2 or later.
 
 ```
-Bandwidth Saver: Unlimited Media CDN by ImgPro
+Unlimited CDN - Image, Audio & Video Delivery by ImgPro
 Copyright (C) 2025 ImgPro
 
 This program is free software; you can redistribute it and/or modify
@@ -249,8 +249,8 @@ the Free Software Foundation; either version 2 of the License, or
 
 ## Related Projects
 
-- **Cloudflare Worker:** [bandwidth-saver-worker](https://github.com/img-pro/bandwidth-saver-worker)
-- **Billing API:** [bandwidth-saver-billing](https://github.com/img-pro/bandwidth-saver-billing)
+- **Cloudflare Worker:** [unlimited-cdn-worker](https://github.com/img-pro/unlimited-cdn-worker)
+- **Billing API:** [unlimited-cdn-billing](https://github.com/img-pro/unlimited-cdn-billing)
 
 ## Credits
 

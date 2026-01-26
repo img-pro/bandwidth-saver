@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: Bandwidth Saver: Unlimited Media CDN
- * Plugin URI: https://github.com/img-pro/bandwidth-saver
+ * Plugin Name: Unlimited CDN - Image, Audio & Video Delivery
+ * Plugin URI: https://unlimited-cdn.com
  * Description: Unlimited media CDN for images, video, audio, and HLS streaming. $19.99/mo for unlimited bandwidth.
  * Version: 1.0
  * Author: ImgPro
@@ -25,7 +25,7 @@ if (version_compare(get_bloginfo('version'), '6.2', '<')) {
     add_action('admin_notices', function() {
         ?>
         <div class="notice notice-error">
-            <p><?php esc_html_e('Bandwidth Saver requires WordPress 6.2 or higher. Please update WordPress to use this plugin.', 'bandwidth-saver'); ?></p>
+            <p><?php esc_html_e('Unlimited CDN requires WordPress 6.2 or higher. Please update WordPress to use this plugin.', 'bandwidth-saver'); ?></p>
         </div>
         <?php
     });
@@ -37,7 +37,7 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
     add_action('admin_notices', function() {
         ?>
         <div class="notice notice-error">
-            <p><?php esc_html_e('Bandwidth Saver requires PHP 7.4 or higher. Contact your hosting provider to upgrade.', 'bandwidth-saver'); ?></p>
+            <p><?php esc_html_e('Unlimited CDN requires PHP 7.4 or higher. Contact your hosting provider to upgrade.', 'bandwidth-saver'); ?></p>
         </div>
         <?php
     });

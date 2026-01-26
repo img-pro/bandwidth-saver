@@ -1,4 +1,4 @@
-=== Bandwidth Saver: Unlimited Media CDN ===
+=== Unlimited CDN - Image, Audio & Video Delivery ===
 Contributors: imgpro
 Tags: media cdn, cdn, video cdn, image cdn, hls streaming
 Requires at least: 6.2
@@ -57,7 +57,7 @@ All plans include a 7-day money-back guarantee.
 
 For developers who want full control, you can deploy the open-source worker on your own Cloudflare account. Your media, your infrastructure, zero external dependencies.
 
-[Self-hosted CDN setup guide on GitHub](https://github.com/img-pro/bandwidth-saver-worker)
+[Self-hosted CDN setup guide on GitHub](https://github.com/img-pro/unlimited-cdn-worker)
 
 = Works With Any WordPress Theme or Plugin =
 
@@ -85,7 +85,7 @@ This media CDN is compatible with:
 **60-second setup. No technical knowledge required.**
 
 1. Install and activate the media CDN plugin
-2. Go to **Settings > Bandwidth Saver**
+2. Go to **Settings > Unlimited CDN**
 3. Toggle the CDN switch on
 4. Upgrade to Unlimited for $19.99/mo
 
@@ -168,7 +168,7 @@ This media CDN plugin connects to external services:
 * [Terms of Service](https://www.cloudflare.com/terms/)
 * [Privacy Policy](https://www.cloudflare.com/privacypolicy/)
 
-**Bandwidth Saver API** (Managed mode only)
+**Unlimited CDN API** (Managed mode only)
 
 * Purpose: Account management, usage tracking
 * Data sent: Site URL, email (if provided), custom domain (if configured)
@@ -186,7 +186,7 @@ We aim to provide reliable service for legitimate WordPress media delivery. Abus
 == Changelog ==
 
 = 1.0 =
-* New: Rebranded as "Bandwidth Saver: Unlimited Media CDN"
+* New: Rebranded as "Unlimited CDN - Image, Audio & Video Delivery"
 * New: Simplified pricing - single Unlimited tier at $19.99/mo
 * New: Video and audio CDN support with range requests
 * New: HLS streaming support (M3U8 and TS segments)
@@ -218,4 +218,4 @@ Major update: Now supports video, audio, and HLS streaming. New simplified prici
 == Support ==
 
 * [Support Forum](https://wordpress.org/support/plugin/bandwidth-saver/)
-* [Self-Host Guide](https://github.com/img-pro/bandwidth-saver-worker)
+* [Self-Host Guide](https://github.com/img-pro/unlimited-cdn-worker)

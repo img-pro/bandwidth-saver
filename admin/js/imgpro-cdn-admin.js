@@ -284,17 +284,7 @@
             handleManageSubscription($(this));
         });
 
-        // Direct upgrade to next tier (from account card) - show confirmation modal
-        $(document).on('click', '.imgpro-direct-upgrade', function(e) {
-            e.preventDefault();
-            const tierId = $(this).data('tier');
-            if (tierId) {
-                showUpgradeConfirmModal(tierId, $(this));
-            }
-        });
-
-        // Upgrade confirmation modal handlers
-        initUpgradeConfirmModal();
+        // Legacy: Direct upgrade handler (kept for backwards compatibility, no longer used in new UI)
 
         // Advanced settings accordion
         initDetailsAccordion();
@@ -455,8 +445,8 @@
         }
 
         const originalText = $button.text();
-        // Get tier from parameter, button data attribute, or default to 'pro'
-        const tier = tierId || $button.data('tier') || 'pro';
+        // Get tier from parameter, button data attribute, or default to 'unlimited'
+        const tier = tierId || $button.data('tier') || 'unlimited';
         $button.addClass('is-loading').prop('disabled', true).text(imgproCdnAdmin.i18n.creatingCheckout);
 
         $.ajax({
@@ -1061,23 +1051,17 @@
             }
         });
 
-        // Upgrade link - handle based on action type
+        // Subscription link - open plan modal or manage subscription
         $(document).off('click', '#imgpro-source-urls-upgrade').on('click', '#imgpro-source-urls-upgrade', function(e) {
             e.preventDefault();
             var action = $(this).data('action');
 
-            if (action === 'see-options') {
-                // Free tier: open plan selector modal
-                openPlanModal();
-            } else if (action === 'upgrade-to-next') {
-                // Paid tier: direct upgrade to next tier
-                var nextTier = $(this).data('next-tier');
-                if (nextTier) {
-                    showUpgradeConfirmModal(nextTier, $(this));
-                }
-            } else if (action === 'manage') {
-                // Business tier: open manage subscription
+            if (action === 'manage') {
+                // Paid: open manage subscription
                 window.open(imgproCdnAdmin.manageUrl, '_blank');
+            } else {
+                // Not paid: open plan selector modal
+                openPlanModal();
             }
         });
     }
@@ -1164,42 +1148,23 @@
             });
         }
 
-        // Check if at limit
-        var atLimit = count >= maxDomains;
+        // Check if at limit (single-tier model: unlimited for all, but check just in case)
+        var atLimit = maxDomains > 0 && count >= maxDomains;
 
         // Show/hide input based on limit
         if (atLimit) {
             $inputWrapper.hide();
 
-            // Get tier info from section data attributes
+            // Get paid status from section
             var $section = $('#imgpro-source-urls-section');
-            var tier = $section.data('tier');
-            var nextTier = $section.data('next-tier');
-            var nextTierName = $section.data('next-tier-name');
+            var isPaid = $section.data('is-paid');
 
-            // Set link text and action based on tier
-            var linkText = '';
-            var action = '';
+            // Set link text and action based on payment status
+            var linkText = isPaid ? 'Manage Subscription' : 'Activate Subscription';
+            var action = isPaid ? 'manage' : 'activate';
 
-            if (tier === 'free') {
-                linkText = 'See upgrade options';
-                action = 'see-options';
-            } else if (tier === 'business') {
-                linkText = 'Manage Subscription';
-                action = 'manage';
-            } else if (nextTier) {
-                linkText = 'Upgrade to ' + nextTierName;
-                action = 'upgrade-to-next';
-                $upgradeLink.attr('data-next-tier', nextTier);
-            }
-
-            // Only show upgrade link if we have a valid action
-            if (action) {
-                $upgradeLink.attr('data-action', action).find('strong').text(linkText);
-                $upgradeLink.show();
-            } else {
-                $upgradeLink.hide();
-            }
+            $upgradeLink.attr('data-action', action).find('strong').text(linkText);
+            $upgradeLink.show();
         } else {
             $inputWrapper.show();
             $upgradeLink.hide();
@@ -1360,14 +1325,17 @@
         // Checkout button
         $(document).on('click', '#imgpro-plan-checkout', function(e) {
             e.preventDefault();
-            if (selectedTierId) {
-                handlePlanCheckout($(this), selectedTierId);
+            // Use selectedTierId if set, otherwise fall back to button's data-tier-id
+            var tierId = selectedTierId || $(this).data('tier-id');
+            if (tierId) {
+                handlePlanCheckout($(this), tierId);
             }
         });
     }
 
     /**
      * Initialize default plan selection
+     * Single-tier model: only one plan card exists
      */
     function initDefaultSelection() {
         // Only target the modal selector to avoid conflicts
@@ -1375,24 +1343,10 @@
         const $selector = $modal.find('.imgpro-plan-selector');
         if (!$selector.length) return;
 
-        const currentTier = $selector.data('current-tier') || '';
-
-        // If user is on free tier or no tier, pre-select Pro
-        if (!currentTier || currentTier === 'free') {
-            // Try highlighted card first, then Pro by ID, then first available
-            let $cardToSelect = $selector.find('.imgpro-plan-card--highlight').first();
-
-            if (!$cardToSelect.length) {
-                $cardToSelect = $selector.find('.imgpro-plan-card[data-tier-id="pro"]').first();
-            }
-
-            if (!$cardToSelect.length || $cardToSelect.hasClass('imgpro-plan-card--current')) {
-                $cardToSelect = $selector.find('.imgpro-plan-card:not(.imgpro-plan-card--current)').first();
-            }
-
-            if ($cardToSelect.length) {
-                selectPlanCard($cardToSelect, true);
-            }
+        // Select the single plan card if it exists
+        const $card = $selector.find('.imgpro-plan-card').first();
+        if ($card.length) {
+            selectPlanCard($card, true);
         }
     }
 
@@ -1403,13 +1357,7 @@
         const $modal = $('#imgpro-plan-modal');
         if (!$modal.length) return;
 
-        $modal.fadeIn(200, function() {
-            // Pre-select Pro tier when modal opens
-            const $proCard = $modal.find('.imgpro-plan-card[data-tier-id="pro"]');
-            if ($proCard.length && !$proCard.hasClass('imgpro-plan-card--current')) {
-                selectPlanCard($proCard, true);
-            }
-        });
+        $modal.fadeIn(200);
         $('body').addClass('imgpro-modal-open');
     }
 
@@ -1420,135 +1368,6 @@
         const $modal = $('#imgpro-plan-modal');
         $modal.fadeOut(200);
         $('body').removeClass('imgpro-modal-open');
-    }
-
-    // ===== Upgrade Confirmation Modal =====
-
-    let pendingUpgradeTierId = null;
-    let pendingUpgradeButton = null;
-
-    /**
-     * Initialize upgrade confirmation modal handlers
-     */
-    function initUpgradeConfirmModal() {
-        const $modal = $('#imgpro-upgrade-confirm-modal');
-        if (!$modal.length) return;
-
-        // Cancel button
-        $('#imgpro-upgrade-cancel').off('click').on('click', function() {
-            closeUpgradeConfirmModal();
-        });
-
-        // Confirm button
-        $('#imgpro-upgrade-confirm').off('click').on('click', function() {
-            if (pendingUpgradeTierId) {
-                const $btn = $(this);
-                $btn.addClass('is-loading').prop('disabled', true);
-                $('#imgpro-upgrade-cancel').prop('disabled', true);
-                handlePlanCheckout($btn, pendingUpgradeTierId);
-            }
-        });
-
-        // Close on backdrop click
-        $modal.find('.imgpro-confirm-modal__backdrop').off('click').on('click', function() {
-            closeUpgradeConfirmModal();
-        });
-    }
-
-    /**
-     * Show upgrade confirmation modal
-     */
-    function showUpgradeConfirmModal(tierId, $triggerButton) {
-        const $modal = $('#imgpro-upgrade-confirm-modal');
-        if (!$modal.length) return;
-
-        // Store pending upgrade info
-        pendingUpgradeTierId = tierId;
-        pendingUpgradeButton = $triggerButton;
-
-        // Get tier data from localized script
-        const tiers = imgproCdnAdmin.tiers || {};
-        const currentTierId = imgproCdnAdmin.tier;
-        const currentTier = tiers[currentTierId];
-        const newTier = tiers[tierId];
-
-        // Update new plan info
-        const tierName = newTier?.name || tierId.charAt(0).toUpperCase() + tierId.slice(1);
-        const tierPrice = newTier?.price?.formatted || '';
-        const tierPeriod = newTier?.price?.period || '/mo';
-
-        $('#imgpro-confirm-tier-name').text(tierName);
-        $('#imgpro-confirm-tier-price-amount').text(tierPrice);
-        $('#imgpro-confirm-tier-price-period').text(tierPeriod);
-        $('#imgpro-confirm-btn-tier').text(tierName);
-
-        // Build multiplier hero
-        const multiplier = calculateBandwidthMultiplier(currentTier, newTier);
-        const newBandwidth = newTier?.limits?.bandwidth?.formatted || '';
-        const currentBandwidth = currentTier?.limits?.bandwidth?.formatted || '100 GB';
-
-        $('#imgpro-confirm-multiplier').text(multiplier + ' more bandwidth');
-        $('#imgpro-confirm-comparison').text(newBandwidth + '/mo (vs ' + currentBandwidth + ')');
-
-        // Build checklist
-        $('#imgpro-confirm-checklist').html(buildChecklistHtml(newTier));
-
-        // Reset button states
-        const $confirmBtn = $('#imgpro-upgrade-confirm');
-        $confirmBtn.removeClass('is-loading').prop('disabled', false);
-        $('#imgpro-upgrade-cancel').prop('disabled', false);
-
-        // Show modal
-        $modal.fadeIn(200);
-        $('body').addClass('imgpro-modal-open');
-    }
-
-    /**
-     * Calculate bandwidth multiplier between tiers
-     */
-    function calculateBandwidthMultiplier(currentTier, newTier) {
-        const currentBytes = currentTier?.limits?.bandwidth?.bytes || 107374182400; // 100 GB default
-        const newBytes = newTier?.limits?.bandwidth?.bytes || currentBytes;
-
-        if (newTier?.limits?.bandwidth?.unlimited) {
-            return 'Unlimited';
-        }
-
-        const multiplier = Math.round(newBytes / currentBytes);
-        return multiplier + 'x';
-    }
-
-    /**
-     * Build HTML for checklist (custom domain, priority support)
-     */
-    function buildChecklistHtml(tier) {
-        if (!tier) return '';
-
-        const checkIcon = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.333 4L6 11.333 2.667 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-        const items = [];
-
-        if (tier.features?.custom_domain) {
-            items.push('<li>' + checkIcon + 'Custom CDN domain</li>');
-        }
-
-        if (tier.features?.priority_support) {
-            items.push('<li>' + checkIcon + 'Priority support</li>');
-        }
-
-        return items.join('');
-    }
-
-    /**
-     * Close upgrade confirmation modal
-     */
-    function closeUpgradeConfirmModal() {
-        const $modal = $('#imgpro-upgrade-confirm-modal');
-        $modal.fadeOut(200);
-        $('body').removeClass('imgpro-modal-open');
-
-        // Clear pending upgrade
-        pendingUpgradeTierId = null;
-        pendingUpgradeButton = null;
     }
 
     /**
@@ -1613,7 +1432,6 @@
                     } else if (response.data.upgraded) {
                         // Subscription upgraded directly - show success and reload
                         closePlanModal();
-                        closeUpgradeConfirmModal();
                         showNotice('success', response.data.message || imgproCdnAdmin.i18n.subscriptionUpgraded);
                         setTimeout(function() {
                             window.location.reload();
@@ -1624,7 +1442,6 @@
                 } else {
                     $button.removeClass('is-loading').prop('disabled', false);
                     closePlanModal();
-                    closeUpgradeConfirmModal();
                     // Account exists - show verification modal with pending tier
                     if (response.data.show_recovery) {
                         showRecoveryVerificationModal(response.data.email_hint, tierId);
@@ -1636,7 +1453,6 @@
             error: function(xhr, status) {
                 $button.removeClass('is-loading').prop('disabled', false);
                 closePlanModal();
-                closeUpgradeConfirmModal();
                 var message = status === 'timeout' ? imgproCdnAdmin.i18n.timeoutError : imgproCdnAdmin.i18n.genericError;
                 showNotice('error', message);
             }
@@ -1660,10 +1476,10 @@
             url.searchParams.delete('show_upgrade');
             window.history.replaceState({}, '', url.toString());
 
-            // Show success notice and upgrade modal
+            // Show success notice and open plan selector modal
             showNotice('success', imgproCdnAdmin.i18n.accountRecovered || 'Account recovered!');
             setTimeout(function() {
-                showUpgradeConfirmModal(upgradeTier, null);
+                openPlanModal();
             }, 300);
         }
     }
@@ -1862,51 +1678,50 @@
     }
 
     /**
-     * Update insights cards with data
+     * Update insights cards with data from API
      */
     function updateInsights(data) {
-        // Total Requests
-        const totalRequests = data.total_requests !== undefined ? data.total_requests : null;
-        const $totalReqCard = $('#imgpro-stat-total-requests');
-        if ($totalReqCard.length) {
-            if (totalRequests !== null) {
-                $totalReqCard.text(totalRequests.toLocaleString());
-            } else {
-                $totalReqCard.text('—');
-            }
+        // === Top Row: Quick Stats (last 7 days) ===
+
+        // Total Requests (last 7 days)
+        var totalRequests = data.total_requests;
+        if (totalRequests != null) {
+            $('#imgpro-stat-total-requests').text(totalRequests.toLocaleString());
         }
 
         // Cached (cache hits)
-        const cached = data.cache_hits !== undefined ? data.cache_hits : null;
-        const $cachedCard = $('#imgpro-stat-cached');
-        if ($cachedCard.length) {
-            if (cached !== null) {
-                $cachedCard.text(cached.toLocaleString());
-            } else {
-                $cachedCard.text('—');
-            }
+        var cached = data.cache_hits;
+        if (cached != null) {
+            $('#imgpro-stat-cached').text(cached.toLocaleString());
         }
 
         // CDN Hit Rate
-        const cacheHitRate = data.cache_hit_rate !== undefined ? data.cache_hit_rate : null;
-        const $cacheHitCard = $('#imgpro-stat-cache-hit-rate');
-        if ($cacheHitCard.length) {
-            if (cacheHitRate !== null) {
-                $cacheHitCard.text(Math.round(cacheHitRate * 100) + '%');
-            } else {
-                $cacheHitCard.text('—');
-            }
+        var cacheHitRate = data.cache_hit_rate;
+        if (cacheHitRate != null) {
+            $('#imgpro-stat-cache-hit-rate').text(Math.round(cacheHitRate * 100) + '%');
         }
 
-        // Projected This Period
-        const projected = data.projected_period_bandwidth;
-        const $projCard = $('#imgpro-insight-projected');
-        if ($projCard.length) {
-            if (projected) {
-                $projCard.text(projected);
-            } else {
-                $projCard.text('—');
-            }
+        // === Bottom Row: Period Insights ===
+
+        // Total Requests This Period
+        var requestsData = data.requests || {};
+        if (requestsData.formatted) {
+            $('#imgpro-requests-total').text(requestsData.formatted);
+        } else if (requestsData.this_period != null) {
+            $('#imgpro-requests-total').text(requestsData.this_period.toLocaleString());
+        }
+
+        // Avg. Daily Requests
+        if (requestsData.avg_daily_formatted) {
+            $('#imgpro-requests-avg-daily').text(requestsData.avg_daily_formatted);
+        } else if (requestsData.avg_daily != null) {
+            $('#imgpro-requests-avg-daily').text(requestsData.avg_daily.toLocaleString());
+        }
+
+        // Days Until Reset
+        var periodData = data.period || {};
+        if (periodData.days_remaining != null) {
+            $('#imgpro-insight-days').text(periodData.days_remaining);
         }
     }
 
@@ -1914,13 +1729,8 @@
      * Show empty state for insights (when no data available)
      */
     function showInsightsEmptyState() {
-        // Top row cards
-        $('#imgpro-stat-total-requests').text('—');
-        $('#imgpro-stat-cached').text('—');
-        $('#imgpro-stat-cache-hit-rate').text('—');
-
-        // Bottom insights row (bandwidth is static, only update projected)
-        $('#imgpro-insight-projected').text('—');
+        $('#imgpro-stat-total-requests, #imgpro-stat-cached, #imgpro-stat-cache-hit-rate').text('—');
+        $('#imgpro-requests-total, #imgpro-requests-avg-daily').text('—');
     }
 
     /**
@@ -1969,7 +1779,7 @@
     }
 
     /**
-     * Render Chart.js bandwidth usage chart
+     * Render Chart.js requests usage chart
      * @returns {boolean} True if chart rendered successfully, false otherwise
      */
     function renderChart(dailyData) {
@@ -1990,9 +1800,8 @@
             usageChart.destroy();
         }
 
-        // Prepare data
+        // Prepare data - primary metric is now requests
         const labels = [];
-        const bandwidthData = [];
         const requestsData = [];
 
         dailyData.forEach(function(day) {
@@ -2001,22 +1810,18 @@
             const formatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             labels.push(formatted);
 
-            // Convert bytes to GB for chart
-            const bandwidthGB = day.bandwidth_bytes / (1024 * 1024 * 1024);
-            bandwidthData.push(bandwidthGB.toFixed(2));
-
             requestsData.push(day.requests || 0);
         });
 
-        // Create chart
+        // Create chart with requests as primary metric
         usageChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Bandwidth (GB)',
-                        data: bandwidthData,
+                        label: 'Requests',
+                        data: requestsData,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         fill: true,
@@ -2050,12 +1855,8 @@
                         displayColors: false,
                         callbacks: {
                             label: function(context) {
-                                const gb = parseFloat(context.parsed.y);
-                                const requests = requestsData[context.dataIndex];
-                                return [
-                                    'Bandwidth: ' + gb.toFixed(2) + ' GB',
-                                    'Requests: ' + requests.toLocaleString()
-                                ];
+                                const requests = context.parsed.y;
+                                return 'Requests: ' + requests.toLocaleString();
                             }
                         }
                     }
@@ -2065,7 +1866,13 @@
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return value.toFixed(1) + ' GB';
+                                // Format large numbers with K/M suffix
+                                if (value >= 1000000) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                } else if (value >= 1000) {
+                                    return (value / 1000).toFixed(1) + 'K';
+                                }
+                                return value;
                             }
                         },
                         grid: {
@@ -2120,8 +1927,6 @@
                 // Check which modal is visible and close it
                 if ($('#imgpro-plan-modal').is(':visible')) {
                     closePlanModal();
-                } else if ($('#imgpro-upgrade-confirm-modal').is(':visible')) {
-                    closeUpgradeConfirmModal();
                 } else if ($('#imgpro-recovery-modal').is(':visible')) {
                     $('#imgpro-recovery-modal').remove();
                 }

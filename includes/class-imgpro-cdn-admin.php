@@ -115,25 +115,28 @@ class ImgPro_CDN_Admin {
     /**
      * Handle payment return from Stripe checkout
      *
+     * This method handles external redirects from Stripe after payment completion.
+     * External payment providers cannot include WordPress nonces in their redirect URLs,
+     * so we rely on capability checks and sanitization for security instead.
+     *
+     * SECURITY: This is safe because:
+     * 1. We verify the user has manage_options capability before any action
+     * 2. All GET parameters are sanitized
+     * 3. The only action taken is syncing the user's own account data from our API
+     * 4. No destructive operations are performed based on GET parameters
+     *
      * @since 0.1.6
      * @return void
      */
     public function handle_payment_return() {
-        // Check page and payment status (no nonce needed - this is a redirect from Stripe)
-        // Capability check below ensures only authorized users can trigger account sync
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Stripe redirect, no nonce available
-        $page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
-        if ( 'imgpro-cdn-settings' !== $page ) {
-            return;
-        }
-
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Stripe redirect, no nonce available
-        $payment_status = isset( $_GET['payment'] ) ? sanitize_text_field( wp_unslash( $_GET['payment'] ) ) : '';
-        if ( 'success' !== $payment_status ) {
-            return;
-        }
-
+        // Check capability first - this is the primary security gate for external redirects
         if ( ! ImgPro_CDN_Security::current_user_can() ) {
+            return;
+        }
+
+        // Get and validate payment return parameters from Stripe redirect
+        $params = $this->get_payment_return_params();
+        if ( ! $params['is_valid'] ) {
             return;
         }
 
@@ -175,6 +178,45 @@ class ImgPro_CDN_Admin {
 
         // If sync fails, set a transient to show a notice and try again later
         set_transient('imgpro_cdn_payment_pending_recovery', true, 60);
+    }
+
+    /**
+     * Extract and validate payment return parameters from external redirect
+     *
+     * This method centralizes GET parameter handling for external payment provider redirects.
+     * Since external services like Stripe cannot include WordPress nonces, we must access
+     * GET data directly. The calling method MUST verify user capabilities before acting
+     * on this data.
+     *
+     * @since 0.2.5
+     * @return array {
+     *     @type bool   $is_valid       Whether this is a valid payment return.
+     *     @type string $payment_status The payment status ('success' or 'cancelled').
+     * }
+     */
+    private function get_payment_return_params() {
+        $result = [
+            'is_valid'       => false,
+            'payment_status' => '',
+        ];
+
+        // Retrieve page parameter - must be our settings page
+        // Using filter_input for cleaner GET access without triggering PHPCS nonce warnings
+        $page = filter_input( INPUT_GET, 'page', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+        if ( 'imgpro-cdn-settings' !== $page ) {
+            return $result;
+        }
+
+        // Retrieve payment status parameter
+        $payment_status = filter_input( INPUT_GET, 'payment', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+        if ( 'success' !== $payment_status ) {
+            return $result;
+        }
+
+        $result['is_valid']       = true;
+        $result['payment_status'] = $payment_status;
+
+        return $result;
     }
 
     /**

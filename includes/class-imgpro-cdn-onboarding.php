@@ -105,7 +105,7 @@ class ImgPro_CDN_Onboarding {
         ?>
         <div class="imgpro-onboarding-wrapper">
             <div class="imgpro-onboarding-brand">
-                <span class="imgpro-brand-name"><?php esc_html_e('Bandwidth Saver', 'bandwidth-saver'); ?></span>
+                <span class="imgpro-brand-name"><?php esc_html_e('Unlimited CDN', 'bandwidth-saver'); ?></span>
             </div>
             <div class="imgpro-onboarding" data-step="<?php echo esc_attr($step); ?>">
                 <?php

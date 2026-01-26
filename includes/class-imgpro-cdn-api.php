@@ -25,7 +25,7 @@ class ImgPro_CDN_API {
      *
      * @var string
      */
-    const BASE_URL = 'https://billing.bandwidth-saver.com';
+    const BASE_URL = 'https://billing.unlimited-cdn.com';
 
     /**
      * Cache TTL in seconds (1 hour) - for static data like tiers
@@ -1096,7 +1096,7 @@ class ImgPro_CDN_API {
     /**
      * Get User-Agent string for API requests
      *
-     * Format: BandwidthSaver/{version} WordPress/{wp_version} PHP/{php_version}
+     * Format: UnlimitedCDN/{version} WordPress/{wp_version} PHP/{php_version}
      * This allows the API to track plugin versions and optimize responses.
      *
      * @since 0.2.2
@@ -1108,7 +1108,7 @@ class ImgPro_CDN_API {
         $plugin_version = defined('IMGPRO_CDN_VERSION') ? IMGPRO_CDN_VERSION : 'unknown';
 
         return sprintf(
-            'BandwidthSaver/%s WordPress/%s PHP/%s',
+            'UnlimitedCDN/%s WordPress/%s PHP/%s',
             $plugin_version,
             $wp_version,
             PHP_VERSION

@@ -534,8 +534,8 @@ class ImgPro_CDN_Admin {
      */
     public function add_menu_page() {
         add_options_page(
-            esc_html__('Bandwidth Saver', 'bandwidth-saver'),
-            esc_html__('Bandwidth Saver', 'bandwidth-saver'),
+            esc_html__('Unlimited CDN', 'bandwidth-saver'),
+            esc_html__('Unlimited CDN', 'bandwidth-saver'),
             'manage_options',
             'imgpro-cdn-settings',
             [$this, 'render_settings_page']
@@ -771,7 +771,7 @@ class ImgPro_CDN_Admin {
         <div class="imgpro-header">
             <div class="imgpro-header-brand">
                 <div>
-                    <h1><?php esc_html_e('Bandwidth Saver', 'bandwidth-saver'); ?></h1>
+                    <h1><?php esc_html_e('Unlimited CDN', 'bandwidth-saver'); ?></h1>
                     <p class="imgpro-tagline"><?php esc_html_e('Faster media for visitors worldwide', 'bandwidth-saver'); ?></p>
                 </div>
             </div>
@@ -1359,7 +1359,7 @@ class ImgPro_CDN_Admin {
                     </ol>
 
                     <div class="imgpro-setup-actions">
-                        <a href="https://github.com/img-pro/bandwidth-saver-worker#quick-start" target="_blank" class="imgpro-btn imgpro-btn-primary">
+                        <a href="https://github.com/img-pro/unlimited-cdn-worker#quick-start" target="_blank" class="imgpro-btn imgpro-btn-primary">
                             <?php esc_html_e('View Setup Guide', 'bandwidth-saver'); ?>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 8.667V12a1.333 1.333 0 01-1.333 1.333H4A1.333 1.333 0 012.667 12V5.333A1.333 1.333 0 014 4h3.333M10 2h4v4M6.667 9.333L14 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </a>
@@ -1705,7 +1705,7 @@ class ImgPro_CDN_Admin {
                     sprintf(
                         /* translators: 1: Plugin page link, 2: ImgPro link, 3: Cloudflare link */
                         __('%1$s by %2$s, powered by %3$s', 'bandwidth-saver'),
-                        '<a href="https://wordpress.org/plugins/bandwidth-saver/" target="_blank">Bandwidth Saver</a>',
+                        '<a href="https://wordpress.org/plugins/bandwidth-saver/" target="_blank">Unlimited CDN</a>',
                         '<a href="https://img.pro" target="_blank">ImgPro</a>',
                         '<a href="https://cloudflare.com" target="_blank">Cloudflare</a>'
                     )

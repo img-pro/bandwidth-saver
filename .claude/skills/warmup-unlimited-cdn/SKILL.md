@@ -10,12 +10,11 @@ Before making ANY changes, fully understand the current Unlimited CDN system and
 
 ## Project Repositories
 
-| Component | GitHub Repo | Local Path |
-|-----------|-------------|------------|
-| WordPress Plugin | `img-pro/unlimited-cdn-wp` | !`git rev-parse --show-toplevel` |
-| CDN Worker | `img-pro/unlimited-cdn` | !`find ~/GitHub -maxdepth 3 -type d -name "unlimited-cdn" ! -path "*-wp*" ! -path "*-billing*" 2>/dev/null \| head -1` |
-| Billing Worker | `img-pro/unlimited-cdn-billing` | !`find ~/GitHub -maxdepth 3 -type d -name "unlimited-cdn-billing" 2>/dev/null \| head -1` |
-| Landing Pages | `img-pro/bandwidth-saver-landing` | !`find ~/GitHub -maxdepth 3 -type d -name "bandwidth-saver-landing" 2>/dev/null \| head -1` |
+The system consists of multiple repositories. Use the session's working directories to locate them:
+
+1. **WordPress Plugin** (`unlimited-cdn`) - Look for directory containing `imgpro-cdn.php`
+2. **CDN Worker** (`unlimited-cdn`) - Shared backend, TypeScript worker with R2 integration
+3. **Billing Worker** (`unlimited-cdn-billing`) - Shared backend, worker with Stripe/D1
 
 ## High-Level Intent
 
@@ -110,4 +109,3 @@ Once you have a solid mental model and have summarized it back to me, **stop and
 | WordPress Plugin | PHP | WordPress.org / Manual |
 | CDN Worker | TypeScript | Cloudflare Workers + R2 |
 | Billing Worker | TypeScript | Cloudflare Workers + D1 |
-| Landing Pages | Astro | Cloudflare Pages |
